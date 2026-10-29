@@ -681,6 +681,11 @@ kbd {
   color: var(--ok);
 }
 
+.status-void {
+  background: var(--bg-sunken);
+  color: var(--ink-3);
+}
+
 .status-draft {
   border: 1px dashed var(--line-strong);
   color: var(--ink-2);

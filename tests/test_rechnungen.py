@@ -154,6 +154,79 @@ def test_festgeschriebene_rechnung_ist_unveraenderbar(client, firma, kunde, date
     assert Rechnung.objects.get().betreff == ""
 
 
+def test_stornieren_mit_kopie_zum_korrigieren(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+    ansicht = client.get(reverse("invoicing:bearbeiten", args=[original.pk]))
+    assert 'id="storno-dialog"' in ansicht.content.decode()
+
+    antwort = client.post(
+        reverse("invoicing:stornieren", args=[original.pk]), {"kopie": "on"}
+    )
+
+    storno = Rechnung.objects.get(storno_zu=original)
+    kopie = Rechnung.objects.get(status=Rechnung.Status.ENTWURF)
+    assert antwort.url == reverse("invoicing:bearbeiten", args=[kopie.pk])
+    assert Rechnung.objects.get(pk=original.pk).storniert
+    assert storno.datum == date.today()
+    assert storno.nummer not in ("", original.nummer)
+    assert storno.brutto == Decimal("-2360.00")
+    assert storno.beleg["storno_zu"] == {"nummer": "260001", "datum": "2026-10-29"}
+    assert storno.datei.endswith(f"Stornorechnung-{storno.nummer}.pdf")
+    inhalt = (daten / storno.datei).read_bytes()
+    assert hashlib.sha256(inhalt).hexdigest() == storno.sha256
+    pdf = PdfReader(BytesIO(inhalt))
+    text = pdf.pages[0].extract_text()
+    assert f"Stornorechnung {storno.nummer}" in text
+    assert "260001 vom 29.10.2026" in text
+    assert "-2.360,00" in text
+    assert "GiroCode" not in text
+    xml = pdf.attachments["factur-x.xml"][0].decode()
+    assert "<ram:InvoiceReferencedDocument>" in xml
+    assert "<ram:IssuerAssignedID>260001</ram:IssuerAssignedID>" in xml
+    assert 'unitCode="HUR">-29.5' in xml
+    assert "<ram:SpecifiedTradeSettlementPaymentMeans>" not in xml
+    # Die Kopie ist ein normaler Entwurf mit denselben Positionen.
+    assert kopie.kontakt == kunde and kopie.storno_zu is None
+    assert [(p.bezeichnung, p.menge) for p in kopie.positionen.all()] == [
+        ("Webdesign", Decimal("29.500"))
+    ]
+
+    # Kein zweites Storno, und eine Stornorechnung selbst lässt sich nicht stornieren.
+    for pk in (original.pk, storno.pk):
+        antwort = client.post(reverse("invoicing:stornieren", args=[pk]))
+        assert antwort.status_code == 404
+    assert Rechnung.objects.filter(storno_zu__isnull=False).count() == 1
+    liste = client.get(reverse("invoicing:liste")).content.decode()
+    assert "Storniert" in liste and f"Storno zu {original.nummer}" in liste
+
+
+def test_stornieren_ohne_kopie_zeigt_stornorechnung(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+
+    antwort = client.post(reverse("invoicing:stornieren", args=[original.pk]))
+
+    storno = Rechnung.objects.get(storno_zu=original)
+    assert antwort.url == reverse("invoicing:bearbeiten", args=[storno.pk])
+    assert not Rechnung.objects.filter(status=Rechnung.Status.ENTWURF).exists()
+    ansicht = client.get(antwort.url).content.decode()
+    assert "Storniert die" in ansicht and 'id="storno-dialog"' not in ansicht
+
+
+def test_kopieren_legt_entwurf_an(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+
+    antwort = client.post(reverse("invoicing:kopieren", args=[original.pk]))
+
+    kopie = Rechnung.objects.get(status=Rechnung.Status.ENTWURF)
+    assert antwort.url == reverse("invoicing:bearbeiten", args=[kopie.pk])
+    assert kopie.nummer == "" and kopie.datum == date.today()
+    assert kopie.positionen.get().preis == Decimal("80.00")
+    assert not Rechnung.objects.get(pk=original.pk).storniert
+
+
 def test_unvollstaendig_bleibt_entwurf(client, kunde, daten):
     antwort = client.post(reverse("invoicing:neu"), formular(kunde), follow=True)
 

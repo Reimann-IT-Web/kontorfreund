@@ -19,13 +19,21 @@ from .beleg import briefanrede
 def vorschlag(rechnung, firma):
     """Empfänger, Betreff und Text, die der Nutzer vor dem Senden noch ändern kann."""
     gruss = "\n".join(z for z in (firma.inhaber, firma.name) if z)
+    if o := rechnung.storno_zu:
+        inhalt = (
+            f"anbei erhalten Sie die Stornorechnung {rechnung.nummer}. "
+            f"Sie storniert die Rechnung {o.nummer} vom {o.datum:%d.%m.%Y} vollständig."
+        )
+    else:
+        inhalt = (
+            f"anbei erhalten Sie die Rechnung {rechnung.nummer} "
+            f"vom {rechnung.datum:%d.%m.%Y} über {euro(rechnung.brutto)}."
+        )
     return {
         "an": rechnung.kontakt.email if rechnung.kontakt else "",
-        "betreff": f"Rechnung {rechnung.nummer}",
+        "betreff": str(rechnung),
         "text": (
-            f"{briefanrede(rechnung.kontakt)}\n\n"
-            f"anbei erhalten Sie die Rechnung {rechnung.nummer} "
-            f"vom {rechnung.datum:%d.%m.%Y} über {euro(rechnung.brutto)}.\n\n"
+            f"{briefanrede(rechnung.kontakt)}\n\n{inhalt}\n\n"
             f"Mit freundlichen Grüßen\n{gruss}"
         ),
         "kopie": True,
@@ -50,7 +58,7 @@ def senden(rechnung, firma, an, betreff, text, kopie):
         bcc=[firma.email] if kopie else [],
     )
     nachricht.attach(
-        f"Rechnung-{rechnung.nummer}.pdf",
+        f"{rechnung.bezeichnung}-{rechnung.nummer}.pdf",
         (Path(settings.DATA_DIR) / rechnung.datei).read_bytes(),
         "application/pdf",
     )

@@ -1,24 +1,29 @@
 {% extends "base.html" %}
 {% load kf %}
 
-{% block title %}Rechnung {{ rechnung.nummer }}{% endblock %}
+{% block title %}{{ rechnung }}{% endblock %}
 
 {% block content %}
 <nav aria-label="Sie sind hier">
   <ol class="crumbs">
     <li><a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a></li>
-    <li aria-current="page">Rechnung {{ rechnung.nummer }}</li>
+    <li aria-current="page">{{ rechnung }}</li>
   </ol>
 </nav>
 
 <div class="page-head">
   <div>
-    <h1>Rechnung {{ rechnung.nummer }}
-      {% if rechnung.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>{% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
+    <h1>{{ rechnung }}
+      {% if rechnung.storniert %}<span class="status status-void">{% icon "x" %}Storniert</span>
+      {% elif rechnung.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>
+      {% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
     </h1>
     <p class="muted">{{ rechnung.kontakt }} · {{ rechnung.datum|date:"d.m.Y" }} · <span class="amount">{{ rechnung.brutto|euro }}</span>{% if rechnung.versendet_am %} · gesendet am {{ rechnung.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ rechnung.versendet_an }}{% endif %}</p>
+    {% if rechnung.ist_storno %}<p class="muted">Storniert die <a href="{% url 'invoicing:bearbeiten' rechnung.storno_zu.pk %}">Rechnung {{ rechnung.storno_zu.nummer }}</a> vom {{ rechnung.storno_zu.datum|date:"d.m.Y" }}.</p>
+    {% elif rechnung.storniert %}<p class="muted">Aufgehoben durch die <a href="{% url 'invoicing:bearbeiten' rechnung.stornorechnung.pk %}">Stornorechnung {{ rechnung.stornorechnung.nummer }}</a> vom {{ rechnung.stornorechnung.datum|date:"d.m.Y" }}.</p>{% endif %}
   </div>
   <div class="actions">
+    {% if not rechnung.ist_storno %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>{% endif %}
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
   </div>
@@ -26,11 +31,12 @@
 
 <div class="beleg-ansicht">
   <div class="beleg-bilder">
-    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="Rechnung {{ rechnung.nummer }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
+    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="{{ rechnung }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
     {% empty %}<p class="muted">Die PDF-Datei fehlt im Archiv.</p>{% endfor %}
   </div>
 
   <aside class="beleg-seite">
+    {% if not rechnung.storniert %}
     <section class="panel" aria-labelledby="versand-titel">
       <h2 class="panel-title" id="versand-titel">{% if rechnung.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}</h2>
       {% if firma.mail_bereit %}
@@ -40,7 +46,7 @@
         {% include "core/feld.html" with f=form.betreff %}
         {% include "core/feld.html" with f=form.text %}
         <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
-        <p class="small muted">Anhang: Rechnung-{{ rechnung.nummer }}.pdf (ZUGFeRD)</p>
+        <p class="small muted">Anhang: {{ rechnung.bezeichnung }}-{{ rechnung.nummer }}.pdf (ZUGFeRD)</p>
         <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
       </form>
       {% else %}
@@ -49,6 +55,7 @@
       <p class="small muted">Oder laden Sie das PDF herunter und hängen es in Ihrem E-Mail-Programm an.</p>
       {% endif %}
     </section>
+    {% endif %}
 
     <section class="panel" aria-labelledby="ablage-titel">
       <h2 class="panel-title" id="ablage-titel">Aufbewahrung</h2>
@@ -59,6 +66,36 @@
       </dl>
       <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ rechnung.sha256 }}</code></p>
     </section>
+
+    {% if not rechnung.ist_storno and not rechnung.storniert %}
+    <section class="panel" aria-labelledby="korrektur-titel">
+      <h2 class="panel-title" id="korrektur-titel">Fehler in der Rechnung?</h2>
+      <p class="small">Eine festgeschriebene Rechnung bleibt, wie sie ist. Zum Korrigieren stornieren Sie sie und schreiben eine neue.</p>
+      <button class="btn btn-block" type="button" data-dialog="storno-dialog">{% icon "x" %}Stornieren …</button>
+    </section>
+    {% endif %}
   </aside>
 </div>
+
+{% if not rechnung.ist_storno %}
+<form id="kopieren-form" method="post" action="{% url 'invoicing:kopieren' rechnung.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+
+{% if not rechnung.ist_storno and not rechnung.storniert %}
+<form id="storno-form" method="post" action="{% url 'invoicing:stornieren' rechnung.pk %}" hidden>{% csrf_token %}</form>
+<dialog class="notice-dialog" id="storno-dialog" aria-labelledby="storno-titel">
+  <form method="dialog">
+    <h2 id="storno-titel">Rechnung {{ rechnung.nummer }} stornieren?</h2>
+    <p>Kontorfreund schreibt die Stornorechnung <strong>{{ naechste_nummer }}</strong> über den vollen Betrag von {{ rechnung.brutto|euro }} und legt sie unveränderbar ab. Das lässt sich nicht rückgängig machen.</p>
+    <label class="choice">
+      <input type="checkbox" name="kopie" form="storno-form" checked>
+      <span><strong>Danach eine Kopie zum Korrigieren anlegen</strong><br><span class="muted">Ein neuer Entwurf mit denselben Angaben; er bekommt beim Festschreiben eine neue Nummer.</span></span>
+    </label>
+    <p class="actions">
+      <button class="btn" value="abbrechen">Abbrechen</button>
+      <button class="btn btn-primary" type="submit" form="storno-form">{% icon "x" %}Stornieren</button>
+    </p>
+  </form>
+</dialog>
+{% endif %}
 {% endblock %}

@@ -346,5 +346,11 @@ document.addEventListener("click", (e) => {
   if (knopf && !window.confirm(knopf.dataset.confirm)) e.preventDefault();
 });
 
+// Knöpfe mit data-dialog öffnen eine Rückfrage, z. B. vor dem Stornieren.
+document.addEventListener("click", (e) => {
+  const knopf = e.target.closest("[data-dialog]");
+  if (knopf) document.getElementById(knopf.dataset.dialog)?.showModal();
+});
+
 // Vorschau nach dem Speichern direkt öffnen.
 document.querySelector("dialog[data-open-on-load]")?.showModal();

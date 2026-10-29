@@ -1,5 +1,6 @@
 import logging
 import smtplib
+from datetime import date
 from pathlib import Path
 
 from django.conf import settings
@@ -30,7 +31,9 @@ def liste(request):
         "invoicing/liste.html",
         {
             "bereich": "rechnungen",
-            "rechnungen": Rechnung.objects.select_related("kontakt"),
+            "rechnungen": Rechnung.objects.select_related(
+                "kontakt", "storno_zu", "stornorechnung"
+            ),
             "altrechnungen": Altbeleg.objects.filter(art=Altbeleg.Art.RECHNUNG).count(),
         },
     )
@@ -49,13 +52,16 @@ def neu(request):
         else Rechnung.Steuerfall.REGEL,
         kopftext=f"{beleg.briefanrede(kontakt)}\n\n"
         "vielen Dank für Ihren Auftrag. Ich berechne Ihnen folgende Leistungen:",
-        fusstext="Mit freundlichen Grüßen\n\n" + (firma.inhaber or firma.name),
+        fusstext=beleg.grussformel(firma),
     )
     return _editor(request, rechnung, firma)
 
 
 def bearbeiten(request, pk):
-    rechnung = get_object_or_404(Rechnung.objects.select_related("kontakt"), pk=pk)
+    rechnung = get_object_or_404(
+        Rechnung.objects.select_related("kontakt", "storno_zu", "stornorechnung"),
+        pk=pk,
+    )
     firma = Firmendaten.laden()
     if not rechnung.ist_entwurf:
         return _anzeigen(request, rechnung, firma)
@@ -159,8 +165,51 @@ def _anzeigen(request, rechnung, firma):
             "seiten": beleg.seitenbilder(pfad.read_bytes())
             if (pfad := Path(settings.DATA_DIR) / rechnung.datei).is_file()
             else [],
+            "naechste_nummer": Rechnung.naechste_nummer(date.today()),
         },
     )
+
+
+@require_POST
+def stornieren(request, pk):
+    original = get_object_or_404(
+        Rechnung,
+        pk=pk,
+        status=Rechnung.Status.FESTGESCHRIEBEN,
+        storno_zu__isnull=True,
+        stornorechnung__isnull=True,
+    )
+    try:
+        storno = beleg.stornieren(original, Firmendaten.laden())
+    except Exception:
+        logger.exception("Stornieren fehlgeschlagen")
+        messages.error(
+            request,
+            "Die Stornorechnung konnte nicht erzeugt werden. Es wurde keine Nummer vergeben.",
+        )
+        return redirect("invoicing:bearbeiten", original.pk)
+    meldung = (
+        f"Rechnung {original.nummer} ist storniert (Stornorechnung {storno.nummer})."
+    )
+    if request.POST.get("kopie"):
+        kopie = original.kopieren()
+        messages.success(request, f"{meldung} Hier ist eine Kopie zum Korrigieren.")
+        return redirect("invoicing:bearbeiten", kopie.pk)
+    messages.success(request, meldung)
+    return redirect("invoicing:bearbeiten", storno.pk)
+
+
+@require_POST
+def kopieren(request, pk):
+    original = get_object_or_404(
+        Rechnung,
+        pk=pk,
+        status=Rechnung.Status.FESTGESCHRIEBEN,
+        storno_zu__isnull=True,
+    )
+    kopie = original.kopieren()
+    messages.success(request, f"Kopie von Rechnung {original.nummer} angelegt.")
+    return redirect("invoicing:bearbeiten", kopie.pk)
 
 
 @require_POST
@@ -192,6 +241,6 @@ def pdf(request, pk):
     return FileResponse(
         pfad.open("rb"),
         content_type="application/pdf",
-        filename=f"Rechnung-{rechnung.nummer}.pdf",
+        filename=f"{rechnung.bezeichnung}-{rechnung.nummer}.pdf",
         as_attachment="herunterladen" in request.GET,
     )

@@ -44,6 +44,19 @@ class Rechnung(models.Model):
 
     # Nach dem Festschreiben dürfen sich nur noch diese Felder ändern.
     NACHTRAEGLICH = {"versendet_am", "versendet_an"}
+    # Angaben, die eine Kopie oder Stornorechnung vom Original übernimmt.
+    KOPIERT = (
+        "kontakt",
+        "leistung_von",
+        "leistung_bis",
+        "zahlungsziel",
+        "steuerfall",
+        "referenz",
+        "betreff",
+        "kopftext",
+        "fusstext",
+        "girocode",
+    )
 
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.ENTWURF
@@ -69,6 +82,15 @@ class Rechnung(models.Model):
     kopftext = models.TextField("Text vor den Positionen", blank=True)
     fusstext = models.TextField("Text nach den Positionen", blank=True)
     girocode = models.BooleanField("GiroCode drucken", default=True)
+    storno_zu = models.OneToOneField(
+        "self",
+        verbose_name="Storniert die Rechnung",
+        on_delete=models.PROTECT,
+        related_name="stornorechnung",
+        null=True,
+        blank=True,
+        editable=False,
+    )
 
     # Beim Festschreiben eingefroren: genau die Angaben, aus denen PDF und XML entstanden.
     beleg = models.JSONField(default=dict, editable=False)
@@ -97,7 +119,9 @@ class Rechnung(models.Model):
         ]
 
     def __str__(self):
-        return f"Rechnung {self.nummer}" if self.nummer else "Rechnungsentwurf"
+        return (
+            f"{self.bezeichnung} {self.nummer}" if self.nummer else "Rechnungsentwurf"
+        )
 
     def save(self, *args, **kwargs):
         if self.pk and self._war_festgeschrieben():
@@ -119,6 +143,18 @@ class Rechnung(models.Model):
     @property
     def ist_entwurf(self):
         return self.status == self.Status.ENTWURF
+
+    @property
+    def ist_storno(self):
+        return self.storno_zu_id is not None
+
+    @property
+    def storniert(self):
+        return hasattr(self, "stornorechnung")
+
+    @property
+    def bezeichnung(self):
+        return "Stornorechnung" if self.ist_storno else "Rechnung"
 
     @property
     def faellig(self):
@@ -155,6 +191,25 @@ class Rechnung(models.Model):
         if self.summen()[2] <= 0:
             fehlt.append("Rechnungsbetrag")
         return fehlt
+
+    def kopieren(self, **abweichend):
+        """Neuer Entwurf mit denselben Angaben und Positionen, datiert auf heute."""
+        kopie = Rechnung.objects.create(
+            **{**{f: getattr(self, f) for f in self.KOPIERT}, **abweichend}
+        )
+        Position.objects.bulk_create(
+            Position(
+                rechnung=kopie,
+                nr=p.nr,
+                bezeichnung=p.bezeichnung,
+                beschreibung=p.beschreibung,
+                menge=p.menge,
+                einheit=p.einheit,
+                preis=p.preis,
+            )
+            for p in self.positionen.all()
+        )
+        return kopie
 
     @staticmethod
     def naechste_nummer(datum):

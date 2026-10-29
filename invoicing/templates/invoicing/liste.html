@@ -34,6 +34,8 @@
         <td>{% if r.kontakt %}{{ r.kontakt }}{% else %}<span class="muted">noch kein Empfänger</span>{% endif %}</td>
         <td>
           {% if r.ist_entwurf %}<span class="status status-draft">{% icon "pencil" %}Entwurf</span>
+          {% elif r.ist_storno %}<span class="status status-void">{% icon "x" %}Storno zu {{ r.storno_zu.nummer }}</span>
+          {% elif r.storniert %}<span class="status status-void">{% icon "x" %}Storniert</span>
           {% elif r.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>
           {% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
         </td>

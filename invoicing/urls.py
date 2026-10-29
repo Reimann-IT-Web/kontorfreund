@@ -10,4 +10,6 @@ urlpatterns = [
     path("<int:pk>/", views.bearbeiten, name="bearbeiten"),
     path("<int:pk>/pdf/", views.pdf, name="pdf"),
     path("<int:pk>/loeschen/", views.loeschen, name="loeschen"),
+    path("<int:pk>/stornieren/", views.stornieren, name="stornieren"),
+    path("<int:pk>/kopieren/", views.kopieren, name="kopieren"),
 ]

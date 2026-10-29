@@ -13,6 +13,7 @@ import pypdfium2 as pdfium
 import typst
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from drafthorse.models.accounting import ApplicableTradeTax
 from drafthorse.models.document import Document
@@ -103,12 +104,18 @@ def briefanrede(kontakt):
     return "Sehr geehrte Damen und Herren,"
 
 
+def grussformel(firma):
+    return "Mit freundlichen Grüßen\n\n" + (firma.inhaber or firma.name)
+
+
 def beleg_daten(rechnung, firma, nummer):
     """Alle Angaben des Belegs. Beim Festschreiben eingefroren, danach nie neu berechnet."""
     netto, ust, brutto = rechnung.summen()
     k = rechnung.kontakt
+    o = rechnung.storno_zu
     return {
         "nummer": nummer,
+        "storno_zu": {"nummer": o.nummer, "datum": o.datum.isoformat()} if o else None,
         "datum": rechnung.datum.isoformat(),
         "faellig": rechnung.faellig.isoformat(),
         "zahlungsziel": rechnung.zahlungsziel,
@@ -192,9 +199,11 @@ def _girocode(b):
 
 def druckdaten(b, entwurf=False, logo=b""):
     """Beleg-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
-    a, e = b["absender"], b["empfaenger"]
+    a, e, storno = b["absender"], b["empfaenger"], b["storno_zu"]
     info = [("Rechnungsnummer", b["nummer"] or "wird vergeben")]
     info.append(("Rechnungsdatum", datum_de(b["datum"])))
+    if storno:
+        info.append(("Zur Rechnung", storno["nummer"]))  # Datum steht im Text darunter
     if e["kundennummer"]:
         info.append(("Kundennummer", e["kundennummer"]))
     if b["leistung_von"]:
@@ -209,19 +218,23 @@ def druckdaten(b, entwurf=False, logo=b""):
             ["Umsatzsteuer 19 %", euro(b["ust"])],
         ]
 
+    iban = " ".join(a["iban"][i : i + 4] for i in range(0, len(a["iban"]), 4))
     zahlung = [
-        "Zahlbar sofort ohne Abzug."
+        f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
+        "Einen bereits gezahlten Betrag erhalten Sie zurück."
+        if storno
+        else "Zahlbar sofort ohne Abzug."
         if b["zahlungsziel"] == 0
         else f"Zahlbar ohne Abzug bis zum {datum_de(b['faellig'])}."
     ]
-    iban = " ".join(a["iban"][i : i + 4] for i in range(0, len(a["iban"]), 4))
-    if iban:
+    if iban and not storno:
         konto = ", ".join(z for z in (a["bank"], f"IBAN {iban}") if z)
         zahlung.append(f"Bitte überweisen Sie den Betrag auf folgendes Konto: {konto}")
         if b["nummer"]:
             zahlung.append(f"Verwendungszweck: Rechnung {b['nummer']}")
 
-    titel = f"Rechnung {b['nummer']}" if b["nummer"] else "Rechnung (Entwurf)"
+    art = "Stornorechnung" if storno else "Rechnung"
+    titel = f"{art} {b['nummer']}" if b["nummer"] else "Rechnung (Entwurf)"
     return {
         "entwurf": entwurf,
         "titel": titel,
@@ -374,6 +387,10 @@ def zugferd(b):
         kaeufer.tax_registrations.add(TaxRegistration(id=("VA", e["ust_id"])))
     if b["referenz"]:
         doc.trade.agreement.buyer_reference = b["referenz"]
+    if b["storno_zu"]:
+        bezug = doc.trade.settlement.invoice_referenced_document
+        bezug.issuer_assigned_id = b["storno_zu"]["nummer"]
+        bezug.issue_date_time = date.fromisoformat(b["storno_zu"]["datum"])
 
     von, bis = b["leistung_von"], b["leistung_bis"] or b["leistung_von"]
     if von == bis:
@@ -402,14 +419,16 @@ def zugferd(b):
     abrechnung = doc.trade.settlement
     abrechnung.currency_code = "EUR"
     abrechnung.payment_reference = f"Rechnung {b['nummer']}"
-    if a["iban"]:
-        zahlweg = PaymentMeans()
-        zahlweg.type_code = "58"  # SEPA-Überweisung
-        zahlweg.payee_account.iban = a["iban"]
-        abrechnung.payment_means.add(zahlweg)
-    bedingung = PaymentTerms()
-    bedingung.due = date.fromisoformat(b["faellig"])
-    abrechnung.terms.add(bedingung)
+    # Zahlungsangaben nur, wenn der Kunde etwas zu zahlen hat (nicht beim Storno).
+    if Decimal(b["brutto"]) > 0:
+        if a["iban"]:
+            zahlweg = PaymentMeans()
+            zahlweg.type_code = "58"  # SEPA-Überweisung
+            zahlweg.payee_account.iban = a["iban"]
+            abrechnung.payment_means.add(zahlweg)
+        bedingung = PaymentTerms()
+        bedingung.due = date.fromisoformat(b["faellig"])
+        abrechnung.terms.add(bedingung)
 
     steuer = ApplicableTradeTax()
     steuer.calculated_amount = Decimal(b["ust"])
@@ -448,7 +467,7 @@ def festschreiben(rechnung, firma):
             Path("archiv")
             / "rechnungen"
             / str(rechnung.datum.year)
-            / f"Rechnung-{nummer}.pdf"
+            / f"{rechnung.bezeichnung}-{nummer}.pdf"
         )
         rechnung.nummer = nummer
         rechnung.beleg = b
@@ -467,3 +486,20 @@ def festschreiben(rechnung, firma):
         with ziel.open("xb") as datei:  # niemals überschreiben
             datei.write(inhalt)
     return rechnung
+
+
+def stornieren(original, firma):
+    """Stornorechnung über den vollen Betrag mit Bezug auf das Original festschreiben."""
+    with transaction.atomic():
+        storno = original.kopieren(
+            storno_zu=original,
+            zahlungsziel=0,
+            girocode=False,
+            kopftext=f"{briefanrede(original.kontakt)}\n\n"
+            f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
+            "wird hiermit vollständig storniert.",
+            fusstext=grussformel(firma),
+        )
+        # Negative Mengen statt Preise: EN 16931 erlaubt keinen negativen Einzelpreis (BR-27).
+        storno.positionen.update(menge=-F("menge"))
+        return festschreiben(storno, firma)
