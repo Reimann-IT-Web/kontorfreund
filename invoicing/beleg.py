@@ -129,6 +129,7 @@ def beleg_daten(rechnung, firma, nummer):
             feld: getattr(firma, feld)
             for feld in (
                 "name",
+                "marke",
                 "inhaber",
                 "strasse",
                 "plz",
@@ -226,6 +227,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "titel": titel,
         "logo": list(logo) or None,
         "absender_name": a["name"],
+        "marke": a["marke"],
         "kopf": [
             z
             for z in (

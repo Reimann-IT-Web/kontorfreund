@@ -23,6 +23,7 @@ class Firmendaten(models.Model):
     """Angaben zum eigenen Unternehmen; es gibt genau einen Datensatz."""
 
     name = models.CharField("Firmenname", max_length=200, blank=True)
+    marke = models.CharField("Marke oder Zusatz", max_length=100, blank=True)
     inhaber = models.CharField("Inhaber", max_length=200, blank=True)
     strasse = models.CharField("Straße und Hausnummer", max_length=200, blank=True)
     plz = models.CharField("PLZ", max_length=10, blank=True)

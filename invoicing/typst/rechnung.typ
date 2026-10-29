@@ -60,7 +60,11 @@
     (left + horizon, left + horizon, right + bottom)
   } else { (left + bottom, right + bottom) },
   ..if d.logo != none { (image(bytes(d.logo), height: 12mm),) },
-  text(size: 15pt, weight: "bold", fill: akzent, d.absender_name),
+  stack(
+    spacing: 2.2mm,
+    text(size: 15pt, weight: "bold", fill: akzent, d.absender_name),
+    ..if d.marke != "" { (text(size: 10pt, fill: leise, d.marke),) },
+  ),
   text(size: 8.5pt, fill: leise, zeilen(d.kopf)),
 )
 #v(2mm)

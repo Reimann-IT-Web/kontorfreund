@@ -22,6 +22,7 @@ class FirmendatenForm(forms.ModelForm):
         model = Firmendaten
         fields = [
             "name",
+            "marke",
             "inhaber",
             "strasse",
             "plz",
@@ -49,6 +50,7 @@ class FirmendatenForm(forms.ModelForm):
             ),
         }
         help_texts = {
+            "marke": "Steht klein unter dem Firmennamen neben dem Logo, z. B. Ihr Markenname.",
             "steuernummer": "Steht auf jeder Rechnung. Alternativ genügt die USt-IdNr.",
             "kleinunternehmer": "Dann weist Kontorfreund keine Umsatzsteuer aus und druckt den Hinweis nach § 19 UStG.",
             "iban": "Erscheint in der Fußzeile und im GiroCode.",

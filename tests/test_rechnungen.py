@@ -273,6 +273,16 @@ def test_logo_hochladen_und_auf_rechnung(client, firma, kunde, daten):
     assert bytes(Firmendaten.laden().logo) == b""
 
 
+def test_marke_unter_dem_firmennamen(client, firma, kunde, daten):
+    einstellungen_absenden(client, firma, marke="Muster Netz & Web")
+    client.post(reverse("invoicing:neu"), formular(kunde))
+
+    rechnung = Rechnung.objects.get()
+    assert rechnung.beleg["absender"]["marke"] == "Muster Netz & Web"
+    pdf = PdfReader(BytesIO((daten / rechnung.datei).read_bytes()))
+    assert "Muster IT\nMuster Netz & Web" in pdf.pages[0].extract_text()
+
+
 def test_kaputtes_logo_abgelehnt(client, firma):
     antwort = einstellungen_absenden(
         client,
