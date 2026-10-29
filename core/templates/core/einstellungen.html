@@ -7,7 +7,7 @@
 <div class="page-head">
   <div>
     <h1>Einstellungen</h1>
-    <p class="muted">Ihre Firmendaten. Sie stehen als Absender auf jeder Rechnung.</p>
+    <p class="muted">Ihre Firmendaten stehen als Absender auf jeder Rechnung.</p>
   </div>
 </div>
 
@@ -43,6 +43,18 @@
       {% include "core/feld.html" with f=form.telefon optional=True %}
       {% include "core/feld.html" with f=form.iban optional=True %}
       {% include "core/feld.html" with f=form.bank optional=True %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-mail">
+    <h2 class="form-title" id="t-mail">E-Mail-Versand</h2>
+    <p class="muted form-hint">Damit Kontorfreund Rechnungen direkt verschickt. Die Angaben finden Sie bei Ihrem E-Mail-Anbieter unter „SMTP“ oder „Postausgang“. Bei Gmail brauchen Sie ein App-Passwort.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.mail_server optional=True %}
+      {% include "core/feld.html" with f=form.mail_port %}
+      {% include "core/feld.html" with f=form.mail_verschluesselung %}
+      {% include "core/feld.html" with f=form.mail_benutzer optional=True %}
+      {% include "core/feld.html" with f=form.mail_passwort optional=True %}
     </div>
   </section>
 

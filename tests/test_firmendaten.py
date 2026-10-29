@@ -19,6 +19,8 @@ def test_firmendaten_speichern(client):
             "steuernummer": "26/123/45678",
             "kleinunternehmer": "on",
             "iban": GUELTIGE_IBAN,
+            "mail_port": "587",
+            "mail_verschluesselung": "starttls",
         },
     )
 

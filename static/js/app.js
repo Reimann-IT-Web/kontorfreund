@@ -183,7 +183,7 @@ if (rechnung) {
   const feld = (name) => rechnung.elements[name];
   const tbody = rechnung.querySelector("[data-positions]");
   const vorlage = document.getElementById("position-vorlage");
-  const hinweisDialog = document.getElementById("prototyp-hinweis");
+  const festschreibenDialog = document.getElementById("festschreiben-dialog");
 
   const STEUERHINWEIS = {
     kleinunternehmer: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
@@ -224,7 +224,7 @@ if (rechnung) {
       : `${punkte.length} von ${punkte.length} · bereit zum Festschreiben`;
   };
 
-  const auswahl = feld("empfaenger");
+  const auswahl = feld("kontakt");
   const karte = rechnung.querySelector("[data-address-card]");
   const anschriftFehlt = rechnung.querySelector("[data-address-missing]");
 
@@ -240,6 +240,13 @@ if (rechnung) {
     if (gewaehlt) anschriftFehlt.querySelector("a").href = `${rechnung.dataset.adressen}${option.value}/`;
     return vollstaendig;
   };
+
+  // Die Anrede im Text folgt dem gewählten Empfänger, solange sie nicht von Hand geändert wurde.
+  auswahl.addEventListener("change", () => {
+    const anrede = auswahl.selectedOptions[0]?.dataset.briefanrede;
+    const kopf = feld("kopftext");
+    if (anrede && /^Sehr geehrte/.test(kopf.value)) kopf.value = kopf.value.replace(/^.*$/m, anrede);
+  });
 
   const rechnen = () => {
     let netto = 0;
@@ -309,11 +316,8 @@ if (rechnung) {
       }
       return;
     }
-    if (e.target.closest("[data-preview]")) hinweisDialog.showModal();
-  });
-  rechnung.addEventListener("submit", (e) => {
-    e.preventDefault();
-    hinweisDialog.showModal();
+    const festschreiben = e.target.closest("[data-submit]");
+    if (festschreiben && !festschreiben.disabled) festschreibenDialog.showModal();
   });
 
   // Aktuellen Schritt in der Schrittleiste markieren.
@@ -335,3 +339,12 @@ if (rechnung) {
 
   rechnen();
 }
+
+// Sicherheitsabfrage vor endgültigen Aktionen, z. B. dem Löschen eines Entwurfs.
+document.addEventListener("click", (e) => {
+  const knopf = e.target.closest("[data-confirm]");
+  if (knopf && !window.confirm(knopf.dataset.confirm)) e.preventDefault();
+});
+
+// Vorschau nach dem Speichern direkt öffnen.
+document.querySelector("dialog[data-open-on-load]")?.showModal();

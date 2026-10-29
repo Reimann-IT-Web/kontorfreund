@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Angebote &amp; Rechnungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Angebote &amp; Rechnungen</h1>
+    <p class="muted">Ihre Rechnungen aus Kontorfreund.{% if altrechnungen %} Die {{ altrechnungen }} Rechnungen aus Ihrem bisherigen Programm finden Sie in der <a href="{% url 'archive:liste' %}?art=rechnung">Ablage</a>.{% endif %}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
+  </div>
+</div>
+
+{% if rechnungen %}
+<div class="table-wrap">
+  <table class="table archive">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Kunde</th>
+        <th scope="col">Status</th>
+        <th scope="col" class="num">Betrag</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rechnungen %}
+      <tr class="data-row">
+        <td class="docnr">{{ r.datum|date:"d.m.Y" }}</td>
+        <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{% if r.nummer %}{{ r.nummer }}{% else %}Entwurf{% endif %}</a></td>
+        <td>{% if r.kontakt %}{{ r.kontakt }}{% else %}<span class="muted">noch kein Empfänger</span>{% endif %}</td>
+        <td>
+          {% if r.ist_entwurf %}<span class="status status-draft">{% icon "pencil" %}Entwurf</span>
+          {% elif r.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>
+          {% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
+        </td>
+        <td class="num"><span class="amount">{% if r.ist_entwurf %}<span class="muted">–</span>{% else %}{{ r.brutto|euro }}{% endif %}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <h2>Noch keine Rechnung in Kontorfreund</h2>
+  <p class="muted">Ihre erste Rechnung erhält die nächste freie Nummer nach Ihren bisherigen Rechnungen.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a></p>
+</div>
+{% endif %}
+{% endblock %}

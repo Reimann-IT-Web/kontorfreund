@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Rechnung {{ rechnung.nummer }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a></li>
+    <li aria-current="page">Rechnung {{ rechnung.nummer }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Rechnung {{ rechnung.nummer }}
+      {% if rechnung.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>{% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
+    </h1>
+    <p class="muted">{{ rechnung.kontakt }} · {{ rechnung.datum|date:"d.m.Y" }} · <span class="amount">{{ rechnung.brutto|euro }}</span>{% if rechnung.versendet_am %} · gesendet am {{ rechnung.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ rechnung.versendet_an }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
+    <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+  </div>
+</div>
+
+<div class="beleg-ansicht">
+  <iframe class="beleg-pdf" src="{% url 'invoicing:pdf' rechnung.pk %}" title="Rechnung {{ rechnung.nummer }} als PDF"></iframe>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="versand-titel">
+      <h2 class="panel-title" id="versand-titel">{% if rechnung.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}</h2>
+      {% if firma.mail_bereit %}
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        {% include "core/feld.html" with f=form.an %}
+        {% include "core/feld.html" with f=form.betreff %}
+        {% include "core/feld.html" with f=form.text %}
+        <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
+        <p class="small muted">Anhang: Rechnung-{{ rechnung.nummer }}.pdf (ZUGFeRD)</p>
+        <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
+      </form>
+      {% else %}
+      <p class="small">Damit Kontorfreund die Rechnung selbst verschickt, tragen Sie einmal Ihre E-Mail-Adresse und den Postausgangsserver ein.</p>
+      <p><a class="btn btn-block" href="{% url 'core:einstellungen' %}#t-mail">{% icon "settings" %}E-Mail-Versand einrichten</a></p>
+      <p class="small muted">Oder laden Sie das PDF herunter und hängen es in Ihrem E-Mail-Programm an.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="ablage-titel">
+      <h2 class="panel-title" id="ablage-titel">Aufbewahrung</h2>
+      <dl class="facts small">
+        <div><dt>Festgeschrieben</dt><dd>{{ rechnung.festgeschrieben_am|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt>Aufbewahren bis</dt><dd>31.12.{{ rechnung.datum.year|add:8 }}</dd></div>
+        <div><dt>Format</dt><dd>PDF/A-3 mit ZUGFeRD (EN 16931)</dd></div>
+      </dl>
+      <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ rechnung.sha256 }}</code></p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

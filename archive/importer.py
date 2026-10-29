@@ -32,6 +32,8 @@ ENTWURF = re.compile(r"-- ENTWURF --")
 RUECKSENDEZEILE = re.compile(r"^(.+?) - .+? - \d{5} \S+")
 PLZ_ORT = re.compile(r"^(\d{5})\s+(.+)$")
 ANREDE = re.compile(r"^(Herrn?|Frau)\s+(.+)$")
+# Anrede ohne Namen, ggf. mit Titeln („Frau“, „Frau Prof. Dr.“) – der Name folgt in der nächsten Zeile.
+ANREDE_ALLEIN = re.compile(r"^(Herrn?|Frau)(\s+\S+\.)*$")
 
 # Mitgelieferte Beispielbelege des Altprogramms gehören nicht zu den eigenen Daten.
 BEISPIEL_ABSENDER = {"Musterfirma GmbH"}
@@ -99,6 +101,10 @@ def _betrag(text):
 def anschrift_zerlegen(zeilen):
     """Anschriftblock (wie gedruckt) in Felder einer Adresse zerlegen."""
     zeilen = [z.strip() for z in zeilen if z.strip() and z.strip() != "Firma"]
+    for i in range(len(zeilen) - 1):
+        if ANREDE_ALLEIN.match(zeilen[i]):
+            zeilen[i : i + 2] = [f"{zeilen[i]} {zeilen[i + 1]}"]
+            break
     plz = ort = strasse = ""
     sicher = False
     if zeilen and (treffer := PLZ_ORT.match(zeilen[-1])):

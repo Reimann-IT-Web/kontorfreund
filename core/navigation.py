@@ -7,7 +7,7 @@ NAVIGATION = [
         "key": "rechnungen",
         "label": "Angebote & Rechnungen",
         "icon": "file",
-        "url": "invoicing:neu",
+        "url": "invoicing:liste",
     },
     {"key": "artikel", "label": "Artikel", "icon": "box", "slug": "artikel"},
     {

@@ -38,6 +38,24 @@ class Firmendaten(models.Model):
     )
     bank = models.CharField("Bank", max_length=100, blank=True)
 
+    class Verschluesselung(models.TextChoices):
+        STARTTLS = "starttls", "STARTTLS (meist Port 587)"
+        SSL = "ssl", "SSL/TLS (meist Port 465)"
+
+    mail_server = models.CharField(
+        "Postausgangsserver (SMTP)", max_length=200, blank=True
+    )
+    mail_port = models.PositiveIntegerField("Port", default=587)
+    mail_verschluesselung = models.CharField(
+        "Verschlüsselung",
+        max_length=10,
+        choices=Verschluesselung.choices,
+        default=Verschluesselung.STARTTLS,
+    )
+    mail_benutzer = models.CharField("Benutzername", max_length=200, blank=True)
+    # Liegt wie alle Daten nur lokal im Datenordner; verschlüsselte Sicherung folgt in Phase 4.
+    mail_passwort = models.CharField("Passwort", max_length=200, blank=True)
+
     class Meta:
         verbose_name = "Firmendaten"
         verbose_name_plural = "Firmendaten"
@@ -64,6 +82,10 @@ class Firmendaten(models.Model):
             and self.ort
             and (self.steuernummer or self.ust_id)
         )
+
+    @property
+    def mail_bereit(self):
+        return bool(self.email and self.mail_server)
 
     @property
     def initialen(self):

@@ -676,6 +676,11 @@ kbd {
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
+.status-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
 .status-draft {
   border: 1px dashed var(--line-strong);
   color: var(--ink-2);
@@ -1407,6 +1412,16 @@ select {
   background: var(--surface);
 }
 
+.positions textarea.input-sub {
+  display: block;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.5rem;
+  line-height: 1.45;
+  resize: vertical;
+  field-sizing: content;
+}
+
 .positions input.num {
   width: 5.5rem;
   text-align: right;
@@ -1898,6 +1913,79 @@ dialog::backdrop {
 .notice-dialog .actions {
   justify-content: flex-end;
   margin-top: var(--s5);
+}
+
+/* ---------- Beleg: Vorschau und Ansicht ---------- */
+
+.preview-dialog {
+  width: min(62rem, calc(100vw - 2rem));
+  height: calc(100vh - 2rem);
+  max-height: none;
+  padding: 0;
+}
+
+.preview-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+
+.preview-head h2 {
+  margin-right: auto;
+  font-size: var(--fs-md);
+}
+
+.preview-dialog iframe,
+.beleg-pdf {
+  width: 100%;
+  border: 0;
+  background: var(--bg-sunken);
+}
+
+.preview-dialog iframe {
+  flex: 1;
+}
+
+.beleg-ansicht {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: var(--s5);
+  align-items: start;
+}
+
+.beleg-pdf {
+  height: calc(100vh - 12rem);
+  min-height: 32rem;
+  border-radius: var(--r);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.beleg-seite {
+  display: grid;
+  gap: var(--s4);
+}
+
+.hash {
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 64rem) {
+  .beleg-ansicht {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .beleg-pdf {
+    height: 70vh;
+    min-height: 0;
+  }
 }
 
 /* ---------- Kleinere Bildschirme ---------- */

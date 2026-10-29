@@ -8,6 +8,7 @@ from django.shortcuts import redirect, render
 
 from archive.models import Altbeleg
 from contacts.models import Kontakt
+from invoicing.models import Rechnung
 
 from .forms import FirmendatenForm
 from .models import Firmendaten
@@ -20,10 +21,19 @@ def start(request):
     firma = Firmendaten.laden()
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
-    # Bis Phase 2 nur aus übernommenen Altbelegen; danach kommen festgeschriebene Rechnungen dazu.
-    umsatz = Altbeleg.objects.filter(
-        art__in=Altbeleg.UMSATZWIRKSAM, datum__year=date.today().year
-    ).aggregate(s=Sum("betrag"))["s"] or Decimal("0.00")
+    jahr = date.today().year
+    # Übernommene Altbelege plus festgeschriebene Rechnungen aus Kontorfreund (netto).
+    umsatz = (
+        Altbeleg.objects.filter(
+            art__in=Altbeleg.UMSATZWIRKSAM, datum__year=jahr
+        ).aggregate(s=Sum("betrag"))["s"]
+        or Decimal("0.00")
+    ) + (
+        Rechnung.objects.filter(
+            status=Rechnung.Status.FESTGESCHRIEBEN, datum__year=jahr
+        ).aggregate(s=Sum("netto"))["s"]
+        or Decimal("0.00")
+    )
     return render(
         request,
         "core/start.html",

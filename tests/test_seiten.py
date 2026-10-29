@@ -46,5 +46,5 @@ def test_rechnung_mit_vorgewaehltem_empfaenger(client):
 
     response = client.get("/rechnungen/neu/", {"empfaenger": kontakt.pk})
 
-    assert response.context["empfaenger"] == kontakt.pk
+    assert response.context["form"]["kontakt"].value() == kontakt.pk
     assert "Fahrschule Kaya (K-0001)" in response.text

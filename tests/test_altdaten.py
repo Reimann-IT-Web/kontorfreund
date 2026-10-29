@@ -110,6 +110,27 @@ def test_anschrift_mit_ansprechpartner():
     )
 
 
+@pytest.mark.parametrize(
+    ("zeilen", "erwartet"),
+    [
+        (["Frau", "Anna Lindner"], ("Frau", "", "Anna", "Lindner")),
+        (["Frau Prof. Dr.", "Anna Lindner"], ("Frau", "Prof. Dr.", "Anna", "Lindner")),
+        (["Herrn", "Lindner"], ("Herr", "", "", "Lindner")),
+    ],
+)
+def test_anschrift_anrede_in_eigener_zeile(zeilen, erwartet):
+    felder, sicher = anschrift_zerlegen([*zeilen, "Weg 1", "55116 Mainz"])
+
+    assert sicher
+    assert felder["art"] == Kontakt.Art.PERSON
+    assert (
+        felder["anrede"],
+        felder["titel"],
+        felder["vorname"],
+        felder["nachname"],
+    ) == erwartet
+
+
 def test_anschrift_nur_person():
     felder, _ = anschrift_zerlegen(["Frau Anna Lindner", "Weg 1", "55116 Mainz"])
 
