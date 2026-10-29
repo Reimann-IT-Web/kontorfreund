@@ -8,7 +8,6 @@ from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
@@ -96,7 +95,9 @@ def _editor(request, rechnung, firma):
             "kontakte": kontakte,
             "einheiten": EINHEITEN,
             "naechste_nummer": Rechnung.naechste_nummer(rechnung.datum),
-            "vorschau": bool(rechnung.pk and request.GET.get("vorschau")),
+            "vorschau": beleg.seitenbilder(_entwurf_pdf(rechnung, firma))
+            if rechnung.pk and request.GET.get("vorschau")
+            else [],
         },
     )
 
@@ -155,6 +156,9 @@ def _anzeigen(request, rechnung, firma):
             "b": rechnung.beleg,
             "firma": firma,
             "form": form,
+            "seiten": beleg.seitenbilder(pfad.read_bytes())
+            if (pfad := Path(settings.DATA_DIR) / rechnung.datei).is_file()
+            else [],
         },
     )
 
@@ -167,15 +171,18 @@ def loeschen(request, pk):
     return redirect("invoicing:liste")
 
 
+def _entwurf_pdf(rechnung, firma):
+    b = beleg.beleg_daten(rechnung, firma, "")
+    return beleg.pdf(b, entwurf=True, logo=bytes(firma.logo))
+
+
 # Der PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.
 @csp_override({})
-@xframe_options_sameorigin
 def pdf(request, pk):
     rechnung = get_object_or_404(Rechnung, pk=pk)
     if rechnung.ist_entwurf:
-        b = beleg.beleg_daten(rechnung, Firmendaten.laden(), "")
         return HttpResponse(
-            beleg.pdf(b, entwurf=True),
+            _entwurf_pdf(rechnung, Firmendaten.laden()),
             content_type="application/pdf",
             headers={"Content-Disposition": 'inline; filename="Rechnung-Entwurf.pdf"'},
         )

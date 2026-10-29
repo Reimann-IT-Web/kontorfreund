@@ -11,7 +11,7 @@
   </div>
 </div>
 
-<form class="form" method="post" novalidate>
+<form class="form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   <section class="form-section" aria-labelledby="t-firma">
     <h2 class="form-title" id="t-firma">Unternehmen</h2>
@@ -21,6 +21,17 @@
       {% include "core/feld.html" with f=form.strasse breit=True %}
       {% include "core/feld.html" with f=form.plz %}
       {% include "core/feld.html" with f=form.ort %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-logo">
+    <h2 class="form-title" id="t-logo">Logo</h2>
+    <div class="logo-feld">
+      {% if form.instance.logo_bild %}<img class="logo-bild" src="{{ form.instance.logo_bild }}" alt="Ihr aktuelles Logo">{% endif %}
+      <div class="stack">
+        {% include "core/feld.html" with f=form.logo_datei optional=True %}
+        {% if form.instance.logo_bild %}<label class="choice">{{ form.logo_entfernen }}<span>{{ form.logo_entfernen.label }}</span></label>{% endif %}
+      </div>
     </div>
   </section>
 

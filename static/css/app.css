@@ -1915,10 +1915,51 @@ dialog::backdrop {
   margin-top: var(--s5);
 }
 
+/* ---------- Einstellungen: Logo ---------- */
+
+.logo-feld {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s4);
+}
+
+input[type="file"] {
+  max-width: 100%;
+  color: var(--ink);
+  font: inherit;
+}
+
+input[type="file"]::file-selector-button {
+  min-height: 2.5rem;
+  margin-right: var(--s3);
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Weißer Grund wie auf dem Papier, damit dunkle Logos auch im Dunkelmodus sichtbar sind. */
+.logo-bild {
+  width: auto;
+  max-width: 12rem;
+  height: 4.5rem;
+  padding: var(--s2);
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
 /* ---------- Beleg: Vorschau und Ansicht ---------- */
 
 .preview-dialog {
   width: min(62rem, calc(100vw - 2rem));
+  max-width: none;
   height: calc(100vh - 2rem);
   max-height: none;
   padding: 0;
@@ -1942,15 +1983,28 @@ dialog::backdrop {
   font-size: var(--fs-md);
 }
 
-.preview-dialog iframe,
-.beleg-pdf {
-  width: 100%;
-  border: 0;
+.preview-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: var(--s4);
+  padding: var(--s4);
+  overflow: auto;
   background: var(--bg-sunken);
 }
 
-.preview-dialog iframe {
-  flex: 1;
+.beleg-bilder {
+  display: grid;
+  gap: var(--s4);
+}
+
+/* Papier bleibt auch im Dunkelmodus weiß. */
+.beleg-blatt {
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: var(--shadow-panel);
 }
 
 .beleg-ansicht {
@@ -1958,13 +2012,6 @@ dialog::backdrop {
   grid-template-columns: minmax(0, 1fr) 22rem;
   gap: var(--s5);
   align-items: start;
-}
-
-.beleg-pdf {
-  height: calc(100vh - 12rem);
-  min-height: 32rem;
-  border-radius: var(--r);
-  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .beleg-seite {
@@ -1980,11 +2027,6 @@ dialog::backdrop {
 @media (max-width: 64rem) {
   .beleg-ansicht {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .beleg-pdf {
-    height: 70vh;
-    min-height: 0;
   }
 }
 

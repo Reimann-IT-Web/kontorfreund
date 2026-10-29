@@ -51,7 +51,9 @@ def start(request):
 
 
 def einstellungen(request):
-    form = FirmendatenForm(request.POST or None, instance=Firmendaten.laden())
+    form = FirmendatenForm(
+        request.POST or None, request.FILES or None, instance=Firmendaten.laden()
+    )
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Firmendaten gespeichert.")

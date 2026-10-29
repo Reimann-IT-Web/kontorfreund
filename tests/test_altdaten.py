@@ -162,3 +162,28 @@ def test_uebernahme_legt_adresse_mit_alter_nummer_an(tmp_path, settings):
     zweiter = pruefen(quelle, leser=lambda pfad: texte[pfad.name])
     assert zweiter.belege == []
     assert zweiter.bereits_uebernommen == 2
+
+
+@pytest.mark.django_db
+def test_neu_nummerierter_kunde_wird_eine_adresse(tmp_path, settings):
+    settings.DATA_DIR = tmp_path / "daten"
+    quelle = tmp_path / "alt"
+    quelle.mkdir()
+    spaeter = (
+        RECHNUNG.replace("5009", "5002")
+        .replace("240012", "250003")
+        .replace("12.03.2024", "04.02.2025")
+        .replace("Lindenweg 4", "Ahornweg 9")
+    )
+    texte = {"alt.pdf": RECHNUNG, "neu.pdf": spaeter}
+    for name in texte:
+        (quelle / name).write_bytes(name.encode())
+
+    bericht = uebernehmen(pruefen(quelle, leser=lambda pfad: texte[pfad.name]))
+
+    kontakt = Kontakt.objects.get()
+    assert kontakt.kundennummer == "K-5002"  # die jüngste Nummer gilt
+    assert kontakt.strasse == "Ahornweg 9"
+    assert kontakt.altbelege.count() == 2
+    assert bericht.zusammengefuehrt == [("Muster Bäckerei GmbH", [5002, 5009])]
+    assert (bericht.neue_kontakte, bericht.vorhandene_kontakte) == (1, 0)

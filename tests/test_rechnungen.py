@@ -8,6 +8,7 @@ from io import BytesIO
 import pytest
 from django.core import mail
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail.backends import locmem
 from django.urls import reverse
 from pypdf import PdfReader
@@ -130,6 +131,8 @@ def test_festschreiben_legt_zugferd_pdf_ab(client, firma, kunde, daten):
     assert "<ram:CategoryCode>E</ram:CategoryCode>" in xml
     assert "Kleinunternehmer gemäß § 19 UStG" in xml
     assert "Rechnung 260001" in pdf.pages[0].extract_text()
+    ansicht = client.get(reverse("invoicing:bearbeiten", args=[rechnung.pk]))
+    assert 'src="data:image/png;base64,' in ansicht.content.decode()
 
 
 def test_festgeschriebene_rechnung_ist_unveraenderbar(client, firma, kunde, daten):
@@ -165,9 +168,13 @@ def test_entwurf_vorschau_und_loeschen(client, firma, kunde, daten):
     rechnung = Rechnung.objects.get()
     assert antwort.url.endswith("?vorschau=1")
 
-    vorschau = client.get(reverse("invoicing:pdf", args=[rechnung.pk]))
-    assert vorschau["Content-Type"] == "application/pdf"
-    assert vorschau["X-Frame-Options"] == "SAMEORIGIN"
+    # Seitenbilder statt eingebettetem PDF: kein PDF-Betrachter im Browser nötig.
+    seite = client.get(antwort.url)
+    assert seite.content.decode().count('src="data:image/png;base64,') == 1
+    assert (
+        client.get(reverse("invoicing:pdf", args=[rechnung.pk]))["Content-Type"]
+        == "application/pdf"
+    )
 
     client.post(reverse("invoicing:loeschen", args=[rechnung.pk]))
     assert not Rechnung.objects.exists()
@@ -220,3 +227,57 @@ def test_passwort_bleibt_bei_leerem_feld(client, firma):
 
     assert Firmendaten.laden().mail_passwort == "geheim"
     assert "geheim" not in client.get(reverse("core:einstellungen")).content.decode()
+
+
+LOGO = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    b'<rect width="32" height="32" rx="9" fill="#0b1220"/></svg>'
+)
+
+
+def einstellungen_absenden(client, firma, **mehr):
+    werte = {
+        f: getattr(firma, f)
+        for f in ("name", "strasse", "plz", "ort", "steuernummer", "email", "iban")
+    }
+    return client.post(
+        reverse("core:einstellungen"),
+        {
+            **werte,
+            "kleinunternehmer": "on",
+            "mail_port": "587",
+            "mail_verschluesselung": "starttls",
+            **mehr,
+        },
+    )
+
+
+def test_logo_hochladen_und_auf_rechnung(client, firma, kunde, daten):
+    einstellungen_absenden(
+        client, firma, logo_datei=SimpleUploadedFile("logo.svg", LOGO, "image/svg+xml")
+    )
+    assert bytes(Firmendaten.laden().logo) == LOGO
+    seite = client.get(reverse("core:einstellungen")).content.decode()
+    assert 'src="data:image/svg+xml;base64,' in seite
+
+    ohne = client.get(reverse("invoicing:pdf", args=[Rechnung.objects.create().pk]))
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    rechnung = Rechnung.objects.get(status=Rechnung.Status.FESTGESCHRIEBEN)
+    inhalt = (daten / rechnung.datei).read_bytes()
+    assert len(inhalt) > len(ohne.content)  # Logo als Vektorgrafik im Kopf
+
+    # Leeres Feld behält das Logo, „entfernen“ löscht es.
+    einstellungen_absenden(client, firma)
+    assert bytes(Firmendaten.laden().logo) == LOGO
+    einstellungen_absenden(client, firma, logo_entfernen="on")
+    assert bytes(Firmendaten.laden().logo) == b""
+
+
+def test_kaputtes_logo_abgelehnt(client, firma):
+    antwort = einstellungen_absenden(
+        client,
+        firma,
+        logo_datei=SimpleUploadedFile("logo.png", b"\x89PNG kaputt", "image/png"),
+    )
+    assert "nicht als Bild lesen" in antwort.content.decode()
+    assert bytes(Firmendaten.laden().logo) == b""

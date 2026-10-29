@@ -25,7 +25,10 @@
 </div>
 
 <div class="beleg-ansicht">
-  <iframe class="beleg-pdf" src="{% url 'invoicing:pdf' rechnung.pk %}" title="Rechnung {{ rechnung.nummer }} als PDF"></iframe>
+  <div class="beleg-bilder">
+    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="Rechnung {{ rechnung.nummer }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
+    {% empty %}<p class="muted">Die PDF-Datei fehlt im Archiv.</p>{% endfor %}
+  </div>
 
   <aside class="beleg-seite">
     <section class="panel" aria-labelledby="versand-titel">

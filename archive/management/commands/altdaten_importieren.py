@@ -72,3 +72,10 @@ class Command(BaseCommand):
                 f"Adressen: {bericht.neue_kontakte} neu angelegt, "
                 f"{bericht.vorhandene_kontakte} vorhandene zugeordnet."
             )
+            if bericht.zusammengefuehrt:
+                aus(
+                    "Gleicher Name unter mehreren Kundennummern – zu einer Adresse "
+                    "zusammengeführt, die jüngste Nummer gilt:"
+                )
+                for name, nummern in bericht.zusammengefuehrt:
+                    aus(f"  {name}: {', '.join(map(str, nummern))}")

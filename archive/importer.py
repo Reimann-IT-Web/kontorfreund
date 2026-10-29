@@ -76,6 +76,7 @@ class Bericht:
     neue_kontakte: int = 0
     vorhandene_kontakte: int = 0
     anschrift_unsicher: list = field(default_factory=list)
+    zusammengefuehrt: list = field(default_factory=list)
 
     def anzahl_je_art(self):
         return Counter((b.absender, b.art) for b in self.belege)
@@ -234,42 +235,47 @@ def pruefen(ordner, leser=pdf_text):
 
 
 def _kontakt_fuer(beleg, cache):
-    """Adresse zum Beleg finden oder anlegen; die jüngste Anschrift gewinnt."""
+    """Adresse zum Beleg finden oder anlegen; jüngste Anschrift und Nummer gewinnen."""
     felder = {k: v for k, v in beleg.anschrift.items() if k != "sicher"}
-    schluessel = beleg.kundennummer or (
-        felder["firmenname"] or felder["nachname"],
-        felder["plz"],
-    )
-    if schluessel in cache:
-        kontakt, neu = cache[schluessel]
-        if neu:
-            for name, wert in felder.items():
-                setattr(kontakt, name, wert)
-            kontakt.save()
-        return kontakt, False
     entwurf = Kontakt(
         **felder,
         kategorie=Kontakt.Kategorie.KUNDE,
         notiz=f"Aus {beleg.absender or 'dem Altprogramm'} übernommen.",
     )
-    kontakt = None
-    nummer_frei = False
+    name = entwurf.name_berechnen().casefold()
+    # Das Altprogramm hat manchen Kunden später neu nummeriert; der Name verbindet beide.
+    treffer = cache.get(beleg.kundennummer) or cache.get(name)
+    if treffer:
+        kontakt, angelegt = treffer
+        if angelegt:
+            for feld, wert in felder.items():
+                setattr(kontakt, feld, wert)
+            if (
+                beleg.kundennummer
+                and not Kontakt.objects.filter(nummer=beleg.kundennummer).exists()
+            ):
+                kontakt.nummer = beleg.kundennummer
+            kontakt.save()
+        neu = False
+    else:
+        kontakt = None
+        nummer_frei = False
+        if beleg.kundennummer:
+            vorhanden = Kontakt.objects.filter(nummer=beleg.kundennummer).first()
+            # Nur zuordnen, wenn auch der Name passt; sonst ist die Nummer zufällig belegt.
+            if vorhanden and vorhanden.anzeigename.casefold() == name:
+                kontakt = vorhanden
+            nummer_frei = vorhanden is None
+        neu = kontakt is None
+        if neu:
+            kontakt = entwurf
+            if nummer_frei:
+                kontakt.nummer = beleg.kundennummer
+            kontakt.save()
+        treffer = (kontakt, neu)
+    cache[name] = treffer
     if beleg.kundennummer:
-        vorhanden = Kontakt.objects.filter(nummer=beleg.kundennummer).first()
-        # Nur zuordnen, wenn auch der Name passt; sonst ist die Nummer zufällig belegt.
-        if (
-            vorhanden
-            and vorhanden.anzeigename.casefold() == entwurf.name_berechnen().casefold()
-        ):
-            kontakt = vorhanden
-        nummer_frei = vorhanden is None
-    neu = kontakt is None
-    if neu:
-        kontakt = entwurf
-        if nummer_frei:
-            kontakt.nummer = beleg.kundennummer
-        kontakt.save()
-    cache[schluessel] = (kontakt, neu)
+        cache[beleg.kundennummer] = treffer
     return kontakt, neu
 
 
@@ -300,5 +306,15 @@ def uebernehmen(bericht):
                 sha256=beleg.sha256,
                 originalname=beleg.pfad.name,
             )
-    bericht.vorhandene_kontakte = len(cache) - bericht.neue_kontakte
+    kontakte = {k.pk: k for k, _ in cache.values()}
+    bericht.vorhandene_kontakte = len(kontakte) - bericht.neue_kontakte
+    nummern = defaultdict(set)
+    for schluessel, (kontakt, _) in cache.items():
+        if isinstance(schluessel, int):
+            nummern[kontakt.pk].add(schluessel)
+    bericht.zusammengefuehrt = sorted(
+        (kontakte[pk].anzeigename, sorted(alle))
+        for pk, alle in nummern.items()
+        if len(alle) > 1
+    )
     return bericht

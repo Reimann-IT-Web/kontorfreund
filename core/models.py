@@ -1,3 +1,4 @@
+import base64
 import re
 
 from django.core.exceptions import ValidationError
@@ -37,6 +38,8 @@ class Firmendaten(models.Model):
         "IBAN", max_length=42, blank=True, validators=[iban_pruefen]
     )
     bank = models.CharField("Bank", max_length=100, blank=True)
+    # In der Datenbank statt als Datei, damit es mit jeder Sicherung erhalten bleibt.
+    logo = models.BinaryField("Logo", blank=True, default=b"")
 
     class Verschluesselung(models.TextChoices):
         STARTTLS = "starttls", "STARTTLS (meist Port 587)"
@@ -82,6 +85,21 @@ class Firmendaten(models.Model):
             and self.ort
             and (self.steuernummer or self.ust_id)
         )
+
+    @property
+    def logo_bild(self):
+        """Logo als Daten-URL für die Ansicht in den Einstellungen."""
+        daten = bytes(self.logo)
+        if not daten:
+            return ""
+        typ = (
+            "image/png"
+            if daten.startswith(b"\x89PNG")
+            else "image/jpeg"
+            if daten.startswith(b"\xff\xd8")
+            else "image/svg+xml"
+        )
+        return f"data:{typ};base64,{base64.b64encode(daten).decode()}"
 
     @property
     def mail_bereit(self):

@@ -54,8 +54,12 @@
 // ---------- Kopf (nur Seite 1) ----------
 
 #grid(
-  columns: (1fr, auto),
-  align: (left + bottom, right + bottom),
+  columns: if d.logo != none { (auto, 1fr, auto) } else { (1fr, auto) },
+  column-gutter: 4mm,
+  align: if d.logo != none {
+    (left + horizon, left + horizon, right + bottom)
+  } else { (left + bottom, right + bottom) },
+  ..if d.logo != none { (image(bytes(d.logo), height: 12mm),) },
   text(size: 15pt, weight: "bold", fill: akzent, d.absender_name),
   text(size: 8.5pt, fill: leise, zeilen(d.kopf)),
 )

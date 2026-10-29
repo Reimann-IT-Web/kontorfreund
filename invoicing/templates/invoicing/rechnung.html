@@ -202,10 +202,12 @@
 <dialog class="preview-dialog" aria-labelledby="vorschau-titel" data-open-on-load>
   <div class="preview-head">
     <h2 id="vorschau-titel">Vorschau</h2>
-    <a class="btn btn-sm" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">In neuem Tab</a>
+    <a class="btn btn-sm" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">Als PDF öffnen</a>
     <form method="dialog"><button class="btn btn-sm btn-primary">Schließen</button></form>
   </div>
-  <iframe src="{% url 'invoicing:pdf' rechnung.pk %}" title="Vorschau der Rechnung als PDF"></iframe>
+  <div class="preview-body">
+    {% for bild in vorschau %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="Rechnungsentwurf, Seite {{ forloop.counter }} von {{ vorschau|length }}">{% endfor %}
+  </div>
 </dialog>
 {% endif %}
 {% endblock %}

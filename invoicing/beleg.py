@@ -1,5 +1,6 @@
 """Rechnung als PDF/A-3 (Typst) mit eingebetteten ZUGFeRD-Daten (Profil EN 16931)."""
 
+import base64
 import calendar
 import hashlib
 import json
@@ -8,6 +9,7 @@ from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
 
+import pypdfium2 as pdfium
 import typst
 from django.conf import settings
 from django.db import transaction
@@ -187,7 +189,7 @@ def _girocode(b):
     return ausgabe.getvalue().decode()
 
 
-def druckdaten(b, entwurf=False):
+def druckdaten(b, entwurf=False, logo=b""):
     """Beleg-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     a, e = b["absender"], b["empfaenger"]
     info = [("Rechnungsnummer", b["nummer"] or "wird vergeben")]
@@ -222,6 +224,7 @@ def druckdaten(b, entwurf=False):
     return {
         "entwurf": entwurf,
         "titel": titel,
+        "logo": list(logo) or None,
         "absender_name": a["name"],
         "kopf": [
             z
@@ -292,15 +295,41 @@ def druckdaten(b, entwurf=False):
     }
 
 
-def pdf(b, entwurf=False, format="pdf"):
+def pdf(b, entwurf=False, logo=b"", format="pdf"):
     return typst.compile(
         str(VORLAGE),
         font_paths=[str(SCHRIFTEN)],
         ignore_system_fonts=True,
-        sys_inputs={"daten": json.dumps(druckdaten(b, entwurf))},
+        sys_inputs={"daten": json.dumps(druckdaten(b, entwurf, logo))},
         format=format,
         **({"pdf_standards": "a-3b"} if format == "pdf" else {"ppi": 110}),
     )
+
+
+def logo_lesbar(daten):
+    try:
+        typst.compile(
+            b"#image(bytes(json(bytes(sys.inputs.logo))))",
+            sys_inputs={"logo": json.dumps(list(daten))},
+            format="svg",
+        )
+    except typst.TypstError:
+        return False
+    return True
+
+
+def seitenbilder(inhalt):
+    """PDF-Seiten als PNG-Daten-URLs; die Ansicht braucht so keinen PDF-Betrachter im Browser."""
+    bilder = []
+    dokument = pdfium.PdfDocument(inhalt)
+    for seite in dokument:
+        ausgabe = BytesIO()
+        seite.render(scale=2).to_pil().save(ausgabe, format="PNG")
+        bilder.append(
+            "data:image/png;base64," + base64.b64encode(ausgabe.getvalue()).decode()
+        )
+    dokument.close()
+    return bilder
 
 
 def zugferd(b):
@@ -401,8 +430,8 @@ def zugferd(b):
     return doc.serialize(schema="FACTUR-X_EN16931")
 
 
-def endgueltiges_pdf(b):
-    inhalt = pdf(b)
+def endgueltiges_pdf(b, logo=b""):
+    inhalt = pdf(b, logo=logo)
     xml = zugferd(b)
     return attach_xml(inhalt, xml, lang="de-DE") if xml else inhalt
 
@@ -412,7 +441,7 @@ def festschreiben(rechnung, firma):
     with transaction.atomic():
         nummer = Rechnung.naechste_nummer(rechnung.datum)
         b = beleg_daten(rechnung, firma, nummer)
-        inhalt = endgueltiges_pdf(b)
+        inhalt = endgueltiges_pdf(b, bytes(firma.logo))
         relativ = (
             Path("archiv")
             / "rechnungen"
