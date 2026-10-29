@@ -1,0 +1,15 @@
+{% extends "konten/schlicht.html" %}
+
+{% block title %}Code eingeben{% endblock %}
+
+{% block content %}
+<h1>Code eingeben</h1>
+<p class="muted">Öffnen Sie Ihre Authenticator-App und geben Sie den Code für {{ marke }} ein.</p>
+<form class="stack" method="post" novalidate>
+  {% csrf_token %}
+  {% include "konten/formfehler.html" %}
+  {% include "core/feld.html" with f=form.code %}
+  <button class="btn btn-primary btn-block" type="submit">Anmelden</button>
+</form>
+<p class="small muted">Telefon nicht zur Hand? Der Inhaber kann die Zwei-Faktor-Anmeldung für Ihr Konto zurücksetzen. <a href="{% url 'konten:anmelden' %}">Zurück zur Anmeldung</a></p>
+{% endblock %}

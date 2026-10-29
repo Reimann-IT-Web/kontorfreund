@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Kein Zugriff{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <h2>Dieser Bereich ist dem Inhaber vorbehalten</h2>
+  <p class="muted">Einstellungen, Benutzer und Datensicherung sieht nur, wer als Inhaber angemeldet ist.</p>
+  <p class="actions"><a class="btn" href="{% url 'core:start' %}">Zur Übersicht</a></p>
+</div>
+{% endblock %}

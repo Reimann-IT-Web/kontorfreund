@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Zwei-Faktor-Anmeldung einrichten{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'konten:konto' %}">Mein Konto</a></li>
+    <li aria-current="page">Zwei-Faktor-Anmeldung</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Zwei-Faktor-Anmeldung einrichten</h1>
+    {% if pflicht %}<p class="is-warn-text">{{ marke }} ist im Netzwerk erreichbar. Als Inhaber richten Sie die Zwei-Faktor-Anmeldung deshalb ein, bevor es weitergeht.</p>{% endif %}
+  </div>
+</div>
+
+<div class="form">
+  <section class="form-section" aria-labelledby="t-app">
+    <h2 class="form-title" id="t-app">1. App auf dem Telefon</h2>
+    <p class="small">Nehmen Sie eine Authenticator-App, zum Beispiel die vorinstallierte Passwort-App Ihres iPhones, Aegis oder FreeOTP. Fügen Sie dort ein neues Konto hinzu und scannen Sie diesen Code:</p>
+    <p><img class="qr" src="{{ qr }}" width="220" height="220" alt="QR-Code zum Einrichten in der Authenticator-App"></p>
+    <p class="small muted">Scannen geht nicht? Geben Sie diesen Schlüssel von Hand ein: <code class="hash">{{ geheimnis }}</code></p>
+  </section>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="form-section" aria-labelledby="t-bestaetigen">
+      <h2 class="form-title" id="t-bestaetigen">2. Code bestätigen</h2>
+      <div class="form-grid">
+        {% include "core/feld.html" with f=form.code %}
+      </div>
+    </section>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{% icon "check" %}Einschalten</button>
+      {% if not pflicht %}<a class="btn btn-ghost" href="{% url 'konten:konto' %}">Abbrechen</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

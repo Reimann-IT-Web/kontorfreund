@@ -1,0 +1,16 @@
+{% extends "konten/schlicht.html" %}
+
+{% block title %}Konto anlegen{% endblock %}
+
+{% block content %}
+<h1>Willkommen bei {{ marke }}</h1>
+<p class="muted">Legen Sie Ihr Konto an. Damit melden Sie sich künftig an; weitere Konten für Mitarbeiter legen Sie danach unter Einstellungen an.</p>
+<form class="stack" method="post" novalidate>
+  {% csrf_token %}
+  {% include "core/feld.html" with f=form.name %}
+  {% include "core/feld.html" with f=form.email %}
+  {% include "core/feld.html" with f=form.kennwort %}
+  {% include "core/feld.html" with f=form.wiederholung %}
+  <button class="btn btn-primary btn-block" type="submit">Konto anlegen</button>
+</form>
+{% endblock %}

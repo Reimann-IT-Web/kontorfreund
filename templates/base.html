@@ -13,6 +13,7 @@
 </head>
 <body>
   <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+  {% block rahmen %}
   <div class="app">
     <aside class="sidebar" id="navigation" aria-label="Hauptnavigation">
       <a class="brand" href="{% url 'core:start' %}">
@@ -34,6 +35,7 @@
         </ul>
       </nav>
       <ul class="nav nav-foot">
+        {% if user.ist_inhaber %}
         <li><a class="nav-link" href="{% url 'core:einstellungen' %}"{% if bereich == "einstellungen" %} aria-current="page"{% endif %}>{% icon "settings" %}<span class="nav-label">Einstellungen</span></a></li>
         <li>
           <a class="nav-link" href="{% url 'backups:uebersicht' %}"{% if bereich == "datensicherung" %} aria-current="page"{% endif %}>
@@ -41,18 +43,25 @@
             {% if sicherung.warnung %}<span class="nav-count is-warn" title="{{ sicherung.warnung }}"><span class="visually-hidden">{{ sicherung.warnung }}</span><span aria-hidden="true">!</span></span>{% endif %}
           </a>
         </li>
+        {% endif %}
         <li><a class="nav-link" href="{% url 'core:platzhalter' 'hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
       </ul>
-      {% if firma.name or firma.inhaber %}
-      <a class="sidebar-user" href="{% url 'core:einstellungen' %}">
-        <span class="avatar" aria-hidden="true">{{ firma.initialen }}</span>
-        <span><strong>{{ firma.inhaber|default:firma.name }}</strong>{% if firma.inhaber and firma.name %}<br><span class="muted">{{ firma.name }}</span>{% endif %}</span>
-      </a>
-      {% else %}
+      {% if user.ist_inhaber and not firma.name and not firma.inhaber %}
       <a class="sidebar-user" href="{% url 'core:einstellungen' %}">
         <span class="avatar" aria-hidden="true">{% icon "pencil" %}</span>
         <span><strong>Firmendaten eintragen</strong><br><span class="muted">für Ihre Rechnungen</span></span>
       </a>
+      {% else %}
+      <div class="sidebar-user">
+        <a class="sidebar-konto" href="{% url 'konten:konto' %}"{% if bereich == "konto" %} aria-current="page"{% endif %}>
+          <span class="avatar" aria-hidden="true">{{ user.initialen }}</span>
+          <span><strong>{{ user.name }}</strong><br><span class="muted">{{ firma.name|default:user.get_rolle_display }}</span></span>
+        </a>
+        <form method="post" action="{% url 'konten:abmelden' %}">
+          {% csrf_token %}
+          <button class="btn btn-ghost btn-icon" type="submit" title="Abmelden">{% icon "log-out" %}<span class="visually-hidden">Abmelden</span></button>
+        </form>
+      </div>
       {% endif %}
     </aside>
 
@@ -73,11 +82,7 @@
       </header>
 
       <main id="inhalt" class="content" tabindex="-1">
-        {% if messages %}
-        <ul class="messages" role="status">
-          {% for meldung in messages %}<li class="{{ meldung.tags }}">{% if meldung.level >= DEFAULT_MESSAGE_LEVELS.WARNING %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ meldung }}</li>{% endfor %}
-        </ul>
-        {% endif %}
+        {% include "meldungen.html" %}
         {% block content %}{% endblock %}
       </main>
     </div>
@@ -101,6 +106,7 @@
       <p class="palette-empty muted" data-palette-empty hidden>Keine Treffer. Prüfen Sie die Schreibweise oder suchen Sie nach einer Nummer wie K-0012.</p>
     </form>
   </dialog>
+  {% endblock %}
   <div class="visually-hidden" aria-live="polite" data-announce></div>
 </body>
 </html>

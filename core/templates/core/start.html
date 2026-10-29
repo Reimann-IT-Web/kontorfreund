@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Guten Tag{% if firma.inhaber %}, {{ firma.inhaber }}{% endif %}</h1>
+    <h1>Guten Tag, {{ user.name }}</h1>
     <p class="muted">{% now "l, j. F Y" %}</p>
   </div>
 </div>
@@ -28,9 +28,9 @@
           <span class="steps-list-mark">{% if firma.vollstaendig %}{% icon "check" "erledigt" %}{% else %}1{% endif %}</span>
           <div>
             <p class="row-title">Firmendaten eintragen</p>
-            <p class="row-meta">Name, Anschrift und Steuernummer stehen auf jeder Rechnung.</p>
+            <p class="row-meta">Name, Anschrift und Steuernummer stehen auf jeder Rechnung.{% if not user.ist_inhaber %} Das erledigt der Inhaber.{% endif %}</p>
           </div>
-          {% if not firma.vollstaendig %}<a class="btn btn-sm" href="{% url 'core:einstellungen' %}">{% icon "pencil" %}Eintragen</a>{% endif %}
+          {% if not firma.vollstaendig and user.ist_inhaber %}<a class="btn btn-sm" href="{% url 'core:einstellungen' %}">{% icon "pencil" %}Eintragen</a>{% endif %}
         </li>
         <li{% if anzahl_kontakte %} class="is-done"{% endif %}>
           <span class="steps-list-mark">{% if anzahl_kontakte %}{% icon "check" "erledigt" %}{% else %}2{% endif %}</span>
@@ -86,6 +86,7 @@
       {% endif %}
     </section>
 
+    {% if user.ist_inhaber %}
     <section class="side-section" aria-labelledby="sicherung-titel">
       <h2 id="sicherung-titel" class="panel-title">Datensicherung</h2>
       {% if not sicherung.eingerichtet %}
@@ -100,6 +101,7 @@
       {% if not sicherung.ziel %}<p class="small muted">Nur auf diesem Rechner. <a href="{% url 'backups:uebersicht' %}">Zweiten Speicherort eintragen</a></p>{% endif %}
       {% endif %}
     </section>
+    {% endif %}
   </aside>
 </div>
 {% endblock %}

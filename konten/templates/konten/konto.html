@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Mein Konto{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Mein Konto</h1>
+    <p class="muted">{{ user.name }} · {{ user.email }} · {{ user.get_rolle_display }}</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="{% url 'konten:abmelden' %}">{% csrf_token %}<button class="btn" type="submit">{% icon "log-out" %}Abmelden</button></form>
+  </div>
+</div>
+
+<section class="form-section form" aria-labelledby="t-zwei-faktor">
+  <h2 class="form-title" id="t-zwei-faktor">Zwei-Faktor-Anmeldung</h2>
+  {% if user.zwei_faktor %}
+  <p><span class="status status-ok">{% icon "check" %}Eingeschaltet</span></p>
+  <p class="small muted">Nach dem Kennwort fragt {{ marke }} nach dem Code aus Ihrer Authenticator-App.</p>
+  {% if pflicht %}
+  <p class="small muted">Weil {{ marke }} im Netzwerk erreichbar ist, bleibt sie für Inhaber eingeschaltet.</p>
+  {% else %}
+  <form method="post" action="{% url 'konten:zwei_faktor_aus' %}" novalidate>
+    {% csrf_token %}
+    <div class="form-grid">
+      {% include "core/feld.html" with f=aus_form.kennwort %}
+    </div>
+    <button class="btn" type="submit">{% icon "x" %}Ausschalten</button>
+  </form>
+  {% endif %}
+  {% else %}
+  <p class="small">Schützt Ihr Konto, auch wenn jemand Ihr Kennwort kennt: Nach dem Kennwort fragt {{ marke }} zusätzlich nach einem Code aus einer App auf Ihrem Telefon.</p>
+  <p><a class="btn btn-primary" href="{% url 'konten:zwei_faktor' %}">{% icon "lock" %}Einrichten</a></p>
+  {% endif %}
+</section>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-kennwort">
+    <h2 class="form-title" id="t-kennwort">Kennwort ändern</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.bisher breit=True %}
+      {% include "core/feld.html" with f=form.kennwort %}
+      {% include "core/feld.html" with f=form.wiederholung %}
+    </div>
+  </section>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Kennwort ändern</button>
+  </div>
+</form>
+{% endblock %}

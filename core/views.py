@@ -9,6 +9,7 @@ from django.shortcuts import redirect, render
 from archive.models import Altbeleg
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
+from konten.rechte import nur_inhaber
 
 from .forms import FirmendatenForm
 from .models import Firmendaten
@@ -50,6 +51,7 @@ def start(request):
     )
 
 
+@nur_inhaber
 def einstellungen(request):
     form = FirmendatenForm(
         request.POST or None, request.FILES or None, instance=Firmendaten.laden()

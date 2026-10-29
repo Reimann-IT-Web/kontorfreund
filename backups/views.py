@@ -5,12 +5,15 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from konten.rechte import nur_inhaber
+
 from . import sicherung
 from .forms import EinlesenForm, KennwortForm, OrtForm, WiederherstellenForm
 
 logger = logging.getLogger(__name__)
 
 
+@nur_inhaber
 def uebersicht(request):
     zustand = sicherung.zustand()
     aktion = request.POST.get("aktion")
@@ -86,6 +89,7 @@ def _sichern(request, text, ohne_daten):
     return redirect("backups:uebersicht")
 
 
+@nur_inhaber
 def wiederherstellen(request, ort, name):
     pfad = sicherung.finden(ort, name)
     if not pfad:
@@ -130,6 +134,7 @@ def wiederherstellen(request, ort, name):
 
 
 @require_POST
+@nur_inhaber
 def einlesen(request):
     form = EinlesenForm(request.POST, request.FILES)
     if not form.is_valid():

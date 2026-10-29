@@ -8,11 +8,17 @@ from .navigation import NAVIGATION
 
 
 def product(request):
-    return {"product_name": f"{settings.PRODUCT_NAME} ({settings.PRODUCT_EDITION})"}
+    return {
+        "product_name": f"{settings.PRODUCT_NAME} ({settings.PRODUCT_EDITION})",
+        "marke": settings.PRODUCT_NAME,
+        "edition": settings.PRODUCT_EDITION,
+    }
 
 
 def navigation(request):
     """Seitenleiste mit Zählern, Suchindex (Strg+K) und Firmendaten für jede Seite."""
+    if not request.user.is_authenticated:
+        return {"firma": Firmendaten.laden()}
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
     eintraege = [
@@ -28,16 +34,29 @@ def navigation(request):
         },
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
         {
-            "titel": "Einstellungen",
-            "info": "Firmendaten",
-            "url": reverse("core:einstellungen"),
-        },
-        {
-            "titel": "Datensicherung",
-            "info": "Sichern und wiederherstellen",
-            "url": reverse("backups:uebersicht"),
+            "titel": "Mein Konto",
+            "info": "Kennwort und Zwei-Faktor-Anmeldung",
+            "url": reverse("konten:konto"),
         },
     ]
+    if request.user.ist_inhaber:
+        suchindex += [
+            {
+                "titel": "Einstellungen",
+                "info": "Firmendaten",
+                "url": reverse("core:einstellungen"),
+            },
+            {
+                "titel": "Benutzer",
+                "info": "Konten für Mitarbeiter",
+                "url": reverse("konten:benutzer"),
+            },
+            {
+                "titel": "Datensicherung",
+                "info": "Sichern und wiederherstellen",
+                "url": reverse("backups:uebersicht"),
+            },
+        ]
     suchindex += [
         {
             "titel": k.anzeigename,

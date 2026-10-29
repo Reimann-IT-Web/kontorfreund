@@ -9,6 +9,9 @@
     <h1>Einstellungen</h1>
     <p class="muted">Ihre Firmendaten stehen als Absender auf jeder Rechnung.</p>
   </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'konten:benutzer' %}">{% icon "users" %}Benutzer</a>
+  </div>
 </div>
 
 <form class="form" method="post" enctype="multipart/form-data" novalidate>

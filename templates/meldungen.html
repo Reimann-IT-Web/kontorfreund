@@ -1,0 +1,5 @@
+{% load kf %}{% if messages %}
+<ul class="messages" role="status">
+  {% for meldung in messages %}<li class="{{ meldung.tags }}">{% if meldung.level >= DEFAULT_MESSAGE_LEVELS.WARNING %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ meldung }}</li>{% endfor %}
+</ul>
+{% endif %}

@@ -54,8 +54,12 @@
         <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
       </form>
       {% else %}
+      {% if user.ist_inhaber %}
       <p class="small">Damit Kontorfreund die Rechnung selbst verschickt, tragen Sie einmal Ihre E-Mail-Adresse und den Postausgangsserver ein.</p>
       <p><a class="btn btn-block" href="{% url 'core:einstellungen' %}#t-mail">{% icon "settings" %}E-Mail-Versand einrichten</a></p>
+      {% else %}
+      <p class="small">Den E-Mail-Versand aus Kontorfreund richtet der Inhaber in den Einstellungen ein.</p>
+      {% endif %}
       <p class="small muted">Oder laden Sie das PDF herunter und hängen es in Ihrem E-Mail-Programm an.</p>
       {% endif %}
     </section>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block rahmen %}
+<main id="inhalt" class="anmeldung" tabindex="-1">
+  <div class="anmeldung-karte">
+    <p class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="7"/><path d="M11 9v14M11 16.5 20 9M14.2 13.8 21 23"/></svg>
+      <span class="brand-text">{{ marke }}<span class="brand-edition">{{ edition }}</span></span>
+    </p>
+    {% include "meldungen.html" %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+{% endblock %}

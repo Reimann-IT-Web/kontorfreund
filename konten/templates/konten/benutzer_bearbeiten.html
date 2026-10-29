@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ konto.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li><a href="{% url 'konten:benutzer' %}">Benutzer</a></li>
+    <li aria-current="page">{{ konto.name }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ konto.name }}{% if not konto.is_active %} <span class="status status-void">{% icon "x" %}Gesperrt</span>{% endif %}</h1>
+    <p class="muted">{{ konto.email }} · {{ konto.get_rolle_display }}{% if konto.last_login %} · zuletzt angemeldet {{ konto.last_login|date:"d.m.Y, H:i" }}{% endif %}</p>
+  </div>
+</div>
+
+<div class="form">
+  {% if konto.gesperrt %}
+  <section class="form-section" aria-labelledby="t-sperre">
+    <h2 class="form-title" id="t-sperre">Nach Fehlversuchen gesperrt</h2>
+    <p class="small">Die Anmeldung ist bis {{ konto.gesperrt_bis|time:"H:i" }} Uhr gesperrt.</p>
+    <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="entsperren">{% icon "lock" %}Sperre aufheben</button></form>
+  </section>
+  {% endif %}
+
+  {% if not selbst %}
+  <section class="form-section" aria-labelledby="t-rolle">
+    <h2 class="form-title" id="t-rolle">Rolle</h2>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="field">
+          <label for="rolle">Rolle</label>
+          <select id="rolle" name="rolle">{% for wert, text in rollen %}<option value="{{ wert }}"{% if wert == konto.rolle %} selected{% endif %}>{{ text }}</option>{% endfor %}</select>
+        </div>
+      </div>
+      <button class="btn" type="submit" name="aktion" value="rolle">{% icon "check" %}Rolle speichern</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="form-section" aria-labelledby="t-kennwort">
+      <h2 class="form-title" id="t-kennwort">Kennwort neu setzen</h2>
+      <p class="form-hint small muted">Zum Beispiel, wenn {{ konto.name }} es vergessen hat. Geben Sie das neue Kennwort persönlich weiter.</p>
+      <div class="form-grid">
+        {% include "core/feld.html" with f=kennwort_form.kennwort %}
+        {% include "core/feld.html" with f=kennwort_form.wiederholung %}
+      </div>
+      <button class="btn" type="submit" name="aktion" value="kennwort">{% icon "lock" %}Kennwort setzen</button>
+    </section>
+  </form>
+
+  {% if konto.zwei_faktor %}
+  <section class="form-section" aria-labelledby="t-zwei-faktor">
+    <h2 class="form-title" id="t-zwei-faktor">Zwei-Faktor-Anmeldung</h2>
+    <p class="small">Ist das Telefon verloren, setzen Sie sie zurück. {{ konto.name }} meldet sich dann nur mit dem Kennwort an und richtet sie neu ein.</p>
+    <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="zwei_faktor" data-confirm="Zwei-Faktor-Anmeldung von {{ konto.name }} wirklich zurücksetzen?">{% icon "x" %}Zurücksetzen</button></form>
+  </section>
+  {% endif %}
+
+  {% if not selbst %}
+  <section class="form-section" aria-labelledby="t-zugang">
+    <h2 class="form-title" id="t-zugang">Zugang</h2>
+    {% if konto.is_active %}
+    <p class="small">Wer nicht mehr mitarbeitet, verliert den Zugang. Das Konto bleibt erhalten, damit nachvollziehbar bleibt, wer was bearbeitet hat.</p>
+    <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="zugang" data-confirm="{{ konto.name }} wirklich sperren?">{% icon "x" %}Zugang sperren</button></form>
+    {% else %}
+    <p class="small">{{ konto.name }} kann sich zurzeit nicht anmelden.</p>
+    <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="zugang">{% icon "check" %}Zugang wieder freigeben</button></form>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

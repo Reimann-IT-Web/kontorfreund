@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Benutzer{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li aria-current="page">Benutzer</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Benutzer</h1>
+    <p class="muted">Inhaber dürfen alles. Mitarbeiter bearbeiten Adressen und Belege, sehen aber keine Einstellungen und keine Datensicherung.</p>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">E-Mail-Adresse</th>
+        <th scope="col">Rolle</th>
+        <th scope="col">Zwei-Faktor</th>
+        <th scope="col">Zugang</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for konto in konten %}
+      <tr class="data-row">
+        <td><a href="{% url 'konten:benutzer_bearbeiten' konto.pk %}">{{ konto.name }}</a>{% if konto == user %} <span class="muted">(Sie)</span>{% endif %}</td>
+        <td>{{ konto.email }}</td>
+        <td>{{ konto.get_rolle_display }}</td>
+        <td>{% if konto.zwei_faktor %}<span class="status status-ok">{% icon "check" %}Ein</span>{% else %}<span class="muted">aus</span>{% endif %}</td>
+        <td>{% if not konto.is_active %}<span class="status status-void">{% icon "x" %}Gesperrt</span>{% elif konto.gesperrt %}<span class="status status-danger">{% icon "clock" %}Nach Fehlversuchen gesperrt</span>{% else %}<span class="muted">aktiv</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-neu">
+    <h2 class="form-title" id="t-neu">Konto anlegen</h2>
+    <p class="form-hint small muted">Das erste Kennwort geben Sie persönlich weiter. Ändern lässt es sich danach unter „Mein Konto“.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.name %}
+      {% include "core/feld.html" with f=form.email %}
+      {% include "core/feld.html" with f=form.rolle %}
+      <div></div>
+      {% include "core/feld.html" with f=form.kennwort %}
+      {% include "core/feld.html" with f=form.wiederholung %}
+    </div>
+  </section>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "user-plus" %}Konto anlegen</button>
+  </div>
+</form>
+{% endblock %}

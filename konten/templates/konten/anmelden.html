@@ -1,0 +1,18 @@
+{% extends "konten/schlicht.html" %}
+{% load kf %}
+
+{% block title %}Anmelden{% endblock %}
+
+{% block content %}
+<h1>Anmelden</h1>
+<p class="muted">Mit Ihrer E-Mail-Adresse und Ihrem Kennwort.</p>
+<form class="stack" method="post" novalidate>
+  {% csrf_token %}
+  {% include "konten/formfehler.html" %}
+  {% include "core/feld.html" with f=form.email %}
+  {% include "core/feld.html" with f=form.kennwort %}
+  {% if weiter %}<input type="hidden" name="next" value="{{ weiter }}">{% endif %}
+  <button class="btn btn-primary btn-block" type="submit">Anmelden</button>
+</form>
+<p class="small muted">Kennwort vergessen? Der Inhaber setzt es unter Einstellungen → Benutzer neu.</p>
+{% endblock %}

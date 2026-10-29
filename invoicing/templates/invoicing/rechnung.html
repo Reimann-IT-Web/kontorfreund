@@ -150,7 +150,7 @@
       </div>
       <label class="choice"{% if rechnung.ist_korrektur %} hidden{% endif %}>
         {{ form.girocode }}
-        <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den <a href="{% url 'core:einstellungen' %}">Einstellungen</a>.{% endif %}</span></span>
+        <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den {% if user.ist_inhaber %}<a href="{% url 'core:einstellungen' %}">Einstellungen</a>{% else %}Einstellungen; der Inhaber trägt sie ein{% endif %}.{% endif %}</span></span>
       </label>
       <p class="callout">{% icon "lock" %}<span>Beim Festschreiben wird die Rechnung als ZUGFeRD-PDF unveränderbar abgelegt und 8 Jahre aufbewahrt. Korrigieren können Sie sie danach nur mit einer Rechnungskorrektur oder Stornorechnung. Prüfen Sie sie deshalb vorher in der Vorschau.</span></p>
     </section>
@@ -170,14 +170,14 @@
       <h2 class="panel-title checks-head">Pflichtangaben <span class="count" data-check-count></span></h2>
       <ul class="checklist">
         <li data-check="empfaenger">{% icon "check" %}{% icon "alert" %}<span>Name und Anschrift des Empfängers</span></li>
-        <li data-check="absender">{% icon "check" %}{% icon "alert" %}<span>Ihre Anschrift und Steuernummer{% if not firma.vollstaendig %} – <a href="{% url 'core:einstellungen' %}">in den Einstellungen ergänzen</a>{% endif %}</span></li>
+        <li data-check="absender">{% icon "check" %}{% icon "alert" %}<span>Ihre Anschrift und Steuernummer{% if not firma.vollstaendig %} – {% include "invoicing/einstellungen_ergaenzen.html" %}{% endif %}</span></li>
         <li data-check="datum">{% icon "check" %}{% icon "alert" %}<span>Rechnungsdatum</span></li>
         <li data-check="nummer">{% icon "check" %}{% icon "alert" %}<span>Fortlaufende Nummer <span class="muted">(automatisch)</span></span></li>
         <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
         <li data-check="zeitraum">{% icon "check" %}{% icon "alert" %}<span>Leistungszeitraum</span></li>
         <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>{% if rechnung.ist_korrektur %}Korrekturbetrag, höchstens {{ rechnung.korrektur_zu.korrigierter_betrag|euro }}{% else %}Rechnungsbetrag{% endif %}</span></li>
         <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer</span></li>
-        <li data-check="xrechnung" hidden>{% icon "check" %}{% icon "alert" %}<span>Für die XRechnung: Ihre Telefonnummer, E-Mail-Adresse und IBAN{% if not firma.telefon or not firma.email or not firma.iban %} – <a href="{% url 'core:einstellungen' %}">in den Einstellungen ergänzen</a>{% endif %}</span></li>
+        <li data-check="xrechnung" hidden>{% icon "check" %}{% icon "alert" %}<span>Für die XRechnung: Ihre Telefonnummer, E-Mail-Adresse und IBAN{% if not firma.telefon or not firma.email or not firma.iban %} – {% include "invoicing/einstellungen_ergaenzen.html" %}{% endif %}</span></li>
       </ul>
       <p class="small check-message" data-check-message role="status"></p>
       <button class="btn btn-primary btn-block" type="button" data-submit disabled>{% icon "lock" %}Festschreiben …</button>

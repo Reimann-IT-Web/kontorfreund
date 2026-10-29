@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "invoicing",
     "archive",
     "backups",
+    "konten",
 ]
 
 MIDDLEWARE = [
@@ -59,7 +60,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "konten.rechte.zwei_faktor_pflicht",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "backups.middleware.taegliche_sicherung",
 ]
@@ -91,6 +94,20 @@ DATABASES = {
         "NAME": DATA_DIR / "db.sqlite3",
     }
 }
+
+# Anmeldung per E-Mail und Kennwort (Spezifikation K-5).
+AUTH_USER_MODEL = "konten.Benutzer"
+PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
+AUTH_PASSWORD_VALIDATORS = [{"NAME": "konten.kennwort.Kennwortregeln"}]
+LOGIN_URL = "konten:anmelden"
+# Automatisch abgemeldet nach so vielen Stunden ohne Anfrage.
+SESSION_COOKIE_AGE = int(os.environ.get("APP_ABMELDEN_NACH_STUNDEN", "8")) * 3600
+SESSION_SAVE_EVERY_REQUEST = True
+# Im Netzwerk erreichbar, sobald andere Adressen als der eigene Rechner erlaubt sind;
+# dann ist die Zwei-Faktor-Anmeldung für Inhaber Pflicht.
+NETZWERK = any(
+    host not in {"localhost", "127.0.0.1", "::1", "[::1]"} for host in ALLOWED_HOSTS
+)
 
 LANGUAGE_CODE = "de-de"
 TIME_ZONE = "Europe/Berlin"
