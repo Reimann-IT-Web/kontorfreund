@@ -62,6 +62,12 @@ def senden(rechnung, firma, an, betreff, text, kopie):
         (Path(settings.DATA_DIR) / rechnung.datei).read_bytes(),
         "application/pdf",
     )
+    if rechnung.xml_datei:
+        nachricht.attach(
+            f"{rechnung.bezeichnung}-{rechnung.nummer}.xml",
+            (Path(settings.DATA_DIR) / rechnung.xml_datei).read_bytes(),
+            "application/xml",
+        )
     verbindung.send_messages([nachricht])
     rechnung.versendet_am = timezone.now()
     rechnung.versendet_an = an

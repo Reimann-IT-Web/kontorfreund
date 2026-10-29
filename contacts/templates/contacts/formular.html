@@ -78,6 +78,17 @@
     </div>
   </section>
 
+  <section class="form-section" aria-labelledby="t-erechnung">
+    <h2 class="form-title" id="t-erechnung">E-Rechnung</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.kaeuferreferenz optional=True %}
+      <label class="choice field-wide">
+        {{ form.xrechnung }}
+        <span><strong>{{ form.xrechnung.label }}</strong><br><span class="muted">{{ form.xrechnung.help_text }}</span></span>
+      </label>
+    </div>
+  </section>
+
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{% icon "check" %}{% if kontakt %}Speichern{% else %}Adresse anlegen{% endif %}</button>
     <a class="btn btn-ghost" href="{% url 'contacts:liste' %}">Abbrechen</a>

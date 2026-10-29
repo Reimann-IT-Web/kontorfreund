@@ -225,6 +225,19 @@ def _entwurf_pdf(rechnung, firma):
     return beleg.pdf(b, entwurf=True, logo=bytes(firma.logo))
 
 
+def xml(request, pk):
+    rechnung = get_object_or_404(Rechnung.objects.exclude(xml_datei=""), pk=pk)
+    pfad = Path(settings.DATA_DIR) / rechnung.xml_datei
+    if not pfad.is_file():
+        raise Http404("Die Datei fehlt im Archiv.")
+    return FileResponse(
+        pfad.open("rb"),
+        content_type="application/xml",
+        filename=f"{rechnung.bezeichnung}-{rechnung.nummer}.xml",
+        as_attachment=True,
+    )
+
+
 # Der PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.
 @csp_override({})
 def pdf(request, pk):

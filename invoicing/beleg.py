@@ -24,9 +24,14 @@ from drafthorse.models.tradelines import LineItem
 from drafthorse.pdf import attach_xml
 from segno import helpers as qr
 
+from contacts.models import ist_leitweg_id
 from core.templatetags.kf import euro, zahl
 
 from .models import Rechnung
+
+# XRechnung 3.0 in der Syntax CII; gültig ist Version 3.0.2, Version 4.0 erst ab 2027.
+XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
+ABRECHNUNG = "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
 
 VORLAGE = Path(__file__).parent / "typst" / "rechnung.typ"
 SCHRIFTEN = Path(__file__).parent / "schrift"
@@ -127,7 +132,8 @@ def beleg_daten(rechnung, firma, nummer):
         else "",
         "steuerfall": rechnung.steuerfall,
         "steuerhinweis": rechnung.steuerhinweis,
-        "referenz": rechnung.referenz,
+        "referenz": rechnung.kaeuferreferenz,
+        "xrechnung": bool(k and k.xrechnung),
         "betreff": rechnung.betreff,
         "kopftext": rechnung.kopftext,
         "fusstext": rechnung.fusstext,
@@ -158,6 +164,7 @@ def beleg_daten(rechnung, firma, nummer):
             "ort": k.ort if k else "",
             "land": k.land if k else "",
             "ust_id": k.ust_id if k else "",
+            "email": k.email if k else "",
         },
         "positionen": [
             {
@@ -209,7 +216,8 @@ def druckdaten(b, entwurf=False, logo=b""):
     if b["leistung_von"]:
         info.append(leistungszeit(b["leistung_von"], b["leistung_bis"]))
     if b["referenz"]:
-        info.append(("Ihre Referenz", b["referenz"]))
+        art = "Leitweg-ID" if ist_leitweg_id(b["referenz"]) else "Ihre Referenz"
+        info.append((art, b["referenz"]))
 
     summen = []
     if b["steuerfall"] == Rechnung.Steuerfall.REGEL:
@@ -348,14 +356,22 @@ def seitenbilder(inhalt):
 
 
 def zugferd(b):
-    """Rechnungsdaten als CII-XML nach EN 16931; None, wenn das Land unbekannt ist."""
+    """Rechnungsdaten als CII-XML nach EN 16931, auf Wunsch als XRechnung.
+
+    None, wenn das Land des Empfängers unbekannt ist.
+    """
     a, e = b["absender"], b["empfaenger"]
     if e["land"] not in LAND_CODE:
         return None
     kategorie, satz, grund, grund_code = KATEGORIE[b["steuerfall"]]
+    xrechnung = b.get("xrechnung", False)
 
     doc = Document()
-    doc.context.guideline_parameter.id = "urn:cen.eu:en16931:2017"
+    if xrechnung:
+        doc.context.business_parameter.id = ABRECHNUNG
+    doc.context.guideline_parameter.id = (
+        XRECHNUNG if xrechnung else "urn:cen.eu:en16931:2017"
+    )
     doc.header.id = b["nummer"]
     doc.header.type_code = "380"
     doc.header.issue_date_time = date.fromisoformat(b["datum"])
@@ -366,6 +382,11 @@ def zugferd(b):
 
     verkaeufer = doc.trade.agreement.seller
     verkaeufer.name = a["name"]
+    if xrechnung:
+        # Ansprechpartner des Verkäufers (BG-6) verlangt die XRechnung immer.
+        verkaeufer.contact.person_name = a["inhaber"] or a["name"]
+        verkaeufer.contact.telephone.number = a["telefon"]
+        verkaeufer.contact.email.address = a["email"]
     verkaeufer.address.line_one = a["strasse"]
     verkaeufer.address.postcode = a["plz"]
     verkaeufer.address.city_name = a["ort"]
@@ -383,6 +404,13 @@ def zugferd(b):
     kaeufer.address.postcode = e["plz"]
     kaeufer.address.city_name = e["ort"]
     kaeufer.address.country_id = LAND_CODE[e["land"]]
+    if xrechnung:
+        # Elektronische Adresse des Käufers (BT-49): Leitweg-ID (Schema 0204) oder E-Mail.
+        kaeufer.electronic_address.uri_ID = (
+            ("0204", b["referenz"])
+            if ist_leitweg_id(b["referenz"])
+            else ("EM", e["email"])
+        )
     if e["ust_id"]:
         kaeufer.tax_registrations.add(TaxRegistration(id=("VA", e["ust_id"])))
     if b["referenz"]:
@@ -419,13 +447,15 @@ def zugferd(b):
     abrechnung = doc.trade.settlement
     abrechnung.currency_code = "EUR"
     abrechnung.payment_reference = f"Rechnung {b['nummer']}"
-    # Zahlungsangaben nur, wenn der Kunde etwas zu zahlen hat (nicht beim Storno).
-    if Decimal(b["brutto"]) > 0:
-        if a["iban"]:
-            zahlweg = PaymentMeans()
-            zahlweg.type_code = "58"  # SEPA-Überweisung
-            zahlweg.payee_account.iban = a["iban"]
-            abrechnung.payment_means.add(zahlweg)
+    # Zahlungsangaben nur, wenn der Kunde etwas zu zahlen hat (nicht beim Storno);
+    # die XRechnung verlangt den Zahlungsweg immer (BR-DE-1).
+    zu_zahlen = Decimal(b["brutto"]) > 0
+    if a["iban"] and (zu_zahlen or xrechnung):
+        zahlweg = PaymentMeans()
+        zahlweg.type_code = "58"  # SEPA-Überweisung
+        zahlweg.payee_account.iban = a["iban"]
+        abrechnung.payment_means.add(zahlweg)
+    if zu_zahlen:
         bedingung = PaymentTerms()
         bedingung.due = date.fromisoformat(b["faellig"])
         abrechnung.terms.add(bedingung)
@@ -452,23 +482,34 @@ def zugferd(b):
 
 
 def endgueltiges_pdf(b, logo=b""):
-    inhalt = pdf(b, logo=logo)
+    """PDF/A-3 mit eingebetteter XML, dazu die XML selbst (None, wenn keine entsteht)."""
     xml = zugferd(b)
-    return attach_xml(inhalt, xml, lang="de-DE") if xml else inhalt
+    if b["xrechnung"] and not xml:
+        raise ValueError(
+            "Für eine XRechnung muss das Land des Empfängers bekannt sein."
+        )
+    inhalt = pdf(b, logo=logo)
+    return (attach_xml(inhalt, xml, lang="de-DE") if xml else inhalt), xml
 
 
 def festschreiben(rechnung, firma):
-    """Nummer vergeben, PDF erzeugen und unveränderbar ablegen."""
+    """Nummer vergeben, PDF (bei XRechnung auch die XML) erzeugen und unveränderbar ablegen."""
     with transaction.atomic():
         nummer = Rechnung.naechste_nummer(rechnung.datum)
         b = beleg_daten(rechnung, firma, nummer)
-        inhalt = endgueltiges_pdf(b, bytes(firma.logo))
+        inhalt, xml = endgueltiges_pdf(b, bytes(firma.logo))
         relativ = (
             Path("archiv")
             / "rechnungen"
             / str(rechnung.datum.year)
             / f"{rechnung.bezeichnung}-{nummer}.pdf"
         )
+        dateien = {relativ: inhalt}
+        if b["xrechnung"]:
+            # Bei der E-Rechnung ist die XML das maßgebliche Original (Spezifikation B-9).
+            dateien[relativ.with_suffix(".xml")] = xml
+            rechnung.xml_datei = relativ.with_suffix(".xml").as_posix()
+            rechnung.xml_sha256 = hashlib.sha256(xml).hexdigest()
         rechnung.nummer = nummer
         rechnung.beleg = b
         rechnung.netto, rechnung.ust, rechnung.brutto = (
@@ -481,10 +522,11 @@ def festschreiben(rechnung, firma):
         rechnung.status = Rechnung.Status.FESTGESCHRIEBEN
         rechnung.festgeschrieben_am = timezone.now()
         rechnung.save()
-        ziel = Path(settings.DATA_DIR) / relativ
-        ziel.parent.mkdir(parents=True, exist_ok=True)
-        with ziel.open("xb") as datei:  # niemals überschreiben
-            datei.write(inhalt)
+        for pfad, daten in dateien.items():
+            ziel = Path(settings.DATA_DIR) / pfad
+            ziel.parent.mkdir(parents=True, exist_ok=True)
+            with ziel.open("xb") as datei:  # niemals überschreiben
+                datei.write(daten)
     return rechnung
 
 

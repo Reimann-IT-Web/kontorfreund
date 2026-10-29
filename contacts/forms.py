@@ -23,6 +23,8 @@ class KontaktForm(forms.ModelForm):
             "telefon",
             "website",
             "ust_id",
+            "kaeuferreferenz",
+            "xrechnung",
             "notiz",
         ]
         widgets = {
@@ -37,4 +39,6 @@ class KontaktForm(forms.ModelForm):
         }
         help_texts = {
             "ust_id": "Nur nötig bei Geschäften mit Unternehmen im EU-Ausland oder § 13b.",
+            "kaeuferreferenz": "Steht auf jeder Rechnung an diese Adresse. Behörden nennen Ihnen dafür ihre Leitweg-ID, z. B. 991-01234-38.",
+            "xrechnung": "Für Behörden und Kunden, die eine XRechnung verlangen. Zu jeder Rechnung legt Kontorfreund dann die XML-Datei bei, die Sie im Portal der Behörde hochladen oder mitschicken.",
         }

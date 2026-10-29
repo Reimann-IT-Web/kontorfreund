@@ -26,6 +26,7 @@
     {% if not rechnung.ist_storno %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>{% endif %}
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+    {% if rechnung.xml_datei %}<a class="btn" href="{% url 'invoicing:xml' rechnung.pk %}">{% icon "download" %}XRechnung (XML)</a>{% endif %}
   </div>
 </div>
 
@@ -46,7 +47,7 @@
         {% include "core/feld.html" with f=form.betreff %}
         {% include "core/feld.html" with f=form.text %}
         <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
-        <p class="small muted">Anhang: {{ rechnung.bezeichnung }}-{{ rechnung.nummer }}.pdf (ZUGFeRD)</p>
+        <p class="small muted">Anhang: {{ rechnung.bezeichnung }}-{{ rechnung.nummer }}.pdf (ZUGFeRD){% if rechnung.xml_datei %} und {{ rechnung.bezeichnung }}-{{ rechnung.nummer }}.xml (XRechnung){% endif %}</p>
         <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
       </form>
       {% else %}
@@ -62,9 +63,10 @@
       <dl class="facts small">
         <div><dt>Festgeschrieben</dt><dd>{{ rechnung.festgeschrieben_am|date:"d.m.Y H:i" }}</dd></div>
         <div><dt>Aufbewahren bis</dt><dd>31.12.{{ rechnung.datum.year|add:8 }}</dd></div>
-        <div><dt>Format</dt><dd>PDF/A-3 mit ZUGFeRD (EN 16931)</dd></div>
+        <div><dt>Format</dt><dd>{% if rechnung.xml_datei %}XRechnung 3.0 (CII) und PDF/A-3{% else %}PDF/A-3 mit ZUGFeRD (EN 16931){% endif %}</dd></div>
       </dl>
-      <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ rechnung.sha256 }}</code></p>
+      <p class="small muted">Prüfsumme {% if rechnung.xml_datei %}PDF {% endif %}(SHA-256)<br><code class="hash">{{ rechnung.sha256 }}</code></p>
+      {% if rechnung.xml_datei %}<p class="small muted">Prüfsumme XML (SHA-256), das maßgebliche Original<br><code class="hash">{{ rechnung.xml_sha256 }}</code></p>{% endif %}
     </section>
 
     {% if not rechnung.ist_storno and not rechnung.storniert %}

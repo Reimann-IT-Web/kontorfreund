@@ -37,7 +37,7 @@
   </div>
 </div>
 
-<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-adressen="{% url 'contacts:liste' %}" novalidate>
+<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-xrechnung-absender="{% if firma.telefon and firma.email and firma.iban %}1{% else %}0{% endif %}" data-adressen="{% url 'contacts:liste' %}" novalidate>
   {% csrf_token %}
   <div class="editor-main">
     <nav class="steps" aria-label="Schritte">
@@ -57,7 +57,7 @@
             <select id="kontakt" name="kontakt">
               <option value="">Adresse wählen …</option>
               {% for k in kontakte %}
-                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
               {% endfor %}
             </select>
             {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
@@ -67,7 +67,7 @@
           <div class="field">
             <label for="referenz">Käuferreferenz <span class="optional">optional</span></label>
             {{ form.referenz }}
-            <p class="hint" id="referenz-hinweis">Nur nötig, wenn der Kunde sie verlangt; bei Behörden die Leitweg-ID.</p>
+            <p class="hint" id="referenz-hinweis">Nur nötig, wenn der Kunde sie verlangt; bei Behörden die Leitweg-ID. Leer lassen, um die aus der Adresse zu nehmen.</p>
           </div>
         </div>
 
@@ -161,7 +161,7 @@
     <div class="panel sticky">
       <p class="panel-title">Rechnungsbetrag</p>
       <p class="total" data-sum-side>0,00&nbsp;€</p>
-      <p class="small muted">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span> · ZUGFeRD</p>
+      <p class="small muted">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span> · <span data-format>ZUGFeRD</span></p>
 
       <h2 class="panel-title checks-head">Pflichtangaben <span class="count" data-check-count></span></h2>
       <ul class="checklist">
@@ -173,6 +173,7 @@
         <li data-check="zeitraum">{% icon "check" %}{% icon "alert" %}<span>Leistungszeitraum</span></li>
         <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>Rechnungsbetrag</span></li>
         <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer</span></li>
+        <li data-check="xrechnung" hidden>{% icon "check" %}{% icon "alert" %}<span>Für die XRechnung: Ihre Telefonnummer, E-Mail-Adresse und IBAN{% if not firma.telefon or not firma.email or not firma.iban %} – <a href="{% url 'core:einstellungen' %}">in den Einstellungen ergänzen</a>{% endif %}</span></li>
       </ul>
       <p class="small check-message" data-check-message role="status"></p>
       <button class="btn btn-primary btn-block" type="button" data-submit disabled>{% icon "lock" %}Festschreiben …</button>

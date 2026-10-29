@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import Q
 
 from archive.models import Altbeleg
-from contacts.models import Kontakt
+from contacts.models import Kontakt, ist_leitweg_id
 
 CENT = Decimal("0.01")
 UST_SATZ = Decimal("19")
@@ -99,6 +99,9 @@ class Rechnung(models.Model):
     brutto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     datei = models.CharField(max_length=300, blank=True, editable=False)
     sha256 = models.CharField(max_length=64, blank=True, editable=False)
+    # Nur bei XRechnung: dieselbe XML wie im PDF, als eigenes maßgebliches Original.
+    xml_datei = models.CharField(max_length=300, blank=True, editable=False)
+    xml_sha256 = models.CharField(max_length=64, blank=True, editable=False)
     festgeschrieben_am = models.DateTimeField(null=True, blank=True, editable=False)
 
     versendet_am = models.DateTimeField(null=True, blank=True)
@@ -157,6 +160,11 @@ class Rechnung(models.Model):
         return "Stornorechnung" if self.ist_storno else "Rechnung"
 
     @property
+    def kaeuferreferenz(self):
+        """Käuferreferenz (BT-10): von der Rechnung, sonst aus der Adresse."""
+        return self.referenz or (self.kontakt.kaeuferreferenz if self.kontakt else "")
+
+    @property
     def faellig(self):
         return self.datum + timedelta(days=self.zahlungsziel)
 
@@ -190,6 +198,19 @@ class Rechnung(models.Model):
             fehlt.append("Leistungszeitraum")
         if self.summen()[2] <= 0:
             fehlt.append("Rechnungsbetrag")
+        if self.kontakt and self.kontakt.xrechnung:
+            fehlt += self._fehlt_fuer_xrechnung(firma)
+        return fehlt
+
+    def _fehlt_fuer_xrechnung(self, firma):
+        """Was die XRechnung zusätzlich verlangt (BR-DE-1, -5 bis -7, -15, BT-34, BT-49)."""
+        fehlt = []
+        if not self.kaeuferreferenz:
+            fehlt.append("Käuferreferenz oder Leitweg-ID")
+        elif not (ist_leitweg_id(self.kaeuferreferenz) or self.kontakt.email):
+            fehlt.append("E-Mail-Adresse des Empfängers")
+        if not (firma.telefon and firma.email and firma.iban):
+            fehlt.append("Ihre Telefonnummer, E-Mail-Adresse und IBAN")
         return fehlt
 
     def kopieren(self, **abweichend):

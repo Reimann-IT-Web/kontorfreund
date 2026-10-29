@@ -197,10 +197,11 @@ if (rechnung) {
     leistung: "Menge und Art der Leistung",
     zeitraum: "Leistungszeitraum",
     entgelt: "Rechnungsbetrag",
+    xrechnung: "Angaben für die XRechnung",
   };
 
   const pruefen = (ergebnis) => {
-    const punkte = [...rechnung.querySelectorAll("[data-check]")];
+    const punkte = [...rechnung.querySelectorAll("[data-check]")].filter((li) => !li.hidden);
     const fehlt = [];
     punkte.forEach((li) => {
       const ok = ergebnis[li.dataset.check] ?? true;
@@ -284,6 +285,13 @@ if (rechnung) {
       });
     }
 
+    // Empfänger mit XRechnung: Käuferreferenz aus der Adresse und eigene Pflichtangaben.
+    const empfaenger = auswahl.selectedOptions[0];
+    const xrechnung = empfaenger?.dataset.xrechnung === "1";
+    rechnung.querySelector("[data-check=xrechnung]").hidden = !xrechnung;
+    rechnung.querySelector("[data-format]").textContent = xrechnung ? "ZUGFeRD und XRechnung" : "ZUGFeRD";
+    feld("referenz").placeholder = empfaenger?.dataset.referenz || "";
+
     const von = feld("leistung_von").value;
     const bis = feld("leistung_bis").value;
     pruefen({
@@ -293,6 +301,7 @@ if (rechnung) {
       leistung: leistungOk,
       zeitraum: Boolean(von) && (!bis || bis >= von),
       entgelt: summe > 0,
+      xrechnung: !xrechnung || rechnung.dataset.xrechnungAbsender === "1",
     });
   };
 
