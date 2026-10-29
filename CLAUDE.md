@@ -22,7 +22,7 @@ uv run ruff check . && uv run ruff format --check .
 uv run python manage.py makemigrations --check --dry-run
 ```
 
-Die CI (`.github/workflows/ci.yml`) führt genau diese Prüfungen aus, Tests auf allen drei Betriebssystemen, plus `pip-audit`.
+Die CI (`.github/workflows/ci.yml`) führt genau diese Prüfungen aus, Tests auf allen drei Betriebssystemen, plus `pip-audit`. Ein eigener Job lädt KoSIT-Validator, XRechnung-Prüfregeln und Mustang (feste Versionen und Prüfsummen) und prüft damit XML und PDF der Testrechnungen in `tests/test_validierung.py`; ohne diese Werkzeuge wird der Test übersprungen. Neue Versionen: URL und Prüfsumme in der CI ändern, bei KoSIT auch den Jar-Namen im Test.
 
 ## Architektur
 
