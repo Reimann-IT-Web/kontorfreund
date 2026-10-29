@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Einstellungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Einstellungen</h1>
+    <p class="muted">Ihre Firmendaten. Sie stehen als Absender auf jeder Rechnung.</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-firma">
+    <h2 class="form-title" id="t-firma">Unternehmen</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.name %}
+      {% include "core/feld.html" with f=form.inhaber optional=True %}
+      {% include "core/feld.html" with f=form.strasse breit=True %}
+      {% include "core/feld.html" with f=form.plz %}
+      {% include "core/feld.html" with f=form.ort %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-steuer">
+    <h2 class="form-title" id="t-steuer">Steuer</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.steuernummer %}
+      {% include "core/feld.html" with f=form.ust_id optional=True %}
+      <label class="choice field-wide">
+        {{ form.kleinunternehmer }}
+        <span><strong>{{ form.kleinunternehmer.label }}</strong><br><span class="muted">{{ form.kleinunternehmer.help_text }}</span></span>
+      </label>
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-kontakt">
+    <h2 class="form-title" id="t-kontakt">Kontakt und Bank</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.email optional=True %}
+      {% include "core/feld.html" with f=form.telefon optional=True %}
+      {% include "core/feld.html" with f=form.iban optional=True %}
+      {% include "core/feld.html" with f=form.bank optional=True %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+  </div>
+</form>
+{% endblock %}

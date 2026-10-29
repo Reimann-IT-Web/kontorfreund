@@ -1,7 +1,15 @@
-from django.urls import path
-
-from core import views
+from django.templatetags.static import static
+from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
-    path("", views.start, name="start"),
+    # Browser fragen /favicon.ico direkt ab, auch wenn die Seite ein anderes Symbol nennt.
+    path(
+        "favicon.ico",
+        RedirectView.as_view(url=static("img/favicon.svg"), permanent=True),
+    ),
+    path("adressen/", include("contacts.urls")),
+    path("rechnungen/", include("invoicing.urls")),
+    # Zuletzt: core enthält die Platzhalter-Bereiche unter /<bereich>/.
+    path("", include("core.urls")),
 ]

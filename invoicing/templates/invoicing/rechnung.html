@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Neue Rechnung{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li>Angebote &amp; Rechnungen</li>
+    <li aria-current="page">Neue Rechnung</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Neue Rechnung <span class="status status-draft">{% icon "pencil" %}Entwurf</span></h1>
+    <p class="muted">Die Nummer {{ naechste_nummer }} wird beim Festschreiben vergeben. Das Speichern von Rechnungen folgt in Phase 2; bis dahin können Sie hier alles ausprobieren.</p>
+  </div>
+</div>
+
+<form class="editor" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-adressen="{% url 'contacts:liste' %}" novalidate>
+  <div class="editor-main">
+    <nav class="steps" aria-label="Schritte">
+      <ol>
+        <li><a href="#schritt-1" aria-current="step"><span class="step-nr">1</span><span class="step-long">Empfänger &amp; Bedingungen</span><span class="step-short" aria-hidden="true">Empfänger</span></a></li>
+        <li><a href="#schritt-2"><span class="step-nr">2</span>Positionen</a></li>
+        <li><a href="#schritt-3"><span class="step-nr">3</span><span class="step-long">Prüfen &amp; festschreiben</span><span class="step-short" aria-hidden="true">Prüfen</span></a></li>
+      </ol>
+    </nav>
+
+    <section class="step" id="schritt-1" aria-labelledby="s1">
+      <h2 id="s1"><span class="step-nr">1</span>Empfänger &amp; Bedingungen</h2>
+      <div class="grid-2">
+        <div class="stack">
+          <div class="field">
+            <label for="empfaenger">Empfänger</label>
+            <select id="empfaenger" name="empfaenger" required>
+              <option value="">Adresse wählen …</option>
+              {% for k in kontakte %}
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}"{% if k.pk == empfaenger %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
+              {% endfor %}
+            </select>
+            {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
+          </div>
+          <address class="address-card" data-address-card hidden></address>
+          <p class="hint is-warn-text" data-address-missing hidden>Für die Rechnung fehlen Straße, PLZ oder Ort. <a href="#" data-address-edit>Adresse ergänzen</a></p>
+          <div class="field">
+            <label for="referenz">Käuferreferenz <span class="optional">optional</span></label>
+            <input id="referenz" name="referenz" type="text" aria-describedby="referenz-hinweis">
+            <p class="hint" id="referenz-hinweis">Nur nötig, wenn der Kunde sie verlangt; bei Behörden die Leitweg-ID.</p>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="field">
+            <label for="datum">Rechnungsdatum</label>
+            <input id="datum" name="datum" type="date" value="{{ datum|date:'Y-m-d' }}" required>
+          </div>
+          <fieldset class="field">
+            <legend>Leistungszeitraum</legend>
+            <div class="range">
+              <label><span class="visually-hidden">von</span><input name="leistung_von" type="date" aria-describedby="zeitraum-hinweis"></label>
+              <span aria-hidden="true">bis</span>
+              <label><span class="visually-hidden">bis</span><input name="leistung_bis" type="date" aria-describedby="zeitraum-hinweis"></label>
+            </div>
+            <p class="hint" id="zeitraum-hinweis">Pflichtangabe. Wurde die Leistung an einem Tag erbracht, genügt „von“.</p>
+          </fieldset>
+          <div class="field">
+            <label for="zahlungsziel">Zahlungsziel</label>
+            <select id="zahlungsziel" name="zahlungsziel">
+              <option value="7">7 Tage</option>
+              <option value="14" selected>14 Tage</option>
+              <option value="30">30 Tage</option>
+            </select>
+            <p class="hint">fällig am <span data-due>{{ faellig|date:"d.m.Y" }}</span></p>
+          </div>
+          <div class="field">
+            <label for="steuerfall">Umsatzsteuer</label>
+            <select id="steuerfall" name="steuerfall">
+              <option value="kleinunternehmer"{% if steuerfall == "kleinunternehmer" %} selected{% endif %}>§ 19 – Kleinunternehmer, keine USt</option>
+              <option value="regel"{% if steuerfall == "regel" %} selected{% endif %}>19 % Umsatzsteuer ausweisen</option>
+              <option value="13b">§ 13b – Kunde schuldet die Steuer</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="betreff">Betreff</label>
+        <input id="betreff" name="betreff" type="text" placeholder="z. B. Leistungen im Oktober">
+      </div>
+      <div class="field">
+        <label for="kopftext">Text vor den Positionen</label>
+        <textarea id="kopftext" name="kopftext" rows="3">Sehr geehrte Damen und Herren,
+
+vielen Dank für Ihren Auftrag. Ich berechne Ihnen folgende Leistungen:</textarea>
+      </div>
+    </section>
+
+    <section class="step" id="schritt-2" aria-labelledby="s2">
+      <h2 id="s2"><span class="step-nr">2</span>Positionen</h2>
+      <div class="table-wrap">
+        <table class="table positions">
+          <thead>
+            <tr>
+              <th scope="col" class="col-pos">Pos.</th>
+              <th scope="col">Bezeichnung</th>
+              <th scope="col" class="num">Menge</th>
+              <th scope="col">Einheit</th>
+              <th scope="col" class="num">Einzelpreis</th>
+              <th scope="col" class="num">Gesamt</th>
+              <th scope="col"><span class="visually-hidden">Entfernen</span></th>
+            </tr>
+          </thead>
+          <tbody data-positions>
+            {% partialdef position inline %}
+            <tr data-position>
+              <td class="col-pos" data-pos-nr>1</td>
+              <td>
+                <input class="input-title" name="bezeichnung" type="text" placeholder="Was haben Sie geliefert oder geleistet?" aria-label="Bezeichnung">
+                <input class="input-sub" name="beschreibung" type="text" placeholder="Beschreibung (optional)" aria-label="Beschreibung">
+              </td>
+              <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="1" aria-label="Menge"></td>
+              <td>
+                <select name="einheit" aria-label="Einheit">
+                  {% for e in einheiten %}<option>{{ e }}</option>{% endfor %}
+                </select>
+              </td>
+              <td class="num"><input class="num" name="preis" type="text" inputmode="decimal" placeholder="0,00" aria-label="Einzelpreis in Euro"></td>
+              <td class="num amount" data-line-total>0,00&nbsp;€</td>
+              <td class="cell-action"><button class="btn btn-ghost btn-icon" type="button" data-remove-position>{% icon "x" %}<span class="visually-hidden">Position entfernen</span></button></td>
+            </tr>
+            {% endpartialdef %}
+          </tbody>
+        </table>
+      </div>
+      <template id="position-vorlage">{% partial position %}</template>
+      <div class="positions-foot">
+        <div class="actions">
+          <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
+          <a class="btn btn-sm" href="{% url 'core:platzhalter' 'artikel' %}">{% icon "box" %}Aus Artikeln übernehmen</a>
+        </div>
+        <dl class="totals">
+          <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
+          <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
+          <div class="totals-sum"><dt>Rechnungsbetrag</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
+        </dl>
+      </div>
+      <p class="tax-note" data-tax-note></p>
+    </section>
+
+    <section class="step" id="schritt-3" aria-labelledby="s3">
+      <h2 id="s3"><span class="step-nr">3</span>Prüfen &amp; festschreiben</h2>
+      <div class="field">
+        <label for="fusstext">Text nach den Positionen</label>
+        <textarea id="fusstext" name="fusstext" rows="2">Bitte überweisen Sie den Betrag bis zum {{ faellig|date:"d.m.Y" }} auf das unten genannte Konto.</textarea>
+      </div>
+      <fieldset class="field choice-group">
+        <legend>Format</legend>
+        <label class="choice">
+          <input type="radio" name="format" value="zugferd" checked>
+          <span><strong>ZUGFeRD-Rechnung</strong> <span class="tag">empfohlen</span><br><span class="muted">Ein normales PDF mit eingebetteten Rechnungsdaten (Profil EN 16931). Ihr Kunde liest das PDF, seine Buchhaltung die Daten.</span></span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="format" value="xrechnung">
+          <span><strong>XRechnung</strong><br><span class="muted">Nur Rechnungsdaten, ohne PDF. Für Behörden mit Leitweg-ID.</span></span>
+        </label>
+      </fieldset>
+      <label class="choice">
+        <input type="checkbox" name="girocode"{% if firma.iban %} checked{% endif %}>
+        <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den <a href="{% url 'core:einstellungen' %}">Einstellungen</a>.{% endif %}</span></span>
+      </label>
+      <p class="callout">{% icon "lock" %}<span>Beim Festschreiben wird die Rechnung unveränderbar abgelegt, als PDF und Datensatz für 8 Jahre. Korrigieren können Sie sie danach nur mit einer Stornorechnung.</span></p>
+    </section>
+  </div>
+
+  <a class="check-bar is-missing" href="#pruefung" data-check-bar>
+    <span>Pflichtangaben <span class="check-bar-state" data-check-bar-state></span></span>
+    {% icon "chevron-down" %}
+  </a>
+
+  <aside class="editor-side" id="pruefung" aria-label="Prüfung">
+    <div class="panel sticky">
+      <p class="panel-title">Rechnungsbetrag</p>
+      <p class="total" data-sum-side>0,00&nbsp;€</p>
+      <p class="small muted">fällig am <span data-due>{{ faellig|date:"d.m.Y" }}</span> · ZUGFeRD</p>
+
+      <h2 class="panel-title checks-head">Pflichtangaben <span class="count" data-check-count></span></h2>
+      <ul class="checklist">
+        <li data-check="empfaenger">{% icon "check" %}{% icon "alert" %}<span>Name und Anschrift des Empfängers</span></li>
+        <li data-check="absender">{% icon "check" %}{% icon "alert" %}<span>Ihre Anschrift und Steuernummer{% if not firma.vollstaendig %} – <a href="{% url 'core:einstellungen' %}">in den Einstellungen ergänzen</a>{% endif %}</span></li>
+        <li data-check="datum">{% icon "check" %}{% icon "alert" %}<span>Rechnungsdatum</span></li>
+        <li data-check="nummer">{% icon "check" %}{% icon "alert" %}<span>Fortlaufende Nummer <span class="muted">(automatisch)</span></span></li>
+        <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
+        <li data-check="zeitraum">{% icon "check" %}{% icon "alert" %}<span>Leistungszeitraum</span></li>
+        <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>Rechnungsbetrag</span></li>
+        <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer</span></li>
+      </ul>
+      <p class="small check-message" data-check-message role="status"></p>
+      <button class="btn btn-primary btn-block" type="submit" data-submit disabled>{% icon "lock" %}Festschreiben &amp; versenden</button>
+      <button class="btn btn-block" type="button" data-preview>{% icon "eye" %}Vorschau als PDF</button>
+    </div>
+  </aside>
+</form>
+
+<dialog class="notice-dialog" id="prototyp-hinweis" aria-labelledby="hinweis-titel">
+  <form method="dialog">
+    <h2 id="hinweis-titel">Kommt mit Phase 2</h2>
+    <p>Festschreiben, PDF und Versand sind noch nicht gebaut. Ab Phase 2 erhält die Rechnung hier ihre Nummer, wird als ZUGFeRD-PDF unveränderbar abgelegt und per E-Mail versendet.</p>
+    <p class="actions"><button class="btn btn-primary" value="ok">Verstanden</button></p>
+  </form>
+</dialog>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% load kf %}<div class="field{% if f.errors %} has-error{% endif %}{% if breit %} field-wide{% endif %}">
+  <label for="{{ f.id_for_label }}">{{ f.label }}{% if optional %} <span class="optional">optional</span>{% elif optional_firma %} <span class="optional" data-nur-firma>optional</span>{% endif %}</label>
+  {{ f }}
+  {% for fehler in f.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+  {% if f.help_text %}<p class="hint" id="{{ f.auto_id }}_helptext">{{ f.help_text }}</p>{% endif %}
+</div>

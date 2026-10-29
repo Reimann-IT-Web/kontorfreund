@@ -15,6 +15,7 @@ Gilt für alle Phasen. Ziel: spürbar einfacher zu bedienen und schöner als kla
 | G-7 | Leere Listen zeigen den nächsten Schritt. | Jede leere Liste hat einen erklärenden Satz und eine passende Schaltfläche, z. B. „Kontakt anlegen“ oder „Importieren“. |
 | G-8 | Fehlermeldungen helfen weiter. | Die Meldung steht am betroffenen Feld und sagt, was zu tun ist. Keine Fehlercodes ohne Erklärung. |
 | G-9 | Verständliche Sprache. | Deutsch, Anrede „Sie“. Fachbegriffe nur wo nötig und dann kurz erklärt. |
+| G-9a | Vertraut für Umsteiger. | Bereiche, Reihenfolge und Begriffe wie in klassischer Desktop-Bürosoftware: Übersicht, Adressen, Angebote & Rechnungen, Artikel, Offene Posten, Wiedervorlagen, Ablage, Auswertungen. Belege entstehen in den Schritten „Empfänger & Bedingungen“, „Positionen“, „Prüfen & festschreiben“. Das Aussehen ist eigenständig. |
 | G-10 | Passt sich dem Gerät an. | Volle Funktion ab 1280 px Breite, auf dem Tablet bedienbar. Auf dem Handy: suchen, ansehen, Notizen und Wiedervorlagen erfassen. |
 | G-11 | Barrierefrei. | WCAG 2.2, Stufe AA. |
 | G-12 | Schnell. | Listen und Suche antworten bei 10.000 Kontakten in unter 1 Sekunde. |

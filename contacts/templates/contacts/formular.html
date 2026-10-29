@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{% if kontakt %}{{ kontakt }} bearbeiten{% else %}Neue Adresse{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'contacts:liste' %}">Adressen</a></li>
+    <li aria-current="page">{% if kontakt %}{{ kontakt.kundennummer }}{% else %}Neue Adresse{% endif %}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{% if kontakt %}{{ kontakt }}{% else %}Neue Adresse{% endif %}</h1>
+    <p class="muted">{% if kontakt %}{{ kontakt.kundennummer }} · zuletzt geändert {{ kontakt.geaendert|date:"d.m.Y, H:i" }} Uhr{% else %}Nur der Name ist Pflicht. Alles andere können Sie später ergänzen.{% endif %}</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate data-kontakt-form>
+  {% csrf_token %}
+
+  {% if dubletten %}
+  <div class="notice notice-warn" role="alert">
+    <p><strong>Diese Adresse gibt es vielleicht schon:</strong></p>
+    <ul>
+      {% for d in dubletten %}
+      <li><a href="{% url 'contacts:bearbeiten' d.pk %}">{{ d }}</a> <span class="muted">({{ d.kundennummer }}{% if d.ort %}, {{ d.ort }}{% endif %}{% if d.email %}, {{ d.email }}{% endif %})</span></li>
+      {% endfor %}
+    </ul>
+    <p class="actions"><button class="btn" type="submit" name="trotzdem" value="1">Trotzdem speichern</button></p>
+  </div>
+  {% endif %}
+
+  <div class="form-grid">
+    <fieldset class="field">
+      <legend>Art</legend>
+      <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+    </fieldset>
+    <fieldset class="field">
+      <legend>Kategorie</legend>
+      <div class="pills">{% for r in form.kategorie %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+    </fieldset>
+  </div>
+
+  <section class="form-section" aria-labelledby="t-name">
+    <h2 class="form-title" id="t-name" data-titel-firma="Firma und Ansprechpartner" data-titel-person="Name">Firma und Ansprechpartner</h2>
+    <div class="form-grid">
+      <div class="field-wide" data-nur-firma>{% include "core/feld.html" with f=form.firmenname %}</div>
+      {% include "core/feld.html" with f=form.anrede optional=True %}
+      {% include "core/feld.html" with f=form.titel optional=True %}
+      {% include "core/feld.html" with f=form.vorname optional=True %}
+      {% include "core/feld.html" with f=form.nachname optional_firma=True %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-anschrift">
+    <h2 class="form-title" id="t-anschrift">Anschrift</h2>
+    <p class="hint form-hint">Für Rechnungen brauchen Sie Straße, PLZ und Ort.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.strasse breit=True %}
+      {% include "core/feld.html" with f=form.plz %}
+      {% include "core/feld.html" with f=form.ort %}
+      {% include "core/feld.html" with f=form.land %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-kontakt">
+    <h2 class="form-title" id="t-kontakt">Kontakt</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.email optional=True %}
+      {% include "core/feld.html" with f=form.telefon optional=True %}
+      {% include "core/feld.html" with f=form.website optional=True %}
+      {% include "core/feld.html" with f=form.ust_id optional=True %}
+      {% include "core/feld.html" with f=form.notiz breit=True optional=True %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}{% if kontakt %}Speichern{% else %}Adresse anlegen{% endif %}</button>
+    <a class="btn btn-ghost" href="{% url 'contacts:liste' %}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

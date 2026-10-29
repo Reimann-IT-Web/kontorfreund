@@ -8,6 +8,8 @@ import os
 import secrets
 from pathlib import Path
 
+from django.utils.csp import CSP
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("APP_DATA_DIR", BASE_DIR / "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -44,10 +46,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "core",
+    "contacts",
+    "invoicing",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -70,6 +75,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.product",
+                "core.context_processors.navigation",
             ],
         },
     },
@@ -88,5 +94,16 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Nur eigene Quellen, keine Inline-Skripte oder -Styles (Spezifikation 02, Sicherheit).
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "img-src": [CSP.SELF, "data:"],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "form-action": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

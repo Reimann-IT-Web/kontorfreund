@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ titel }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ titel }}</h1>
+  </div>
+</div>
+<div class="empty">
+  <h2>Dieser Bereich folgt in {{ phase }}</h2>
+  <p class="muted">{{ inhalt }}</p>
+  <p class="actions">
+    <a class="btn" href="{% url 'core:start' %}">{% icon "home" %}Zur Übersicht</a>
+    <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
+  </p>
+</div>
+{% endblock %}

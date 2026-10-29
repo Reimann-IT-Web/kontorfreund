@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Adressen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if archiv %}Archivierte Adressen{% else %}Adressen{% endif %}</h1>
+    <p class="muted">
+      {% if archiv %}<a href="{% url 'contacts:liste' %}">Zurück zu den {{ anzahl }} aktiven Adressen</a>
+      {% else %}{{ anzahl }} Adresse{{ anzahl|pluralize:"n" }}{% if anzahl_archiv %} · <a href="?archiv=1">{{ anzahl_archiv }} im Archiv</a>{% endif %}{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Neue Adresse</a>
+  </div>
+</div>
+
+{% if anzahl or anzahl_archiv %}
+<form class="filterbar" method="get" role="search">
+  <label class="field field-search">
+    {% icon "search" %}
+    <span class="visually-hidden">Adressen durchsuchen</span>
+    <input type="search" name="q" value="{{ q }}" placeholder="Name, Ort, E-Mail oder Nummer">
+  </label>
+  {% if kategorie %}<input type="hidden" name="kategorie" value="{{ kategorie }}">{% endif %}
+  {% if archiv %}<input type="hidden" name="archiv" value="1">{% endif %}
+  <div class="segmented" role="group" aria-label="Kategorie">
+    <a href="?{% if q %}q={{ q|urlencode }}{% endif %}{% if archiv %}&amp;archiv=1{% endif %}"{% if not kategorie %} aria-current="true"{% endif %}>Alle</a>
+    {% for wert, label in kategorien %}
+      <a href="?kategorie={{ wert }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if archiv %}&amp;archiv=1{% endif %}"{% if kategorie == wert %} aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+</form>
+{% endif %}
+
+{% if kontakte %}
+<div class="table-wrap">
+  <table class="table addresses">
+    <thead>
+      <tr>
+        <th scope="col">Nr.</th>
+        <th scope="col">Name</th>
+        <th scope="col" class="col-ort">Ort</th>
+        <th scope="col" class="col-kat">Kategorie</th>
+        <th scope="col" class="col-kontakt">Telefon</th>
+        <th scope="col"><span class="visually-hidden">Details</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in kontakte %}
+      {% with auf=k.pk|stringformat:"s" %}
+      <tr class="data-row{% if offen == auf %} is-open{% endif %}">
+        <td class="docnr">{{ k.kundennummer }}</td>
+        <td>
+          <span class="cell-title">{{ k.anzeigename }}</span>
+          {% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}
+          {% if not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
+        </td>
+        <td class="col-ort">{{ k.ort|default:"–" }}</td>
+        <td class="col-kat"><span class="tag">{{ k.get_kategorie_display }}</span></td>
+        <td class="col-kontakt">{{ k.telefon|default:"–" }}</td>
+        <td class="cell-action">
+          <button class="btn btn-ghost btn-icon" type="button" data-expand aria-controls="details-{{ k.pk }}" aria-expanded="{% if offen == auf %}true{% else %}false{% endif %}">
+            {% icon "chevron-down" %}<span class="visually-hidden">Details zu {{ k.anzeigename }}</span>
+          </button>
+        </td>
+      </tr>
+      <tr class="detail-row" id="details-{{ k.pk }}"{% if offen != auf %} hidden{% endif %}>
+        <td colspan="6">
+          <div class="detail">
+            <div>
+              <h3 class="detail-title">Kontakt</h3>
+              {% if k.telefon %}<p><a class="link" href="tel:{{ k.telefon|cut:' ' }}">{% icon "phone" %}{{ k.telefon }}</a></p>{% endif %}
+              {% if k.email %}<p><a class="link" href="mailto:{{ k.email }}">{% icon "mail" %}{{ k.email }}</a></p>{% endif %}
+              {% if k.website %}<p class="muted">{{ k.website }}</p>{% endif %}
+              {% if not k.telefon and not k.email and not k.website %}<p class="muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
+            </div>
+            <div>
+              <h3 class="detail-title">Anschrift</h3>
+              <address class="plain">{% for zeile in k.anschrift_zeilen %}{{ zeile }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</address>
+              {% if k.notiz %}<h3 class="detail-title detail-gap">Notiz</h3><p>{{ k.notiz|linebreaksbr }}</p>{% endif %}
+            </div>
+            <div class="detail-actions">
+              <a class="btn btn-sm btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Rechnung schreiben</a>
+              <a class="btn btn-sm" href="{% url 'contacts:bearbeiten' k.pk %}">{% icon "pencil" %}Bearbeiten</a>
+              <form method="post" action="{% url 'contacts:archivieren' k.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-block" type="submit">{% icon "folder" %}{% if k.archiviert %}Wiederherstellen{% else %}Archivieren{% endif %}</button>
+              </form>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if q or kategorie %}<p class="table-foot muted">{{ kontakte|length }} Treffer</p>{% endif %}
+
+{% elif q or kategorie %}
+<div class="empty">
+  <h2>Keine Adresse gefunden</h2>
+  <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer. {% endif %}Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.</p>
+  <p class="actions"><a class="btn" href="{% url 'contacts:liste' %}">Filter zurücksetzen</a></p>
+</div>
+
+{% elif archiv %}
+<div class="empty">
+  <h2>Das Archiv ist leer</h2>
+  <p class="muted">Archivierte Adressen verschwinden aus Listen und Suche, bleiben aber vollständig erhalten.</p>
+</div>
+
+{% else %}
+<div class="empty">
+  <h2>Noch keine Adressen</h2>
+  <p class="muted">Legen Sie Ihre erste Adresse an. Nur der Name ist Pflicht, alles andere können Sie später ergänzen.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Erste Adresse anlegen</a></p>
+</div>
+{% endif %}
+{% endblock %}

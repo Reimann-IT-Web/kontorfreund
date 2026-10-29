@@ -7,3 +7,9 @@ __pycache__/
 
 # Datenverzeichnis: Datenbank, Dateiablage, secret_key
 data/
+
+# Arbeitsdateien des Design-Werkzeugs (Prüfbilder, Auswahlseiten)
+.impeccable/questions/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/

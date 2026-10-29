@@ -28,14 +28,18 @@ Die CI (`.github/workflows/ci.yml`) führt genau diese Prüfungen aus, Tests auf
 
 - `config/` – Django-Projekt. Betriebswerte über Umgebungsvariablen `APP_*` (`APP_DEBUG`, `APP_SECRET_KEY`, `APP_ALLOWED_HOSTS`, `APP_DATA_DIR`).
 - Datenverzeichnis (`APP_DATA_DIR`, Standard `./data`, nicht im Repo): SQLite-Datenbank, Dateiablage und der beim ersten Start erzeugte `secret_key`. Ohne Umgebungsvariablen läuft das Programm als Einzelplatz-Installation.
-- `core/` – Startseite und Gemeinsames. Jeder Fachbereich bekommt eine eigene App (z. B. `contacts`, `invoicing`, `payments`, `exports`).
-- Oberfläche: Django-Templates (`templates/base.html` + App-Templates), HTMX statt JS-Framework.
+- `core/` – Übersicht, Einstellungen mit `Firmendaten` (genau ein Datensatz, `Firmendaten.laden()`), Seitenleiste (`core/navigation.py`), Kontextprozessoren (Navigation, Suchindex für Strg+K, Firmendaten auf jeder Seite), Template-Tags `kf` (`{% icon %}`, `|euro`, `|zahl`, `|relativ`) und der Formularfeld-Baustein `core/feld.html`.
+- `contacts/` – Adressen (`Kontakt`: Firma oder Person, Nummer K-0001 fortlaufend, Dublettenprüfung, Archiv statt Löschen).
+- `invoicing/` – Rechnungseditor; bis Phase 2 ohne Speichern. Rechnen und Pflichtangaben-Prüfung laufen in `static/js/app.js`.
+- Jeder weitere Fachbereich bekommt eine eigene App (z. B. `payments`, `exports`).
+- Oberfläche: Django-Templates (`templates/base.html` + App-Templates, Django-6-Partials), eigenes CSS in `static/css/app.css` mit Design-Tokens, kein JS-Framework. Gestaltungsregeln: `PRODUCT.md`, `.impeccable/surfaces/`.
 
 ## Regeln
 
 - Clean Room: keinen Code, keine Texte, Screenshots, Vorlagen oder Datenbankstrukturen aus anderer Software übernehmen. Installationen, Programmdateien und Datenbanken anderer CRM- oder Rechnungsprogramme auf diesem Rechner weder öffnen noch analysieren.
 - Nicht an Microsoft gebunden: keine Windows-only-Abhängigkeiten, kein Office, Access oder Outlook. Bibliotheken müssen per `uv sync` auf allen drei Systemen ohne Systempakete laufen. Deshalb PDFs mit Typst, nicht WeasyPrint (braucht Pango).
 - Datenschutz: keine Telemetrie, keine externen CDNs, Schriften oder Skripte – alles wird selbst ausgeliefert.
+- Keine Beispieldaten in App oder Datenbank; alle Inhalte gibt der Nutzer selbst ein. Testdaten nur in Tests oder in einer Wegwerf-Datenbank (`APP_DATA_DIR` auf einen Temp-Ordner).
 - Geldbeträge immer `Decimal`, nie `float`.
 - Festgeschriebene Belege sind unveränderbar (GoBD); Korrektur nur per Stornorechnung.
 - Oberflächentexte auf Deutsch, Anrede „Sie“.
