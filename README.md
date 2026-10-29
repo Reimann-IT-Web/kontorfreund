@@ -1,4 +1,4 @@
-# Kontorfreund
+# Kontorfreund (Kleinunternehmen)
 
 Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in Deutschland: Kontakte, Wiedervorlagen, Angebote und Rechnungen mit E-Rechnung (XRechnung, ZUGFeRD), offene Posten, Mahnwesen und DATEV-Export.
 

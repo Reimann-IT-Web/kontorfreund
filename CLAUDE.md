@@ -8,7 +8,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer in Deutschland. Djan
 
 Was gebaut wird, steht ausschließlich in `docs/spec/` (Clean-Room-Spezifikation, nach Phasen gegliedert). Neue Funktionen nur, wenn sie dort beschrieben und freigegeben sind.
 
-Produktname: Kontorfreund (Markenprüfung beim DPMA steht noch aus). Im Code immer `settings.PRODUCT_NAME` verwenden, nie hart codieren.
+Produkt: „Kontorfreund (Kleinunternehmen)“ – Marke `settings.PRODUCT_NAME` („Kontorfreund“, Markenprüfung beim DPMA steht noch aus) plus Edition `settings.PRODUCT_EDITION` („Kleinunternehmen“). Weitere Editionen sollen später auf derselben Codebasis entstehen, nicht als Kopie. Name und Edition im Code nie hart codieren; Templates nutzen `product_name` aus `core.context_processors`.
 
 ## Befehle
 

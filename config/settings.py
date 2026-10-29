@@ -12,7 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("APP_DATA_DIR", BASE_DIR / "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+# Marke und Edition getrennt, damit weitere Editionen dieselbe Codebasis nutzen können.
 PRODUCT_NAME = "Kontorfreund"
+PRODUCT_EDITION = "Kleinunternehmen"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
