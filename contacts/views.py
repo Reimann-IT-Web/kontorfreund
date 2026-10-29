@@ -1,7 +1,7 @@
 import re
 
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -26,7 +26,9 @@ def liste(request):
     q = request.GET.get("q", "").strip()
     kategorie = request.GET.get("kategorie", "")
     archiv = request.GET.get("archiv") == "1"
-    kontakte = Kontakt.objects.filter(archiviert=archiv)
+    kontakte = Kontakt.objects.filter(archiviert=archiv).annotate(
+        anzahl_belege=Count("altbelege")
+    )
     if kategorie in Kontakt.Kategorie.values:
         kontakte = kontakte.filter(kategorie=kategorie)
     if q:

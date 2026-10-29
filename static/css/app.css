@@ -1071,6 +1071,11 @@ select {
   padding-left: 2.5rem;
 }
 
+.field-inline select {
+  width: auto;
+  min-width: 9rem;
+}
+
 .segmented {
   display: inline-flex;
   gap: 2px;

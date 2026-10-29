@@ -35,6 +35,7 @@ class Kontakt(models.Model):
         "Kategorie", max_length=12, choices=Kategorie.choices, default=Kategorie.KUNDE
     )
     firmenname = models.CharField("Firmenname", max_length=200, blank=True)
+    zusatz = models.CharField("Namenszusatz", max_length=200, blank=True)
     anrede = models.CharField(
         "Anrede",
         max_length=10,
@@ -106,6 +107,8 @@ class Kontakt(models.Model):
     def anschrift_zeilen(self):
         """Anschrift für Belege, Zeile für Zeile."""
         zeilen = [self.anzeigename]
+        if self.art == self.Art.FIRMA and self.zusatz:
+            zeilen.append(self.zusatz)
         if self.art == self.Art.FIRMA and self.ansprechpartner:
             zeilen.append(" ".join(t for t in [self.anrede, self.ansprechpartner] if t))
         if self.strasse:

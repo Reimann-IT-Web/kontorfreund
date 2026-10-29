@@ -2,9 +2,11 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
+from django.db.models import Sum
 from django.http import Http404
 from django.shortcuts import redirect, render
 
+from archive.models import Altbeleg
 from contacts.models import Kontakt
 
 from .forms import FirmendatenForm
@@ -18,8 +20,10 @@ def start(request):
     firma = Firmendaten.laden()
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
-    # Umsatz kommt ab Phase 2 aus festgeschriebenen Rechnungen.
-    umsatz = Decimal("0.00")
+    # Bis Phase 2 nur aus übernommenen Altbelegen; danach kommen festgeschriebene Rechnungen dazu.
+    umsatz = Altbeleg.objects.filter(
+        art__in=Altbeleg.UMSATZWIRKSAM, datum__year=date.today().year
+    ).aggregate(s=Sum("betrag"))["s"] or Decimal("0.00")
     return render(
         request,
         "core/start.html",

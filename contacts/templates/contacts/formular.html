@@ -48,6 +48,7 @@
     <h2 class="form-title" id="t-name" data-titel-firma="Firma und Ansprechpartner" data-titel-person="Name">Firma und Ansprechpartner</h2>
     <div class="form-grid">
       <div class="field-wide" data-nur-firma>{% include "core/feld.html" with f=form.firmenname %}</div>
+      <div class="field-wide" data-nur-firma>{% include "core/feld.html" with f=form.zusatz optional=True %}</div>
       {% include "core/feld.html" with f=form.anrede optional=True %}
       {% include "core/feld.html" with f=form.titel optional=True %}
       {% include "core/feld.html" with f=form.vorname optional=True %}

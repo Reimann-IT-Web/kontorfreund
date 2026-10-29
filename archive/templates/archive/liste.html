@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Ablage{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Ablage</h1>
+    <p class="muted">{{ gesamt }} Beleg{{ gesamt|pluralize:"e" }} aus Ihrem bisherigen Programm, unverändert als PDF aufbewahrt.</p>
+  </div>
+</div>
+
+{% if gesamt %}
+<form class="filterbar" method="get" role="search">
+  <label class="field field-search">
+    {% icon "search" %}
+    <span class="visually-hidden">Belege durchsuchen</span>
+    <input type="search" name="q" value="{{ q }}" placeholder="Nummer oder Kunde">
+  </label>
+  <label class="field field-inline">
+    <span class="visually-hidden">Jahr</span>
+    <select name="jahr" data-auto-submit>
+      <option value="">Alle Jahre</option>
+      {% for j in jahre %}<option value="{{ j }}"{% if jahr == j|stringformat:"s" %} selected{% endif %}>{{ j }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if art %}<input type="hidden" name="art" value="{{ art }}">{% endif %}
+  {% if kontakt %}<input type="hidden" name="kontakt" value="{{ kontakt }}">{% endif %}
+  <div class="segmented" role="group" aria-label="Art">
+    <a href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if jahr %}jahr={{ jahr }}&amp;{% endif %}{% if kontakt %}kontakt={{ kontakt }}{% endif %}"{% if not art %} aria-current="true"{% endif %}>Alle</a>
+    {% for wert, label in arten %}
+      <a href="?art={{ wert }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if jahr %}&amp;jahr={{ jahr }}{% endif %}{% if kontakt %}&amp;kontakt={{ kontakt }}{% endif %}"{% if art == wert %} aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+</form>
+{% endif %}
+
+{% if belege %}
+<div class="table-wrap">
+  <table class="table archive">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Art</th>
+        <th scope="col">Kunde</th>
+        <th scope="col" class="col-ort">Absender</th>
+        <th scope="col" class="num">Betrag</th>
+        <th scope="col"><span class="visually-hidden">Öffnen</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in belege %}
+      <tr class="data-row">
+        <td class="docnr">{{ b.datum|date:"d.m.Y" }}</td>
+        <td class="docnr">{{ b.nummer }}</td>
+        <td><span class="tag">{{ b.get_art_display }}</span>{% if b.bezug %}<span class="cell-sub">zu {{ b.bezug }}</span>{% endif %}</td>
+        <td>{% if b.kontakt %}<a href="{% url 'contacts:liste' %}?q={{ b.kontakt.kundennummer }}&amp;offen={{ b.kontakt.pk }}">{{ b.kontakt }}</a>{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="col-ort">{{ b.absender }}</td>
+        <td class="num"><span class="amount{% if b.betrag < 0 %} is-danger{% endif %}">{% if b.betrag is not None %}{{ b.betrag|euro }}{% else %}–{% endif %}</span></td>
+        <td class="cell-action"><a class="btn btn-ghost btn-icon" href="{% url 'archive:datei' b.pk %}" target="_blank" rel="noopener">{% icon "eye" %}<span class="visually-hidden">{{ b }} als PDF öffnen</span></a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">{{ belege|length }} Beleg{{ belege|length|pluralize:"e" }}{% if summe is not None %} · Umsatz (Rechnungen abzüglich Stornos und Gutschriften): <strong class="amount">{{ summe|euro }}</strong>{% endif %}</p>
+
+{% elif gesamt %}
+<div class="empty">
+  <h2>Kein Beleg gefunden</h2>
+  <p class="muted">Prüfen Sie Suchbegriff, Jahr und Art.</p>
+  <p class="actions"><a class="btn" href="{% url 'archive:liste' %}">Filter zurücksetzen</a></p>
+</div>
+
+{% else %}
+<div class="empty">
+  <h2>Die Ablage ist noch leer</h2>
+  <p class="muted">Hier erscheinen die Rechnungen, Stornos, Gutschriften und Angebote aus Ihrem bisherigen Programm, sobald sie übernommen sind. Die Original-PDFs bleiben dabei unverändert.</p>
+</div>
+{% endif %}
+{% endblock %}

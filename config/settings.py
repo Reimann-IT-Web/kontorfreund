@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "core",
     "contacts",
     "invoicing",
+    "archive",
 ]
 
 MIDDLEWARE = [

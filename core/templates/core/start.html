@@ -67,7 +67,7 @@
     {% if firma.kleinunternehmer %}
     <section class="side-section" aria-labelledby="grenze">
       <h2 id="grenze" class="panel-title">Kleinunternehmergrenze</h2>
-      <p class="facts-line"><span>Umsatz {% now "Y" %} in Kontorfreund</span><span class="amount">{{ umsatz|euro }}</span></p>
+      <p class="facts-line"><span>Umsatz {% now "Y" %}</span><span class="amount">{{ umsatz|euro }}</span></p>
       <progress class="meter" max="100" value="{{ grenze_prozent }}" aria-label="Anteil an der Grenze">{{ grenze_prozent }} %</progress>
       <p class="small muted">{{ grenze_prozent }} % von {{ grenze|euro }}. Bleibt der Umsatz darunter, gilt § 19 UStG auch {{ naechstes_jahr }}. Ab 80 % warnt Kontorfreund beim Schreiben jeder Rechnung.</p>
     </section>

@@ -145,6 +145,12 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// ---------- Auswahlfelder, die ihr Formular sofort absenden ----------
+
+document.querySelectorAll("[data-auto-submit]").forEach((feld) => {
+  feld.addEventListener("change", () => feld.form.requestSubmit());
+});
+
 // ---------- Adressformular: Firmenfeld nur bei Firmen ----------
 
 const kontaktForm = document.querySelector("[data-kontakt-form]");

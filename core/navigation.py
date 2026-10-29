@@ -26,7 +26,7 @@ NAVIGATION = [
         "key": "ablage",
         "label": "Ablage",
         "icon": "folder",
-        "slug": "ablage",
+        "url": "archive:liste",
         "gruppe": "weitere",
     },
     {
@@ -53,11 +53,6 @@ PLATZHALTER = {
     "wiedervorlagen": (
         "Wiedervorlagen",
         "Erinnerungen mit Fälligkeit, schnell verschieben und erledigen.",
-        "Phase 1",
-    ),
-    "ablage": (
-        "Ablage",
-        "Dateien je Adresse und Vorgang, mit Vorschau für PDF und Bilder.",
         "Phase 1",
     ),
     "auswertungen": (

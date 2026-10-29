@@ -10,6 +10,7 @@ class KontaktForm(forms.ModelForm):
             "art",
             "kategorie",
             "firmenname",
+            "zusatz",
             "anrede",
             "titel",
             "vorname",
