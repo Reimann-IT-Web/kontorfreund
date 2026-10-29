@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Datensicherung{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Datensicherung</h1>
+    {% if sicherung.eingerichtet %}
+    <p class="muted">{% if sicherung.zuletzt %}Zuletzt gesichert am {{ sicherung.zuletzt|date:"d.m.Y \u\m H:i" }} Uhr{% else %}Noch keine Sicherung{% endif %} · jeden Tag automatisch und verschlüsselt</p>
+    {% else %}
+    <p class="muted">Kontorfreund sichert Ihre Adressen, Rechnungen und alle Belege verschlüsselt, an jedem Tag, an dem Sie das Programm benutzen.</p>
+    {% endif %}
+  </div>
+  {% if sicherung.eingerichtet %}
+  <div class="actions">
+    <button class="btn btn-primary" type="submit" form="sichern-form">{% icon "database" %}Jetzt sichern</button>
+  </div>
+  {% endif %}
+</div>
+
+{% if sicherung.fehler %}
+<div class="notice notice-warn" role="alert">
+  <p><strong>{{ sicherung.fehler }}</strong> Kontorfreund versucht es beim nächsten Mal erneut, mit „Jetzt sichern“ sofort.</p>
+</div>
+{% elif sicherung.warnung and sicherung.eingerichtet %}
+<div class="notice notice-warn" role="alert">
+  <p><strong>Am zweiten Speicherort fehlen neue Sicherungen.</strong> {% if sicherung.ziel_zuletzt %}Die letzte liegt dort seit dem {{ sicherung.ziel_zuletzt|date:"d.m.Y" }}.{% endif %} Schließen Sie die Platte an oder prüfen Sie das Netzlaufwerk und sichern Sie dann.</p>
+</div>
+{% elif sicherung.eingerichtet and not sicherung.ziel %}
+<div class="notice notice-warn">
+  <p><strong>Ihre Sicherungen liegen nur auf diesem Rechner.</strong> Fällt die Festplatte aus, sind sie mit verloren, und Rechnungen müssen 8 Jahre erhalten bleiben. Tragen Sie einen zweiten Speicherort ein.</p>
+</div>
+{% endif %}
+
+{% if sicherung.eingerichtet %}
+<div class="split">
+  <section aria-labelledby="t-liste">
+    <h2 class="form-title" id="t-liste">Sicherungen</h2>
+    {% if sicherungen %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Sicherung</th>
+            <th scope="col" class="col-ort">Inhalt</th>
+            <th scope="col" class="col-ort">Liegt auf</th>
+            <th scope="col"><span class="visually-hidden">Wiederherstellen</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sicherungen %}
+          <tr class="data-row">
+            <td>
+              <span class="cell-title docnr">{% if s.kopf %}{{ s.erstellt|date:"d.m.Y, H:i" }}{% else %}{{ s.name }}{% endif %}</span>
+              <span class="cell-sub">{% if s.anlass %}{{ s.anlass }} · {% endif %}{{ s.groesse|filesizeformat }}</span>
+            </td>
+            <td class="col-ort">{% if s.kopf %}{% include "backups/umfang.html" with u=s.kopf.umfang %}{% else %}<span class="is-warn-text">nicht lesbar</span>{% endif %}</td>
+            <td class="col-ort"><span class="pills">{% for o in s.orte %}<span class="tag">{{ o }}</span>{% endfor %}</span></td>
+            <td class="num">{% if s.kopf %}<a class="btn btn-sm" href="{% url 'backups:wiederherstellen' s.ort s.name %}">{% icon "restore" %}<span class="visually-hidden">Sicherung vom {{ s.erstellt|date:"d.m.Y, H:i" }} </span>Wiederherstellen …</a>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty empty-inline">
+      <h3>Noch keine Sicherung</h3>
+      <p class="muted">Sobald Sie Adressen oder Rechnungen eingeben, sichert Kontorfreund sie jeden Tag. Mit „Jetzt sichern“ geht es sofort.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="side" aria-label="Einstellungen der Datensicherung">
+    <section class="side-section" aria-labelledby="t-ort">
+      <h2 class="panel-title" id="t-ort">Speicherorte</h2>
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="aktion" value="ort">
+        {% include "core/feld.html" with f=ort_form.ziel optional=True %}
+        {% if sicherung.ziel_fehler %}<p class="small is-warn-text">{{ sicherung.ziel_fehler }}</p>{% endif %}
+        {% include "core/feld.html" with f=ort_form.aufbewahren %}
+        <p class="small muted">Eine Sicherung ist derzeit etwa {{ groesse|filesizeformat }} groß. Auf diesem Rechner liegen die Sicherungen im Ordner<br><code class="hash">{{ ordner }}</code></p>
+        <button class="btn" type="submit">{% icon "check" %}Speichern</button>
+      </form>
+    </section>
+
+    <section class="side-section" aria-labelledby="t-kennwort">
+      <h2 class="panel-title" id="t-kennwort">Kennwort ändern</h2>
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="aktion" value="kennwort">
+        {% include "backups/kennwort.html" with form=kennwort_form %}
+        <p class="small muted">Ältere Sicherungen öffnen Sie weiter mit dem bisherigen Kennwort.</p>
+        <button class="btn" type="submit">{% icon "lock" %}Kennwort ändern</button>
+      </form>
+    </section>
+
+    <section class="side-section" aria-labelledby="t-einlesen">
+      <h2 class="panel-title" id="t-einlesen">Von einem anderen Rechner</h2>
+      {% include "backups/einlesen.html" with im_seitenrand=True %}
+    </section>
+  </aside>
+</div>
+
+<form id="sichern-form" method="post" hidden>{% csrf_token %}<input type="hidden" name="aktion" value="sichern"></form>
+
+{% else %}
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="aktion" value="einrichten">
+  <section class="form-section" aria-labelledby="t-kennwort">
+    <h2 class="form-title" id="t-kennwort">Kennwort festlegen</h2>
+    <p class="muted form-hint">Jede Sicherung wird mit diesem Kennwort verschlüsselt. <strong>Ohne das Kennwort lässt sich keine Sicherung wiederherstellen.</strong> Niemand kann es zurücksetzen, auch Kontorfreund nicht.</p>
+    <div class="form-grid">
+      {% include "backups/kennwort.html" with form=kennwort_form %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-ort">
+    <h2 class="form-title" id="t-ort">Zweiter Speicherort</h2>
+    <p class="muted form-hint">Rechnungen und Belege müssen 8 Jahre erhalten bleiben. Eine Kopie an einem anderen Ort schützt vor Festplattenschaden, Diebstahl und Feuer. Eine Sicherung ist derzeit etwa {{ groesse|filesizeformat }} groß.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=ort_form.ziel optional=True breit=True %}
+      {% include "core/feld.html" with f=ort_form.aufbewahren %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "lock" %}Einrichten und sichern</button>
+  </div>
+</form>
+
+<section class="form-section" aria-labelledby="t-einlesen">
+  <h2 class="form-title" id="t-einlesen">Neuer Rechner?</h2>
+  {% include "backups/einlesen.html" %}
+</section>
+{% endif %}
+{% endblock %}

@@ -32,6 +32,11 @@ def navigation(request):
             "info": "Firmendaten",
             "url": reverse("core:einstellungen"),
         },
+        {
+            "titel": "Datensicherung",
+            "info": "Sichern und wiederherstellen",
+            "url": reverse("backups:uebersicht"),
+        },
     ]
     suchindex += [
         {

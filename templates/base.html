@@ -35,6 +35,12 @@
       </nav>
       <ul class="nav nav-foot">
         <li><a class="nav-link" href="{% url 'core:einstellungen' %}"{% if bereich == "einstellungen" %} aria-current="page"{% endif %}>{% icon "settings" %}<span class="nav-label">Einstellungen</span></a></li>
+        <li>
+          <a class="nav-link" href="{% url 'backups:uebersicht' %}"{% if bereich == "datensicherung" %} aria-current="page"{% endif %}>
+            {% icon "database" %}<span class="nav-label">Datensicherung</span>
+            {% if sicherung.warnung %}<span class="nav-count is-warn" title="{{ sicherung.warnung }}"><span class="visually-hidden">{{ sicherung.warnung }}</span><span aria-hidden="true">!</span></span>{% endif %}
+          </a>
+        </li>
         <li><a class="nav-link" href="{% url 'core:platzhalter' 'hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
       </ul>
       {% if firma.name or firma.inhaber %}
@@ -69,7 +75,7 @@
       <main id="inhalt" class="content" tabindex="-1">
         {% if messages %}
         <ul class="messages" role="status">
-          {% for meldung in messages %}<li>{% icon "check" %}{{ meldung }}</li>{% endfor %}
+          {% for meldung in messages %}<li class="{{ meldung.tags }}">{% if meldung.level >= DEFAULT_MESSAGE_LEVELS.WARNING %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ meldung }}</li>{% endfor %}
         </ul>
         {% endif %}
         {% block content %}{% endblock %}

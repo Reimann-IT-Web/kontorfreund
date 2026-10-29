@@ -11,6 +11,7 @@ urlpatterns = [
     path("adressen/", include("contacts.urls")),
     path("rechnungen/", include("invoicing.urls")),
     path("ablage/", include("archive.urls")),
+    path("datensicherung/", include("backups.urls")),
     # Zuletzt: core enthält die Platzhalter-Bereiche unter /<bereich>/.
     path("", include("core.urls")),
 ]

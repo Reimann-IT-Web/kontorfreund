@@ -85,6 +85,21 @@
       <p class="small muted">Noch nichts bearbeitet.</p>
       {% endif %}
     </section>
+
+    <section class="side-section" aria-labelledby="sicherung-titel">
+      <h2 id="sicherung-titel" class="panel-title">Datensicherung</h2>
+      {% if not sicherung.eingerichtet %}
+      <p class="small is-warn-text">{{ sicherung.warnung }}</p>
+      <p class="small muted">Richten Sie die tägliche, verschlüsselte Sicherung einmal ein. Danach läuft sie von selbst.</p>
+      <p><a class="btn btn-sm" href="{% url 'backups:uebersicht' %}">{% icon "database" %}Einrichten</a></p>
+      {% elif sicherung.warnung %}
+      <p class="small is-warn-text">{{ sicherung.warnung }}</p>
+      <p><a class="btn btn-sm" href="{% url 'backups:uebersicht' %}">{% icon "database" %}Ansehen</a></p>
+      {% else %}
+      <p class="facts-line"><span>Zuletzt gesichert</span><span>{% if sicherung.zuletzt %}{{ sicherung.zuletzt|date:"d.m.Y, H:i" }}{% else %}noch nie{% endif %}</span></p>
+      {% if not sicherung.ziel %}<p class="small muted">Nur auf diesem Rechner. <a href="{% url 'backups:uebersicht' %}">Zweiten Speicherort eintragen</a></p>{% endif %}
+      {% endif %}
+    </section>
   </aside>
 </div>
 {% endblock %}

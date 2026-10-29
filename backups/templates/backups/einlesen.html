@@ -1,0 +1,6 @@
+{% load kf %}<form class="stack" method="post" action="{% url 'backups:einlesen' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  <p class="small">Sicherungsdatei von einem anderen Rechner oder einer USB-Platte einlesen. Bevor etwas ersetzt wird, sehen Sie Datum und Inhalt.</p>
+  {% include "core/feld.html" with f=einlesen_form.datei %}
+  <div><button class="btn{% if im_seitenrand %} btn-block{% endif %}" type="submit">{% icon "upload" %}Einlesen</button></div>
+</form>

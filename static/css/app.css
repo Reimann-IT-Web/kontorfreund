@@ -974,6 +974,8 @@ input[type="date"],
 input[type="email"],
 input[type="tel"],
 input[type="url"],
+input[type="password"],
+input[type="number"],
 select,
 textarea {
   width: 100%;
@@ -1672,6 +1674,18 @@ select {
   border-top: 1px solid var(--line);
 }
 
+.form + .form-section {
+  margin-top: var(--s7);
+}
+
+/* Zeilenköpfe in Tabellen lesen sich wie Zellen, nur kräftiger. */
+.table th[scope="row"] {
+  background: none;
+  color: var(--ink);
+  font-size: inherit;
+  font-weight: 600;
+}
+
 .field-error {
   display: flex;
   align-items: flex-start;
@@ -1745,6 +1759,16 @@ select {
   background: var(--ok-soft);
   color: var(--ok);
   font-weight: 600;
+}
+
+.messages .warning {
+  background: var(--today-soft);
+  color: var(--today);
+}
+
+.messages .error {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .notice {

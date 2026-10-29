@@ -1,0 +1,6 @@
+{% load kf %}{% include "core/feld.html" with f=form.kennwort %}
+{% include "core/feld.html" with f=form.wiederholung %}
+<div class="field field-wide{% if form.notiert.errors %} has-error{% endif %}">
+  <label class="choice">{{ form.notiert }}<span>{{ form.notiert.label }}</span></label>
+  {% for fehler in form.notiert.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+</div>

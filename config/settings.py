@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "contacts",
     "invoicing",
     "archive",
+    "backups",
 ]
 
 MIDDLEWARE = [
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "backups.middleware.taegliche_sicherung",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -77,6 +79,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.product",
                 "core.context_processors.navigation",
+                "backups.context_processors.datensicherung",
             ],
         },
     },

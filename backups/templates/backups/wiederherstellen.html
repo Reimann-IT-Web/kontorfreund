@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Sicherung wiederherstellen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'backups:uebersicht' %}">Datensicherung</a></li>
+    <li aria-current="page">Sicherung vom {{ s.erstellt|date:"d.m.Y" }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Sicherung vom {{ s.erstellt|date:"d.m.Y, H:i" }} Uhr</h1>
+    <p class="muted">{{ s.anlass }} · {{ s.groesse|filesizeformat }} · {{ ort }}</p>
+  </div>
+</div>
+
+<div class="split">
+  <section aria-labelledby="t-inhalt">
+    <h2 class="form-title" id="t-inhalt">Inhalt</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Art</span></th>
+            <th scope="col" class="num">In der Sicherung</th>
+            <th scope="col" class="num">Jetzt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% with u=s.kopf.umfang %}
+          <tr><th scope="row">Adressen</th><td class="num docnr">{{ u.adressen }}</td><td class="num docnr">{{ jetzt.adressen }}</td></tr>
+          <tr><th scope="row">Rechnungen</th><td class="num docnr">{{ u.rechnungen }}</td><td class="num docnr">{{ jetzt.rechnungen }}</td></tr>
+          <tr><th scope="row">Entwürfe</th><td class="num docnr">{{ u.entwuerfe }}</td><td class="num docnr">{{ jetzt.entwuerfe }}</td></tr>
+          <tr><th scope="row">Altbelege</th><td class="num docnr">{{ u.altbelege }}</td><td class="num docnr">{{ jetzt.altbelege }}</td></tr>
+          <tr><th scope="row">Dateien</th><td class="num docnr">{{ u.dateien }}</td><td class="num docnr">{{ jetzt.dateien }}</td></tr>
+          {% endwith %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="side" aria-label="Wiederherstellen">
+    <section class="panel" aria-labelledby="t-zurueck">
+      <h2 class="panel-title" id="t-zurueck">Wiederherstellen</h2>
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        <p class="small">Alles, was Sie seit dem {{ s.erstellt|date:"d.m.Y, H:i" }} Uhr geändert haben, wird durch den Stand der Sicherung ersetzt. Ihren jetzigen Stand sichert Kontorfreund vorher, Sie können also zurück.</p>
+        {% for fehler in form.non_field_errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+        {% include "core/feld.html" with f=form.kennwort %}
+        <button class="btn btn-primary btn-block" type="submit">{% icon "restore" %}Wiederherstellen</button>
+        {% if not sicherung.eingerichtet %}<p class="small muted">Danach sichert Kontorfreund auf diesem Rechner jeden Tag mit demselben Kennwort.</p>{% endif %}
+      </form>
+    </section>
+  </aside>
+</div>
+{% endblock %}
