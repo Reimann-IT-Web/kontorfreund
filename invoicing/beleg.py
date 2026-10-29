@@ -118,9 +118,13 @@ def beleg_daten(rechnung, firma, nummer):
     netto, ust, brutto = rechnung.summen()
     k = rechnung.kontakt
     o = rechnung.storno_zu
+    r = rechnung.korrektur_zu
     return {
         "nummer": nummer,
         "storno_zu": {"nummer": o.nummer, "datum": o.datum.isoformat()} if o else None,
+        "korrektur_zu": {"nummer": r.nummer, "datum": r.datum.isoformat()}
+        if r
+        else None,
         "datum": rechnung.datum.isoformat(),
         "faellig": rechnung.faellig.isoformat(),
         "zahlungsziel": rechnung.zahlungsziel,
@@ -207,10 +211,12 @@ def _girocode(b):
 def druckdaten(b, entwurf=False, logo=b""):
     """Beleg-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     a, e, storno = b["absender"], b["empfaenger"], b["storno_zu"]
+    korrektur = b.get("korrektur_zu")
     info = [("Rechnungsnummer", b["nummer"] or "wird vergeben")]
     info.append(("Rechnungsdatum", datum_de(b["datum"])))
-    if storno:
-        info.append(("Zur Rechnung", storno["nummer"]))  # Datum steht im Text darunter
+    if storno or korrektur:
+        # Datum steht im Text darunter
+        info.append(("Zur Rechnung", (storno or korrektur)["nummer"]))
     if e["kundennummer"]:
         info.append(("Kundennummer", e["kundennummer"]))
     if b["leistung_von"]:
@@ -231,18 +237,28 @@ def druckdaten(b, entwurf=False, logo=b""):
         f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
         "Einen bereits gezahlten Betrag erhalten Sie zurück."
         if storno
+        else f"Der Betrag der Rechnung {korrektur['nummer']} mindert sich damit um "
+        f"{euro(-Decimal(b['brutto']))}. Haben Sie bereits mehr gezahlt, "
+        "erhalten Sie den Unterschied zurück."
+        if korrektur
         else "Zahlbar sofort ohne Abzug."
         if b["zahlungsziel"] == 0
         else f"Zahlbar ohne Abzug bis zum {datum_de(b['faellig'])}."
     ]
-    if iban and not storno:
+    if iban and not (storno or korrektur):
         konto = ", ".join(z for z in (a["bank"], f"IBAN {iban}") if z)
         zahlung.append(f"Bitte überweisen Sie den Betrag auf folgendes Konto: {konto}")
         if b["nummer"]:
             zahlung.append(f"Verwendungszweck: Rechnung {b['nummer']}")
 
-    art = "Stornorechnung" if storno else "Rechnung"
-    titel = f"{art} {b['nummer']}" if b["nummer"] else "Rechnung (Entwurf)"
+    art = (
+        "Stornorechnung"
+        if storno
+        else "Rechnungskorrektur"
+        if korrektur
+        else "Rechnung"
+    )
+    titel = f"{art} {b['nummer']}" if b["nummer"] else f"{art} (Entwurf)"
     return {
         "entwurf": entwurf,
         "titel": titel,
@@ -278,6 +294,7 @@ def druckdaten(b, entwurf=False, logo=b""):
             for p in b["positionen"]
         ],
         "summen": summen,
+        "summe_titel": "Korrekturbetrag" if korrektur else "Rechnungsbetrag",
         "brutto": euro(b["brutto"]),
         "steuerhinweis": b["steuerhinweis"],
         "zahlung": zahlung,
@@ -415,10 +432,11 @@ def zugferd(b):
         kaeufer.tax_registrations.add(TaxRegistration(id=("VA", e["ust_id"])))
     if b["referenz"]:
         doc.trade.agreement.buyer_reference = b["referenz"]
-    if b["storno_zu"]:
+    # Bezug auf die Rechnung, die storniert oder korrigiert wird (BT-25, BT-26).
+    if original := b["storno_zu"] or b.get("korrektur_zu"):
         bezug = doc.trade.settlement.invoice_referenced_document
-        bezug.issuer_assigned_id = b["storno_zu"]["nummer"]
-        bezug.issue_date_time = date.fromisoformat(b["storno_zu"]["datum"])
+        bezug.issuer_assigned_id = original["nummer"]
+        bezug.issue_date_time = date.fromisoformat(original["datum"])
 
     von, bis = b["leistung_von"], b["leistung_bis"] or b["leistung_von"]
     if von == bis:
@@ -545,3 +563,19 @@ def stornieren(original, firma):
         # Negative Mengen statt Preise: EN 16931 erlaubt keinen negativen Einzelpreis (BR-27).
         storno.positionen.update(menge=-F("menge"))
         return festschreiben(storno, firma)
+
+
+def korrektur_anlegen(original, firma):
+    """Entwurf einer Rechnungskorrektur: alle Positionen mit negativer Menge zum Kürzen."""
+    with transaction.atomic():
+        korrektur = original.kopieren(
+            korrektur_zu=original,
+            zahlungsziel=0,
+            girocode=False,
+            kopftext=f"{briefanrede(original.kontakt)}\n\n"
+            f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
+            "wird wie folgt korrigiert:",
+            fusstext=grussformel(firma),
+        )
+        korrektur.positionen.update(menge=-F("menge"))
+        return korrektur

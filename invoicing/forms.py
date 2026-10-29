@@ -56,10 +56,17 @@ class RechnungForm(forms.ModelForm):
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
         self.fields["kontakt"].queryset = Kontakt.objects.filter(archiviert=False)
+        if self.instance.ist_korrektur:
+            # Die Korrektur gilt für Empfänger und Steuerfall des Originals; zu zahlen ist nichts.
+            for name in ("kontakt", "steuerfall", "zahlungsziel", "girocode"):
+                self.fields[name].disabled = True
 
 
-def positionen_lesen(post):
-    """Positionszeilen aus dem Editor; leere Zeilen fallen weg."""
+def positionen_lesen(post, korrektur=False):
+    """Positionszeilen aus dem Editor; leere Zeilen fallen weg.
+
+    Negative Mengen nur in einer Rechnungskorrektur, negative Preise nie (BR-27).
+    """
     spalten = [
         post.getlist(name)
         for name in ("bezeichnung", "beschreibung", "menge", "einheit", "preis")
@@ -76,7 +83,7 @@ def positionen_lesen(post):
         except InvalidOperation:
             fehler.append(f"Position {zeile}: Menge und Preis bitte als Zahl eingeben.")
             continue
-        if menge < 0 or preis < 0:
+        if preis < 0 or (menge < 0 and not korrektur):
             fehler.append(
                 f"Position {zeile}: Menge und Preis dürfen nicht negativ sein."
             )

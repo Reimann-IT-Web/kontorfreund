@@ -32,7 +32,7 @@ def liste(request):
         {
             "bereich": "rechnungen",
             "rechnungen": Rechnung.objects.select_related(
-                "kontakt", "storno_zu", "stornorechnung"
+                "kontakt", "storno_zu", "stornorechnung", "korrektur_zu"
             ),
             "altrechnungen": Altbeleg.objects.filter(art=Altbeleg.Art.RECHNUNG).count(),
         },
@@ -59,7 +59,9 @@ def neu(request):
 
 def bearbeiten(request, pk):
     rechnung = get_object_or_404(
-        Rechnung.objects.select_related("kontakt", "storno_zu", "stornorechnung"),
+        Rechnung.objects.select_related(
+            "kontakt", "storno_zu", "stornorechnung", "korrektur_zu"
+        ),
         pk=pk,
     )
     firma = Firmendaten.laden()
@@ -71,7 +73,9 @@ def bearbeiten(request, pk):
 def _editor(request, rechnung, firma):
     if request.method == "POST":
         form = RechnungForm(request.POST, instance=rechnung)
-        positionen, fehler = positionen_lesen(request.POST)
+        positionen, fehler = positionen_lesen(
+            request.POST, korrektur=rechnung.ist_korrektur
+        )
         if form.is_valid() and not fehler:
             with transaction.atomic():
                 rechnung = form.save()
@@ -96,6 +100,11 @@ def _editor(request, rechnung, firma):
         {
             "bereich": "rechnungen",
             "rechnung": rechnung,
+            "titel": "Rechnungskorrektur"
+            if rechnung.ist_korrektur
+            else "Rechnungsentwurf"
+            if rechnung.pk
+            else "Neue Rechnung",
             "form": form,
             "positionen": positionen,
             "kontakte": kontakte,
@@ -134,7 +143,7 @@ def _nach_speichern(request, rechnung, firma):
         return redirect(hier)
     messages.success(
         request,
-        f"Rechnung {rechnung.nummer} ist festgeschrieben und als PDF abgelegt.",
+        f"{rechnung.bezeichnung} {rechnung.nummer} ist festgeschrieben und als PDF abgelegt.",
     )
     return redirect(hier)
 
@@ -160,6 +169,8 @@ def _anzeigen(request, rechnung, firma):
             "bereich": "rechnungen",
             "rechnung": rechnung,
             "b": rechnung.beleg,
+            "korrekturen": (korrekturen := list(rechnung.korrekturen.all())),
+            "teilweise_korrigiert": any(not k.ist_entwurf for k in korrekturen),
             "firma": firma,
             "form": form,
             "seiten": beleg.seitenbilder(pfad.read_bytes())
@@ -177,8 +188,16 @@ def stornieren(request, pk):
         pk=pk,
         status=Rechnung.Status.FESTGESCHRIEBEN,
         storno_zu__isnull=True,
+        korrektur_zu__isnull=True,
         stornorechnung__isnull=True,
     )
+    if original.korrekturen.exclude(status=Rechnung.Status.ENTWURF).exists():
+        messages.error(
+            request,
+            f"Rechnung {original.nummer} ist bereits teilweise korrigiert. "
+            "Den Rest mindern Sie mit einer weiteren Rechnungskorrektur.",
+        )
+        return redirect("invoicing:bearbeiten", original.pk)
     try:
         storno = beleg.stornieren(original, Firmendaten.laden())
     except Exception:
@@ -200,12 +219,26 @@ def stornieren(request, pk):
 
 
 @require_POST
+def korrigieren(request, pk):
+    original = get_object_or_404(Rechnung, pk=pk)
+    if not original.korrigierbar:
+        raise Http404("Diese Rechnung lässt sich nicht korrigieren.")
+    korrektur = beleg.korrektur_anlegen(original, Firmendaten.laden())
+    messages.success(
+        request,
+        f"Entwurf einer Rechnungskorrektur zu Rechnung {original.nummer} angelegt.",
+    )
+    return redirect("invoicing:bearbeiten", korrektur.pk)
+
+
+@require_POST
 def kopieren(request, pk):
     original = get_object_or_404(
         Rechnung,
         pk=pk,
         status=Rechnung.Status.FESTGESCHRIEBEN,
         storno_zu__isnull=True,
+        korrektur_zu__isnull=True,
     )
     kopie = original.kopieren()
     messages.success(request, f"Kopie von Rechnung {original.nummer} angelegt.")

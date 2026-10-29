@@ -134,7 +134,7 @@
   row-gutter: 7pt,
   ..d.summen.flatten(),
   grid.hline(stroke: 0.6pt + tinte),
-  text(size: 11pt, weight: "bold", "Rechnungsbetrag"),
+  text(size: 11pt, weight: "bold", d.summe_titel),
   text(size: 11pt, weight: "bold", d.brutto),
 )))
 

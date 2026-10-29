@@ -227,6 +227,117 @@ def test_kopieren_legt_entwurf_an(client, firma, kunde, daten):
     assert not Rechnung.objects.get(pk=original.pk).storniert
 
 
+def korrektur_formular(kunde, menge, **mehr):
+    return formular(
+        kunde,
+        bezeichnung=["Webdesign"],
+        beschreibung=[""],
+        menge=[menge],
+        einheit=["Std."],
+        preis=["80,00"],
+        **mehr,
+    )
+
+
+def test_rechnungskorrektur_mindert_teilbetrag(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+    andere = Kontakt.objects.create(firmenname="Andere GmbH", ort="Mainz")
+
+    antwort = client.post(reverse("invoicing:korrigieren", args=[original.pk]))
+
+    entwurf = Rechnung.objects.get(korrektur_zu=original)
+    assert antwort.url == reverse("invoicing:bearbeiten", args=[entwurf.pk])
+    assert entwurf.ist_entwurf and entwurf.kontakt == kunde
+    # Vorbelegt mit allen Positionen zum Kürzen, wie bei der Stornorechnung.
+    assert entwurf.positionen.get().menge == Decimal("-29.500")
+    seite = client.get(antwort.url).content.decode()
+    assert "Rechnungskorrektur" in seite and "2.360,00" in seite
+
+    # Empfänger und Steuerfall bleiben die des Originals, auch wenn etwas anderes kommt.
+    client.post(
+        antwort.url,
+        korrektur_formular(
+            andere,
+            "-2,5",
+            steuerfall="regel",
+            girocode="on",
+            kopftext=entwurf.kopftext,
+        ),
+    )
+
+    korrektur = Rechnung.objects.get(pk=entwurf.pk)
+    assert korrektur.status == Rechnung.Status.FESTGESCHRIEBEN
+    assert korrektur.nummer == "260002"
+    assert korrektur.kontakt == kunde
+    assert korrektur.steuerfall == Rechnung.Steuerfall.KLEINUNTERNEHMER
+    assert korrektur.brutto == Decimal("-200.00")
+    assert korrektur.beleg["korrektur_zu"] == {
+        "nummer": "260001",
+        "datum": "2026-10-29",
+    }
+    assert korrektur.datei.endswith("Rechnungskorrektur-260002.pdf")
+    pdf = PdfReader(BytesIO((daten / korrektur.datei).read_bytes()))
+    text = pdf.pages[0].extract_text()
+    assert "Rechnungskorrektur 260002" in text
+    assert "260001 vom 29.10.2026 wird wie folgt korrigiert" in text
+    assert "mindert sich damit um 200,00" in text and "Korrekturbetrag" in text
+    assert "Bitte überweisen" not in text and "GiroCode" not in text
+    xml = pdf.attachments["factur-x.xml"][0].decode()
+    assert "<ram:IssuerAssignedID>260001</ram:IssuerAssignedID>" in xml
+    assert 'unitCode="HUR">-2.5' in xml
+    assert "<ram:SpecifiedTradeSettlementPaymentMeans>" not in xml
+
+    original = Rechnung.objects.get(pk=original.pk)
+    assert original.korrigierter_betrag == Decimal("2160.00")
+    ansicht = client.get(reverse("invoicing:bearbeiten", args=[original.pk]))
+    ansicht = ansicht.content.decode()
+    assert "Rechnungskorrektur 260002" in ansicht and "2.160,00" in ansicht
+    # Nach einer Korrektur nur noch weiter mindern, nicht mehr voll stornieren.
+    assert 'id="storno-dialog"' not in ansicht and "Betrag mindern" in ansicht
+    client.post(reverse("invoicing:stornieren", args=[original.pk]))
+    assert not Rechnung.objects.filter(storno_zu=original).exists()
+    liste = client.get(reverse("invoicing:liste")).content.decode()
+    assert "Korrektur zu 260001" in liste
+
+
+def test_rechnungskorrektur_hoechstens_bis_null(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+    client.post(reverse("invoicing:korrigieren", args=[original.pk]))
+    entwurf = Rechnung.objects.get(korrektur_zu=original)
+    hier = reverse("invoicing:bearbeiten", args=[entwurf.pk])
+
+    zu_viel = client.post(hier, korrektur_formular(kunde, "-30"), follow=True)
+    assert "Korrekturbetrag (höchstens 2.360,00" in zu_viel.content.decode()
+    erhoeht = client.post(hier, korrektur_formular(kunde, "1"), follow=True)
+    assert "Menge und Art der Leistung" in erhoeht.content.decode()
+    assert Rechnung.objects.get(pk=entwurf.pk).ist_entwurf
+
+    # Den ganzen Rest mindern ist erlaubt; danach ist nichts mehr zu korrigieren.
+    client.post(hier, korrektur_formular(kunde, "-29,5"))
+    korrektur = Rechnung.objects.get(pk=entwurf.pk)
+    assert not korrektur.ist_entwurf
+    assert Rechnung.objects.get(pk=original.pk).korrigierter_betrag == 0
+    for pk in (original.pk, korrektur.pk):
+        assert (
+            client.post(reverse("invoicing:korrigieren", args=[pk])).status_code == 404
+        )
+    assert (
+        client.post(reverse("invoicing:kopieren", args=[korrektur.pk])).status_code
+        == 404
+    )
+
+
+def test_negative_menge_nur_in_der_korrektur(client, firma, kunde, daten):
+    antwort = client.post(
+        reverse("invoicing:neu"), korrektur_formular(kunde, "-1"), follow=True
+    )
+
+    assert "dürfen nicht negativ sein" in antwort.content.decode()
+    assert not Rechnung.objects.exists()
+
+
 def test_unvollstaendig_bleibt_entwurf(client, kunde, daten):
     antwort = client.post(reverse("invoicing:neu"), formular(kunde), follow=True)
 

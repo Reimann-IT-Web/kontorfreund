@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load kf %}
 
-{% block title %}{% if rechnung.pk %}Rechnungsentwurf{% else %}Neue Rechnung{% endif %}{% endblock %}
+{% block title %}{{ titel }}{% endblock %}
 
 {% block content %}
 {% partialdef position %}
@@ -11,7 +11,7 @@
     <input class="input-title" name="bezeichnung" type="text" value="{{ p.bezeichnung }}" placeholder="Was haben Sie geliefert oder geleistet?" aria-label="Bezeichnung">
     <textarea class="input-sub" name="beschreibung" rows="1" placeholder="Beschreibung (optional)" aria-label="Beschreibung">{{ p.beschreibung }}</textarea>
   </td>
-  <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% else %}1{% endif %}" aria-label="Menge"></td>
+  <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% elif rechnung.ist_korrektur %}-1{% else %}1{% endif %}" aria-label="Menge"></td>
   <td>
     <select name="einheit" aria-label="Einheit">
       {% for e in einheiten %}<option{% if e == p.einheit %} selected{% endif %}>{{ e }}</option>{% endfor %}
@@ -26,18 +26,21 @@
 <nav aria-label="Sie sind hier">
   <ol class="crumbs">
     <li><a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a></li>
-    <li aria-current="page">{% if rechnung.pk %}Rechnungsentwurf{% else %}Neue Rechnung{% endif %}</li>
+    <li aria-current="page">{{ titel }}</li>
   </ol>
 </nav>
 
 <div class="page-head">
   <div>
-    <h1>{% if rechnung.pk %}Rechnungsentwurf{% else %}Neue Rechnung{% endif %} <span class="status status-draft">{% icon "pencil" %}Entwurf</span></h1>
-    <p class="muted">Beim Festschreiben erhält die Rechnung die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
+    <h1>{{ titel }} <span class="status status-draft">{% icon "pencil" %}Entwurf</span></h1>
+    {% if rechnung.ist_korrektur %}{% with o=rechnung.korrektur_zu %}
+    <p class="muted">Korrigiert die <a href="{% url 'invoicing:bearbeiten' o.pk %}">Rechnung {{ o.nummer }}</a> vom {{ o.datum|date:"d.m.Y" }} über <span class="amount">{{ o.brutto|euro }}</span>. Mindern lässt sie sich noch um höchstens <span class="amount">{{ o.korrigierter_betrag|euro }}</span>.</p>
+    {% endwith %}{% endif %}
+    <p class="muted">Beim Festschreiben erhält die {{ rechnung.bezeichnung }} die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
   </div>
 </div>
 
-<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-xrechnung-absender="{% if firma.telefon and firma.email and firma.iban %}1{% else %}0{% endif %}" data-adressen="{% url 'contacts:liste' %}" novalidate>
+<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-xrechnung-absender="{% if firma.telefon and firma.email and firma.iban %}1{% else %}0{% endif %}" data-adressen="{% url 'contacts:liste' %}"{% if rechnung.ist_korrektur %} data-korrektur="{{ rechnung.korrektur_zu.korrigierter_betrag|stringformat:'s' }}"{% endif %} novalidate>
   {% csrf_token %}
   <div class="editor-main">
     <nav class="steps" aria-label="Schritte">
@@ -54,7 +57,7 @@
         <div class="stack">
           <div class="field{% if form.kontakt.errors %} has-error{% endif %}">
             <label for="kontakt">Empfänger</label>
-            <select id="kontakt" name="kontakt">
+            <select id="kontakt" name="kontakt"{% if rechnung.ist_korrektur %} disabled{% endif %}>
               <option value="">Adresse wählen …</option>
               {% for k in kontakte %}
                 <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
@@ -82,7 +85,7 @@
             </div>
             <p class="hint" id="zeitraum-hinweis">Pflichtangabe. Wurde die Leistung an einem Tag erbracht, genügt „von“. Ein ganzer Monat erscheint als „Oktober 2026“.</p>
           </fieldset>
-          <div class="field">
+          <div class="field"{% if rechnung.ist_korrektur %} hidden{% endif %}>
             <label for="zahlungsziel">Zahlungsziel</label>
             {{ form.zahlungsziel }}
             <p class="hint">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span></p>
@@ -105,6 +108,7 @@
 
     <section class="step" id="schritt-2" aria-labelledby="s2">
       <h2 id="s2"><span class="step-nr">2</span>Positionen</h2>
+      {% if rechnung.ist_korrektur %}<p class="hint">Tragen Sie ein, um wie viel sich jede Position mindert: mit Minus vor der Menge, zum Beispiel −2 Std. Positionen, die bleiben, wie sie berechnet wurden, entfernen Sie. Für einen Nachlass ohne eigene Position fügen Sie eine neue hinzu, etwa „Preisnachlass“ mit Menge −1.</p>{% endif %}
       <div class="table-wrap">
         <table class="table positions">
           <thead>
@@ -131,7 +135,7 @@
         <dl class="totals">
           <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
           <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
-          <div class="totals-sum"><dt>Rechnungsbetrag</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
+          <div class="totals-sum"><dt>{% if rechnung.ist_korrektur %}Korrekturbetrag{% else %}Rechnungsbetrag{% endif %}</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
         </dl>
       </div>
       <p class="tax-note" data-tax-note></p>
@@ -144,11 +148,11 @@
         {{ form.fusstext }}
         <p class="hint">Zahlungsfrist und Bankverbindung druckt Kontorfreund automatisch darüber.</p>
       </div>
-      <label class="choice">
+      <label class="choice"{% if rechnung.ist_korrektur %} hidden{% endif %}>
         {{ form.girocode }}
         <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den <a href="{% url 'core:einstellungen' %}">Einstellungen</a>.{% endif %}</span></span>
       </label>
-      <p class="callout">{% icon "lock" %}<span>Beim Festschreiben wird die Rechnung als ZUGFeRD-PDF unveränderbar abgelegt und 8 Jahre aufbewahrt. Korrigieren können Sie sie danach nur mit einer Stornorechnung. Prüfen Sie sie deshalb vorher in der Vorschau.</span></p>
+      <p class="callout">{% icon "lock" %}<span>Beim Festschreiben wird die Rechnung als ZUGFeRD-PDF unveränderbar abgelegt und 8 Jahre aufbewahrt. Korrigieren können Sie sie danach nur mit einer Rechnungskorrektur oder Stornorechnung. Prüfen Sie sie deshalb vorher in der Vorschau.</span></p>
     </section>
   </div>
 
@@ -159,9 +163,9 @@
 
   <aside class="editor-side" id="pruefung" aria-label="Prüfung">
     <div class="panel sticky">
-      <p class="panel-title">Rechnungsbetrag</p>
+      <p class="panel-title">{% if rechnung.ist_korrektur %}Korrekturbetrag{% else %}Rechnungsbetrag{% endif %}</p>
       <p class="total" data-sum-side>0,00&nbsp;€</p>
-      <p class="small muted">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span> · <span data-format>ZUGFeRD</span></p>
+      <p class="small muted"{% if rechnung.ist_korrektur %} hidden{% endif %}>fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span> · <span data-format>ZUGFeRD</span></p>
 
       <h2 class="panel-title checks-head">Pflichtangaben <span class="count" data-check-count></span></h2>
       <ul class="checklist">
@@ -171,7 +175,7 @@
         <li data-check="nummer">{% icon "check" %}{% icon "alert" %}<span>Fortlaufende Nummer <span class="muted">(automatisch)</span></span></li>
         <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
         <li data-check="zeitraum">{% icon "check" %}{% icon "alert" %}<span>Leistungszeitraum</span></li>
-        <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>Rechnungsbetrag</span></li>
+        <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>{% if rechnung.ist_korrektur %}Korrekturbetrag, höchstens {{ rechnung.korrektur_zu.korrigierter_betrag|euro }}{% else %}Rechnungsbetrag{% endif %}</span></li>
         <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer</span></li>
         <li data-check="xrechnung" hidden>{% icon "check" %}{% icon "alert" %}<span>Für die XRechnung: Ihre Telefonnummer, E-Mail-Adresse und IBAN{% if not firma.telefon or not firma.email or not firma.iban %} – <a href="{% url 'core:einstellungen' %}">in den Einstellungen ergänzen</a>{% endif %}</span></li>
       </ul>
@@ -190,8 +194,8 @@
 
 <dialog class="notice-dialog" id="festschreiben-dialog" aria-labelledby="festschreiben-titel">
   <form method="dialog">
-    <h2 id="festschreiben-titel">Rechnung festschreiben?</h2>
-    <p>Die Rechnung erhält die Nummer <strong>{{ naechste_nummer }}</strong> und wird als PDF unveränderbar abgelegt. Danach lässt sie sich nicht mehr ändern, nur noch stornieren.</p>
+    <h2 id="festschreiben-titel">{{ rechnung.bezeichnung }} festschreiben?</h2>
+    <p>Die {{ rechnung.bezeichnung }} erhält die Nummer <strong>{{ naechste_nummer }}</strong> und wird als PDF unveränderbar abgelegt. Danach lässt sie sich nicht mehr ändern.</p>
     <p class="actions">
       <button class="btn" value="abbrechen">Abbrechen</button>
       <button class="btn btn-primary" type="submit" form="rechnung-form" name="aktion" value="festschreiben">{% icon "lock" %}Festschreiben</button>

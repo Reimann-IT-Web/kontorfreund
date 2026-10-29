@@ -199,6 +199,9 @@ if (rechnung) {
     entgelt: "Rechnungsbetrag",
     xrechnung: "Angaben für die XRechnung",
   };
+  // Rechnungskorrektur: nur Minderungen (negative Mengen), höchstens um den offenen Betrag.
+  const korrektur = rechnung.dataset.korrektur;
+  if (korrektur) PRUEFPUNKT.entgelt = "Korrekturbetrag";
 
   const pruefen = (ergebnis) => {
     const punkte = [...rechnung.querySelectorAll("[data-check]")].filter((li) => !li.hidden);
@@ -258,7 +261,7 @@ if (rechnung) {
       const gesamt = cent(menge * zahl(zeile.querySelector("[name=preis]").value));
       zeile.querySelector("[data-line-total]").textContent = euro.format(gesamt);
       netto += gesamt;
-      if (!zeile.querySelector("[name=bezeichnung]").value.trim() || menge <= 0) leistungOk = false;
+      if (!zeile.querySelector("[name=bezeichnung]").value.trim() || (korrektur ? menge >= 0 : menge <= 0)) leistungOk = false;
     });
     netto = cent(netto);
 
@@ -300,7 +303,7 @@ if (rechnung) {
       datum: Boolean(feld("datum").value),
       leistung: leistungOk,
       zeitraum: Boolean(von) && (!bis || bis >= von),
-      entgelt: summe > 0,
+      entgelt: korrektur ? summe < 0 && -summe <= Number(korrektur) : summe > 0,
       xrechnung: !xrechnung || rechnung.dataset.xrechnungAbsender === "1",
     });
   };

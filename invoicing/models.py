@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from archive.models import Altbeleg
 from contacts.models import Kontakt, ist_leitweg_id
+from core.templatetags.kf import euro
 
 CENT = Decimal("0.01")
 UST_SATZ = Decimal("19")
@@ -18,7 +19,10 @@ def runden(wert):
 
 
 class Festgeschrieben(ValidationError):
-    """Festgeschriebene Rechnungen sind unveränderbar (GoBD); Korrektur nur per Storno."""
+    """Festgeschriebene Rechnungen sind unveränderbar (GoBD).
+
+    Korrigiert wird nur per Stornorechnung oder Rechnungskorrektur.
+    """
 
     def __init__(self):
         super().__init__(
@@ -91,6 +95,15 @@ class Rechnung(models.Model):
         blank=True,
         editable=False,
     )
+    korrektur_zu = models.ForeignKey(
+        "self",
+        verbose_name="Korrigiert die Rechnung",
+        on_delete=models.PROTECT,
+        related_name="korrekturen",
+        null=True,
+        blank=True,
+        editable=False,
+    )
 
     # Beim Festschreiben eingefroren: genau die Angaben, aus denen PDF und XML entstanden.
     beleg = models.JSONField(default=dict, editable=False)
@@ -156,8 +169,34 @@ class Rechnung(models.Model):
         return hasattr(self, "stornorechnung")
 
     @property
+    def ist_korrektur(self):
+        return self.korrektur_zu_id is not None
+
+    @property
     def bezeichnung(self):
-        return "Stornorechnung" if self.ist_storno else "Rechnung"
+        if self.ist_storno:
+            return "Stornorechnung"
+        return "Rechnungskorrektur" if self.ist_korrektur else "Rechnung"
+
+    @property
+    def korrigierter_betrag(self):
+        """Was nach Stornorechnung und festgeschriebenen Korrekturen noch zu zahlen bleibt."""
+        if self.storniert:
+            return Decimal("0.00")
+        return self.brutto + sum(
+            (k.brutto for k in self.korrekturen.all() if not k.ist_entwurf),
+            Decimal("0.00"),
+        )
+
+    @property
+    def korrigierbar(self):
+        """Ob eine Rechnungskorrektur noch etwas mindern kann."""
+        return (
+            not self.ist_entwurf
+            and not self.ist_storno
+            and not self.ist_korrektur
+            and self.korrigierter_betrag > 0
+        )
 
     @property
     def kaeuferreferenz(self):
@@ -190,13 +229,22 @@ class Rechnung(models.Model):
         if not firma.vollstaendig:
             fehlt.append("Ihre Firmendaten")
         positionen = list(self.positionen.all())
-        if not positionen or any(not p.bezeichnung or p.menge <= 0 for p in positionen):
+        # Eine Rechnungskorrektur mindert nur: jede Position mit negativer Menge.
+        if not positionen or any(
+            not p.bezeichnung or (p.menge >= 0 if self.ist_korrektur else p.menge <= 0)
+            for p in positionen
+        ):
             fehlt.append("Menge und Art der Leistung")
         if not self.leistung_von or (
             self.leistung_bis and self.leistung_bis < self.leistung_von
         ):
             fehlt.append("Leistungszeitraum")
-        if self.summen()[2] <= 0:
+        brutto = self.summen()[2]
+        if self.ist_korrektur:
+            hoechstens = self.korrektur_zu.korrigierter_betrag
+            if not 0 < -brutto <= hoechstens:
+                fehlt.append(f"Korrekturbetrag (höchstens {euro(hoechstens)})")
+        elif brutto <= 0:
             fehlt.append("Rechnungsbetrag")
         if self.kontakt and self.kontakt.xrechnung:
             fehlt += self._fehlt_fuer_xrechnung(firma)

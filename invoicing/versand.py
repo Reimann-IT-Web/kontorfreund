@@ -24,6 +24,12 @@ def vorschlag(rechnung, firma):
             f"anbei erhalten Sie die Stornorechnung {rechnung.nummer}. "
             f"Sie storniert die Rechnung {o.nummer} vom {o.datum:%d.%m.%Y} vollständig."
         )
+    elif o := rechnung.korrektur_zu:
+        inhalt = (
+            f"anbei erhalten Sie die Rechnungskorrektur {rechnung.nummer}. "
+            f"Sie mindert den Betrag der Rechnung {o.nummer} vom {o.datum:%d.%m.%Y} "
+            f"um {euro(-rechnung.brutto)}."
+        )
     else:
         inhalt = (
             f"anbei erhalten Sie die Rechnung {rechnung.nummer} "

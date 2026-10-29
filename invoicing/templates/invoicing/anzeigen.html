@@ -20,10 +20,13 @@
     </h1>
     <p class="muted">{{ rechnung.kontakt }} · {{ rechnung.datum|date:"d.m.Y" }} · <span class="amount">{{ rechnung.brutto|euro }}</span>{% if rechnung.versendet_am %} · gesendet am {{ rechnung.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ rechnung.versendet_an }}{% endif %}</p>
     {% if rechnung.ist_storno %}<p class="muted">Storniert die <a href="{% url 'invoicing:bearbeiten' rechnung.storno_zu.pk %}">Rechnung {{ rechnung.storno_zu.nummer }}</a> vom {{ rechnung.storno_zu.datum|date:"d.m.Y" }}.</p>
+    {% elif rechnung.ist_korrektur %}<p class="muted">Korrigiert die <a href="{% url 'invoicing:bearbeiten' rechnung.korrektur_zu.pk %}">Rechnung {{ rechnung.korrektur_zu.nummer }}</a> vom {{ rechnung.korrektur_zu.datum|date:"d.m.Y" }}.</p>
     {% elif rechnung.storniert %}<p class="muted">Aufgehoben durch die <a href="{% url 'invoicing:bearbeiten' rechnung.stornorechnung.pk %}">Stornorechnung {{ rechnung.stornorechnung.nummer }}</a> vom {{ rechnung.stornorechnung.datum|date:"d.m.Y" }}.</p>{% endif %}
+    {% for k in korrekturen %}<p class="muted">{% if k.ist_entwurf %}Entwurf einer <a href="{% url 'invoicing:bearbeiten' k.pk %}">Rechnungskorrektur</a>, noch nicht festgeschrieben.{% else %}Korrigiert durch die <a href="{% url 'invoicing:bearbeiten' k.pk %}">Rechnungskorrektur {{ k.nummer }}</a> vom {{ k.datum|date:"d.m.Y" }} über <span class="amount">{{ k.brutto|euro }}</span>.{% endif %}</p>{% endfor %}
+    {% if teilweise_korrigiert and not rechnung.storniert %}<p class="muted">Nach Korrektur zu zahlen: <span class="amount">{{ rechnung.korrigierter_betrag|euro }}</span></p>{% endif %}
   </div>
   <div class="actions">
-    {% if not rechnung.ist_storno %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>{% endif %}
+    {% if not rechnung.ist_storno and not rechnung.ist_korrektur %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>{% endif %}
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
     {% if rechnung.xml_datei %}<a class="btn" href="{% url 'invoicing:xml' rechnung.pk %}">{% icon "download" %}XRechnung (XML)</a>{% endif %}
@@ -69,21 +72,26 @@
       {% if rechnung.xml_datei %}<p class="small muted">Prüfsumme XML (SHA-256), das maßgebliche Original<br><code class="hash">{{ rechnung.xml_sha256 }}</code></p>{% endif %}
     </section>
 
-    {% if not rechnung.ist_storno and not rechnung.storniert %}
+    {% if rechnung.korrigierbar %}
     <section class="panel" aria-labelledby="korrektur-titel">
       <h2 class="panel-title" id="korrektur-titel">Fehler in der Rechnung?</h2>
-      <p class="small">Eine festgeschriebene Rechnung bleibt, wie sie ist. Zum Korrigieren stornieren Sie sie und schreiben eine neue.</p>
-      <button class="btn btn-block" type="button" data-dialog="storno-dialog">{% icon "x" %}Stornieren …</button>
+      <p class="small">Eine festgeschriebene Rechnung bleibt, wie sie ist. Ist der Betrag zu hoch, mindern Sie ihn mit einer Rechnungskorrektur.{% if not teilweise_korrigiert %} Ist mehr falsch, stornieren Sie die Rechnung und schreiben eine neue.{% endif %}</p>
+      <button class="btn btn-block" type="submit" form="korrigieren-form">{% icon "pencil" %}Betrag mindern</button>
+      {% if not teilweise_korrigiert %}<button class="btn btn-block" type="button" data-dialog="storno-dialog">{% icon "x" %}Stornieren …</button>{% endif %}
     </section>
     {% endif %}
   </aside>
 </div>
 
-{% if not rechnung.ist_storno %}
+{% if not rechnung.ist_storno and not rechnung.ist_korrektur %}
 <form id="kopieren-form" method="post" action="{% url 'invoicing:kopieren' rechnung.pk %}" hidden>{% csrf_token %}</form>
 {% endif %}
 
-{% if not rechnung.ist_storno and not rechnung.storniert %}
+{% if rechnung.korrigierbar %}
+<form id="korrigieren-form" method="post" action="{% url 'invoicing:korrigieren' rechnung.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+
+{% if rechnung.korrigierbar and not teilweise_korrigiert %}
 <form id="storno-form" method="post" action="{% url 'invoicing:stornieren' rechnung.pk %}" hidden>{% csrf_token %}</form>
 <dialog class="notice-dialog" id="storno-dialog" aria-labelledby="storno-titel">
   <form method="dialog">

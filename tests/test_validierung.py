@@ -33,7 +33,7 @@ pytestmark = [
 REP = {"rep": "http://www.xoev.de/de/validator/varl/1"}
 LEITWEG_ID = "991-33333TEST-33"
 
-# Name, Steuerfall, Angaben der Adresse; jede Rechnung wird auch storniert.
+# Name, Steuerfall, Angaben der Adresse; dazu je eine Stornorechnung und Rechnungskorrektur.
 FAELLE = [
     ("kleinunternehmer", "kleinunternehmer", {}),
     ("regel", "regel", {}),
@@ -60,9 +60,35 @@ def java(*argumente):
     )
 
 
+def festschreiben(client, adresse, kunde, steuerfall, *mengen):
+    """Neue Rechnung oder Entwurf mit zwei Positionen festschreiben."""
+    client.post(
+        adresse,
+        {
+            "kontakt": kunde.pk,
+            "datum": "2026-10-29",
+            "leistung_von": "2026-10-01",
+            "leistung_bis": "2026-10-31",
+            "zahlungsziel": "14",
+            "steuerfall": steuerfall,
+            "kopftext": "Sehr geehrte Damen und Herren,",
+            "fusstext": "Mit freundlichen Grüßen",
+            "bezeichnung": ["Webdesign", "Hosting"],
+            "beschreibung": ["- Startseite\n- Galerie", ""],
+            "menge": list(mengen),
+            "einheit": ["Std.", "Monat"],
+            "preis": ["80,00", "9,99"],
+            "aktion": "festschreiben",
+        },
+    )
+    rechnung = Rechnung.objects.filter(kontakt=kunde).latest("pk")
+    assert not rechnung.ist_entwurf, kunde
+    return rechnung
+
+
 @pytest.fixture
 def rechnungen(client, settings):
-    """Je Steuerfall eine Rechnung und ihre Stornorechnung, festgeschrieben."""
+    """Je Steuerfall Rechnung, Stornorechnung und Rechnungskorrektur, festgeschrieben."""
     f = Firmendaten.laden()
     f.name = "Muster IT"
     f.inhaber = "Max Muster"
@@ -86,31 +112,23 @@ def rechnungen(client, settings):
             email="buchhaltung@kunde.test",
             **adresse,
         )
-        client.post(
-            reverse("invoicing:neu"),
-            {
-                "kontakt": kunde.pk,
-                "datum": "2026-10-29",
-                "leistung_von": "2026-10-01",
-                "leistung_bis": "2026-10-31",
-                "zahlungsziel": "14",
-                "steuerfall": steuerfall,
-                "kopftext": "Sehr geehrte Damen und Herren,",
-                "fusstext": "Mit freundlichen Grüßen",
-                "bezeichnung": ["Webdesign", "Hosting"],
-                "beschreibung": ["- Startseite\n- Galerie", ""],
-                "menge": ["29,5", "12"],
-                "einheit": ["Std.", "Monat"],
-                "preis": ["80,00", "9,99"],
-                "aktion": "festschreiben",
-            },
-        )
-        original = Rechnung.objects.get(kontakt=kunde)
-        assert not original.ist_entwurf, name
+
+        neu = reverse("invoicing:neu")
+        original = festschreiben(client, neu, kunde, steuerfall, "29,5", "12")
         client.post(reverse("invoicing:stornieren", args=[original.pk]))
         storno = Rechnung.objects.get(storno_zu=original)
-        dateien[name] = Path(settings.DATA_DIR) / original.datei
-        dateien[f"{name}-storno"] = Path(settings.DATA_DIR) / storno.datei
+        zweite = festschreiben(client, neu, kunde, steuerfall, "29,5", "12")
+        client.post(reverse("invoicing:korrigieren", args=[zweite.pk]))
+        entwurf = reverse(
+            "invoicing:bearbeiten", args=[Rechnung.objects.get(korrektur_zu=zweite).pk]
+        )
+        korrektur = festschreiben(client, entwurf, kunde, steuerfall, "-2,5", "-1")
+        for art, rechnung in (
+            ("", original),
+            ("-storno", storno),
+            ("-korrektur", korrektur),
+        ):
+            dateien[f"{name}{art}"] = Path(settings.DATA_DIR) / rechnung.datei
     return dateien
 
 
