@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ stufe }} zu Rechnung {{ rechnung.nummer }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'zahlungen:liste' %}">Offene Posten</a></li>
+    <li><a href="{% url 'invoicing:bearbeiten' rechnung.pk %}">Rechnung {{ rechnung.nummer }}</a></li>
+    <li aria-current="page">{{ stufe }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ stufe }} schreiben</h1>
+    <p class="muted">Rechnung {{ rechnung.nummer }} vom {{ rechnung.datum|date:"d.m.Y" }} an {{ rechnung.kontakt }}, fällig seit {{ rechnung.faellig|date:"d.m.Y" }}, offen {{ rechnung.offen|euro }}.</p>
+  </div>
+</div>
+
+<form class="beleg-ansicht" method="post" novalidate>
+  {% csrf_token %}
+  <div class="stack">
+    <div class="grid-2 grid-tight">
+      {% include "core/feld.html" with f=form.datum %}
+      {% include "core/feld.html" with f=form.frist %}
+    </div>
+    {% include "core/feld.html" with f=form.text %}
+    <p class="hint">Die Anrede steht automatisch davor, Aufstellung, Betrag, Frist und Bankverbindung darunter.</p>
+    <div class="grid-2 grid-tight">
+      {% include "core/feld.html" with f=form.gebuehr %}
+      <div class="stack">
+        <label class="choice">{{ form.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">{% if rechnung.kontakt.ist_verbraucher %}5{% else %}9{% endif %} Prozentpunkte über dem Basiszinssatz{% if rechnung.kontakt.ist_verbraucher %}, weil der Kunde eine Privatperson ist{% endif %}.</span></span></label>
+        {% if not rechnung.kontakt.ist_verbraucher %}<label class="choice">{{ form.pauschale }}<span><strong>Verzugspauschale 40 €</strong><br><span class="muted">Steht Ihnen gegenüber Unternehmen zu (§ 288 Abs. 5 BGB); viele verzichten darauf, um die Kundenbeziehung zu schonen.</span></span></label>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="aufstellung-titel">
+      <h2 class="panel-title" id="aufstellung-titel">Aufstellung</h2>
+      <table class="aufstellung">
+        <tbody>
+          {% for text, betrag in aufstellung.zeilen %}<tr><td>{{ text }}</td><td class="amount">{{ betrag|euro }}</td></tr>{% endfor %}
+        </tbody>
+        <tfoot><tr><td>Zu zahlen</td><td class="amount">{{ aufstellung.gesamt|euro }}</td></tr></tfoot>
+      </table>
+      {% for h in aufstellung.hinweise %}<p class="small{% if forloop.first and not aufstellung.im_verzug and aufstellung.gebuehr %} is-warn-text{% endif %}">{{ h }}</p>{% endfor %}
+      {% for f in aufstellung.fehler %}<p class="small is-warn-text">{{ f }}</p>{% endfor %}
+      {% if basiszins_veraltet %}<p class="small is-warn-text">Der Basiszinssatz ist nicht aktuell{% if user.ist_inhaber %}; <a href="{% url 'zahlungen:einstellungen' %}">jetzt eintragen</a>{% endif %}.</p>{% endif %}
+      <p class="small muted">Beträge werden nach Ihren Änderungen mit „Vorschau“ neu berechnet.</p>
+      <button class="btn btn-block" type="submit" name="aktion" value="vorschau">{% icon "eye" %}Vorschau</button>
+      <button class="btn btn-primary btn-block" type="submit" name="aktion" value="erstellen">{% icon "lock" %}{{ stufe }} erstellen</button>
+      <p class="small muted">Beim Erstellen legt Kontorfreund das Schreiben als PDF ab. Danach laden Sie es herunter oder senden es per E-Mail.</p>
+    </section>
+  </aside>
+</form>
+
+{% if vorschau %}
+<dialog class="preview-dialog" aria-labelledby="vorschau-titel" data-open-on-load>
+  <div class="preview-head">
+    <h2 id="vorschau-titel">Vorschau</h2>
+    <form method="dialog"><button class="btn btn-sm btn-primary">Schließen</button></form>
+  </div>
+  <div class="preview-body">
+    {% for bild in vorschau %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="{{ stufe }}, Entwurf, Seite {{ forloop.counter }} von {{ vorschau|length }}">{% endfor %}
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}

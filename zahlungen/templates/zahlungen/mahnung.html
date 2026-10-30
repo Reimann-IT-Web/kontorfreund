@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ mahnung }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'zahlungen:liste' %}">Offene Posten</a></li>
+    <li><a href="{% url 'invoicing:bearbeiten' mahnung.rechnung.pk %}">Rechnung {{ mahnung.rechnung.nummer }}</a></li>
+    <li aria-current="page">{{ mahnung.bezeichnung }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ mahnung }}{% if mahnung.versendet_am %} <span class="status status-ok">{% icon "check" %}Versendet</span>{% endif %}</h1>
+    <p class="muted">{{ mahnung.rechnung.kontakt }} · {{ mahnung.datum|date:"d.m.Y" }} · zu zahlen <span class="amount">{{ mahnung.gesamt|euro }}</span> bis {{ mahnung.frist|date:"d.m.Y" }}{% if mahnung.versendet_am %} · gesendet am {{ mahnung.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ mahnung.versendet_an }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'zahlungen:mahnung_pdf' mahnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
+    <a class="btn" href="{% url 'zahlungen:mahnung_pdf' mahnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+  </div>
+</div>
+
+<div class="beleg-ansicht">
+  <div class="beleg-bilder">
+    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="{{ mahnung }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
+    {% empty %}<p class="muted">Die PDF-Datei fehlt im Archiv.</p>{% endfor %}
+  </div>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="versand-titel">
+      <h2 class="panel-title" id="versand-titel">{% if mahnung.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}</h2>
+      {% if firma.mail_bereit %}
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        {% include "core/feld.html" with f=form.an %}
+        {% include "core/feld.html" with f=form.betreff %}
+        {% include "core/feld.html" with f=form.text %}
+        <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
+        <p class="small muted">Anhang: {{ mahnung.dateiname }}</p>
+        <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
+      </form>
+      {% else %}
+      <p class="small">Laden Sie das PDF herunter und hängen Sie es in Ihrem E-Mail-Programm an, oder drucken Sie es aus.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="ablage-titel">
+      <h2 class="panel-title" id="ablage-titel">Ablage</h2>
+      <dl class="facts small">
+        <div><dt>Erstellt</dt><dd>{{ mahnung.erstellt|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt>Offener Rechnungsbetrag</dt><dd class="amount">{{ mahnung.offen|euro }}</dd></div>
+        {% if mahnung.nebenkosten %}<div><dt>Mahnkosten und Zinsen</dt><dd class="amount">{{ mahnung.nebenkosten|euro }}</dd></div>{% endif %}
+      </dl>
+      <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ mahnung.sha256 }}</code></p>
+      {% if loeschbar %}
+      <form method="post" action="{% url 'zahlungen:mahnung_loeschen' mahnung.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-ghost btn-block" type="submit" data-confirm="Dieses Schreiben löschen? Tun Sie das nur, wenn Sie es nicht verschickt haben.">{% icon "x" %}Löschen, weil nicht verschickt</button>
+      </form>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

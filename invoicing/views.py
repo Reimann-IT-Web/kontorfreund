@@ -35,7 +35,7 @@ def liste(request):
             "belegart": "rechnungen",
             "rechnungen": Rechnung.objects.select_related(
                 "kontakt", "storno_zu", "stornorechnung", "korrektur_zu"
-            ),
+            ).prefetch_related("zahlungen", "korrekturen"),
             "altrechnungen": Altbeleg.objects.filter(art=Altbeleg.Art.RECHNUNG).count(),
         },
     )

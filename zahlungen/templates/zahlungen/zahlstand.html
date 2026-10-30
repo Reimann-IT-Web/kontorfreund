@@ -1,0 +1,9 @@
+{% load kf %}{% with s=r.zahlstand %}{% if s == "bezahlt" %}<span class="status status-ok">{% icon "check" %}Bezahlt</span>
+{% elif s == "teilbezahlt" %}<span class="status status-open">{% icon "banknote" %}Teilbezahlt</span>
+{% elif s == "ueberfaellig" %}<span class="status status-danger">{% icon "alert" %}Überfällig</span>
+{% elif s == "ueberzahlt" %}<span class="status status-today">{% icon "banknote" %}Zu viel gezahlt</span>
+{% elif s == "ausgebucht" %}<span class="status status-void">{% icon "check" %}Ausgebucht</span>
+{% elif s == "erledigt" %}<span class="status status-void">{% icon "check" %}Erledigt</span>
+{% elif s == "storniert" %}<span class="status status-void">{% icon "x" %}Storniert</span>
+{% elif r.versendet_am %}<span class="status status-open">{% icon "send" %}Versendet</span>
+{% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}{% endwith %}

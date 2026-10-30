@@ -14,7 +14,7 @@ NAVIGATION = [
         "key": "offene-posten",
         "label": "Offene Posten",
         "icon": "banknote",
-        "slug": "offene-posten",
+        "url": "zahlungen:liste",
     },
     {
         "key": "wiedervorlagen",
@@ -40,11 +40,6 @@ NAVIGATION = [
 
 # Bereiche, die noch nicht gebaut sind: (Titel, was kommt, Phase).
 PLATZHALTER = {
-    "offene-posten": (
-        "Offene Posten",
-        "Zahlungseingänge buchen, Mahnungen in drei Stufen, GiroCode.",
-        "Phase 3",
-    ),
     "wiedervorlagen": (
         "Wiedervorlagen",
         "Erinnerungen mit Fälligkeit, schnell verschieben und erledigen.",

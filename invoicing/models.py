@@ -199,6 +199,58 @@ class Rechnung(models.Model):
             Decimal("0.00"),
         )
 
+    # ---------- Offener Posten (App zahlungen: Zahlung, Mahnung) ----------
+
+    @property
+    def ist_posten(self):
+        """Festgeschriebene Rechnung, die bezahlt werden muss.
+
+        Stornorechnungen und Korrekturen mindern nur das Original.
+        """
+        return not (self.ist_entwurf or self.ist_storno or self.ist_korrektur)
+
+    @property
+    def bezahlt(self):
+        return sum(
+            (z.betrag for z in self.zahlungen.all() if not z.ist_ausbuchung),
+            Decimal("0.00"),
+        )
+
+    @property
+    def ausgebucht(self):
+        return sum(
+            (z.betrag for z in self.zahlungen.all() if z.ist_ausbuchung),
+            Decimal("0.00"),
+        )
+
+    @property
+    def offen(self):
+        """Noch zu zahlen; negativ, wenn der Kunde zu viel gezahlt hat."""
+        if not self.ist_posten:
+            return Decimal("0.00")
+        return self.korrigierter_betrag - self.bezahlt - self.ausgebucht
+
+    @property
+    def ueberfaellig(self):
+        return self.offen > 0 and self.faellig < date.today()
+
+    @property
+    def zahlstand(self):
+        """bezahlt, teilbezahlt, ueberfaellig, offen, ueberzahlt, ausgebucht,
+        erledigt (auf null korrigiert) oder storniert."""
+        offen = self.offen
+        if offen < 0:
+            return "ueberzahlt"
+        if self.storniert:
+            return "storniert"
+        if offen == 0:
+            if self.bezahlt > 0:
+                return "bezahlt"
+            return "ausgebucht" if self.ausgebucht else "erledigt"
+        if self.ueberfaellig:
+            return "ueberfaellig"
+        return "teilbezahlt" if offen < self.korrigierter_betrag else "offen"
+
     @property
     def korrigierbar(self):
         """Ob eine Rechnungskorrektur noch etwas mindern kann."""

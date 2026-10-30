@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load kf %}
+{% load kf posten %}
 
 {% block title %}{{ rechnung }}{% endblock %}
 
@@ -15,6 +15,7 @@
   <div>
     <h1>{{ rechnung }}
       {% if rechnung.storniert %}<span class="status status-void">{% icon "x" %}Storniert</span>
+      {% elif rechnung.ist_posten %}{% include "zahlungen/zahlstand.html" with r=rechnung %}
       {% elif rechnung.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>
       {% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
     </h1>
@@ -65,6 +66,8 @@
       {% endif %}
     </section>
     {% endif %}
+
+    {% if rechnung.ist_posten %}{% zahlungen_panel rechnung %}{% endif %}
 
     <section class="panel" aria-labelledby="ablage-titel">
       <h2 class="panel-title" id="ablage-titel">Aufbewahrung</h2>

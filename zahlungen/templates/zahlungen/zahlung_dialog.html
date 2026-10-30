@@ -1,0 +1,18 @@
+{% load kf %}<dialog class="notice-dialog" id="zahlung-dialog" aria-labelledby="zahlung-dialog-titel">
+  <form class="stack" method="post" action="" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="weiter" value="{{ request.get_full_path }}">
+    <h2 id="zahlung-dialog-titel">Zahlung buchen</h2>
+    <p class="muted" data-zahlung-titel></p>
+    <div class="grid-2 grid-tight">
+      {% include "core/feld.html" with f=zahlung_form.betrag %}
+      {% include "core/feld.html" with f=zahlung_form.datum %}
+    </div>
+    {% include "core/feld.html" with f=zahlung_form.art %}
+    {% include "core/feld.html" with f=zahlung_form.notiz optional=True %}
+    <p class="actions">
+      <button class="btn" type="submit" formmethod="dialog" formnovalidate>Abbrechen</button>
+      <button class="btn btn-primary" type="submit">{% icon "banknote" %}Zahlung buchen</button>
+    </p>
+  </form>
+</dialog>

@@ -409,3 +409,19 @@ document.addEventListener("click", (e) => {
 
 // Vorschau nach dem Speichern direkt öffnen.
 document.querySelector("dialog[data-open-on-load]")?.showModal();
+
+// Offene Posten: „Zahlung“ in einer Zeile bucht im Dialog statt auf der Rechnungsseite.
+const zahlungDialog = document.getElementById("zahlung-dialog");
+if (zahlungDialog) {
+  const formular = zahlungDialog.querySelector("form");
+  document.addEventListener("click", (e) => {
+    const knopf = e.target.closest("[data-zahlung]");
+    if (!knopf) return;
+    e.preventDefault();
+    formular.action = knopf.dataset.zahlung;
+    formular.elements["zahlung-betrag"].value = knopf.dataset.betrag;
+    zahlungDialog.querySelector("[data-zahlung-titel]").textContent = knopf.dataset.titel;
+    zahlungDialog.showModal();
+    formular.elements["zahlung-betrag"].select();
+  });
+}

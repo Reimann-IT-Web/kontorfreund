@@ -1,0 +1,75 @@
+{% load kf %}<section class="panel" id="zahlungen" aria-labelledby="zahlungen-titel">
+  <h2 class="panel-title" id="zahlungen-titel">Zahlungen {% include "zahlungen/zahlstand.html" with r=rechnung %}</h2>
+  <dl class="facts small">
+    <div><dt>Rechnungsbetrag</dt><dd class="amount">{{ rechnung.korrigierter_betrag|euro }}</dd></div>
+    {% for z in zahlungen %}
+    <div class="facts-buchung">
+      <dt>{{ z.datum|date:"d.m.Y" }} · {{ z.get_art_display }}{% if z.notiz %}<br><span class="muted">{{ z.notiz }}</span>{% endif %}{% if z.nebenkosten %}<br><span class="muted">dazu {{ z.nebenkosten|euro }} Mahnkosten und Zinsen</span>{% endif %}</dt>
+      <dd><span class="amount">−{{ z.betrag|euro }}</span>
+        <form method="post" action="{% url 'zahlungen:zahlung_loeschen' z.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-icon" type="submit" data-confirm="Diese Buchung wirklich löschen?">{% icon "x" %}<span class="visually-hidden">Buchung vom {{ z.datum|date:"d.m.Y" }} löschen</span></button></form>
+      </dd>
+    </div>
+    {% endfor %}
+    <div class="facts-summe"><dt>{% if offen < 0 %}Zu viel gezahlt{% else %}Offen{% endif %}</dt><dd class="amount">{% if offen < 0 %}{{ zu_viel|euro }}{% else %}{{ offen|euro }}{% endif %}</dd></div>
+  </dl>
+  {% if rechnung.ueberfaellig %}<p class="small is-warn-text">Fällig war die Rechnung am {{ rechnung.faellig|date:"d.m.Y" }}.</p>
+  {% elif offen > 0 %}<p class="small muted">Fällig am {{ rechnung.faellig|date:"d.m.Y" }}.</p>{% endif %}
+
+  {% if offen > 0 %}
+  <form class="stack" method="post" action="{% url 'zahlungen:buchen' rechnung.pk %}" novalidate>
+    {% csrf_token %}
+    <div class="grid-2 grid-tight">
+      {% include "core/feld.html" with f=form.betrag %}
+      {% include "core/feld.html" with f=form.datum %}
+    </div>
+    {% include "core/feld.html" with f=form.art %}
+    {% include "core/feld.html" with f=form.notiz optional=True %}
+    <button class="btn btn-primary btn-block" type="submit">{% icon "banknote" %}Zahlung buchen</button>
+  </form>
+  <details class="disclosure">
+    <summary>Rest ausbuchen …</summary>
+    <form class="stack" method="post" action="{% url 'zahlungen:ausbuchen' rechnung.pk %}" novalidate>
+      {% csrf_token %}
+      <p class="small muted">Für Beträge, die nicht mehr kommen, etwa abgezogene Bankgebühren oder wenn der Kunde zahlungsunfähig ist.</p>
+      <div class="grid-2 grid-tight">
+        {% include "core/feld.html" with f=ausbuchen.betrag %}
+        {% include "core/feld.html" with f=ausbuchen.datum %}
+      </div>
+      {% include "core/feld.html" with f=ausbuchen.grund %}
+      <button class="btn btn-block" type="submit">{% icon "check" %}Ausbuchen</button>
+    </form>
+  </details>
+  {% elif offen < 0 %}
+  <p class="small">Der Kunde hat zu viel gezahlt. Überweisen Sie ihm den Betrag zurück und buchen Sie die Rückzahlung mit Minus.</p>
+  <form class="stack" method="post" action="{% url 'zahlungen:buchen' rechnung.pk %}" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="zahlung-betrag" value="{{ offen|zahl:2 }}">
+    <input type="hidden" name="zahlung-datum" value="{{ heute|date:'Y-m-d' }}">
+    <input type="hidden" name="zahlung-art" value="ueberweisung">
+    <input type="hidden" name="zahlung-notiz" value="Rückzahlung">
+    <button class="btn btn-block" type="submit">{% icon "banknote" %}Rückzahlung von heute buchen</button>
+  </form>
+  {% endif %}
+</section>
+
+{% if mahnungen or rechnung.ueberfaellig %}
+<section class="panel" aria-labelledby="mahnen-titel">
+  <h2 class="panel-title" id="mahnen-titel">Mahnungen</h2>
+  {% if mahnungen %}
+  <ul class="plain-list small">
+    {% for m in mahnungen %}<li><a href="{% url 'zahlungen:mahnung' m.pk %}">{{ m.bezeichnung }}</a> vom {{ m.datum|date:"d.m.Y" }}, Frist bis {{ m.frist|date:"d.m.Y" }}{% if m.versendet_am %} · gesendet{% endif %}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if naechste %}{% with stufe=naechste.0 ab=naechste.1 %}
+    {% if ab <= heute %}
+    <p class="small">{{ stufe }} ist fällig.</p>
+    <a class="btn btn-primary btn-block" href="{% url 'zahlungen:mahnen' rechnung.pk %}">{% icon "mail" %}{{ stufe }} schreiben</a>
+    {% else %}
+    <p class="small muted">{{ stufe }} ist ab {{ ab|date:"d.m.Y" }} fällig.</p>
+    <a class="btn btn-block" href="{% url 'zahlungen:mahnen' rechnung.pk %}">{% icon "mail" %}{{ stufe }} schon jetzt schreiben</a>
+    {% endif %}
+  {% endwith %}{% elif offen > 0 %}
+  <p class="small">Alle Mahnstufen sind ausgeschöpft. Als Nächstes käme ein gerichtlicher Mahnbescheid, den Sie online beim zuständigen Mahngericht beantragen können.</p>
+  {% endif %}
+</section>
+{% endif %}

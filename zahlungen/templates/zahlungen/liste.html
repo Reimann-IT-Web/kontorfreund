@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Offene Posten{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Offene Posten{% if kontakt %} · {{ kontakt }}{% endif %}</h1>
+    <p class="muted">Festgeschriebene Rechnungen, bis sie bezahlt sind. Zahlungen buchen Sie hier oder auf der Seite der Rechnung.</p>
+  </div>
+  {% if user.ist_inhaber %}
+  <div class="actions">
+    <a class="btn" href="{% url 'zahlungen:einstellungen' %}">{% icon "settings" %}Mahnwesen einstellen</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if basiszins_veraltet and user.ist_inhaber %}
+<p class="callout">{% icon "alert" %}<span>Der Basiszinssatz für die Verzugszinsen ist nicht mehr aktuell. Die Bundesbank veröffentlicht ihn zum 1. Januar und 1. Juli; tragen Sie ihn in den <a href="{% url 'zahlungen:einstellungen' %}">Einstellungen zum Mahnwesen</a> ein.</span></p>
+{% endif %}
+
+<dl class="op-summen">
+  <div><dt>Offen</dt><dd>{{ summe_offen|euro }}</dd><dd class="small muted">{{ anzahl_offen }} Rechnung{{ anzahl_offen|pluralize:"en" }}</dd></div>
+  <div><dt>davon überfällig</dt><dd{% if summe_ueberfaellig %} class="is-danger"{% endif %}>{{ summe_ueberfaellig|euro }}</dd><dd class="small muted">{{ anzahl_ueberfaellig }} Rechnung{{ anzahl_ueberfaellig|pluralize:"en" }}</dd></div>
+</dl>
+
+{% if vorschlaege %}
+<section class="group" aria-labelledby="mahnen-titel">
+  <h2 class="group-head" id="mahnen-titel">Mahnung fällig <span class="count">{{ vorschlaege|length }}</span></h2>
+  <ul class="rows">
+    {% for r, stufe in vorschlaege %}
+    <li class="row">
+      <span class="status status-danger">{% icon "alert" %}seit {{ r.faellig|date:"d.m.Y" }}</span>
+      <div class="row-main">
+        <p class="row-title">{{ r.kontakt }}</p>
+        <p class="row-meta">Rechnung {{ r.nummer }} vom {{ r.datum|date:"d.m.Y" }} · als Nächstes: {{ stufe }}</p>
+      </div>
+      <span class="amount">{{ r.offen|euro }}</span>
+      <a class="btn btn-sm" href="{% url 'zahlungen:mahnen' r.pk %}">{% icon "mail" %}{{ stufe }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<form class="filterbar" method="get">
+  <div class="segmented" role="group" aria-label="Anzeigen">
+    {% for wert, label in ansichten %}<a href="?zeigen={{ wert }}{% if kontakt %}&amp;kunde={{ kontakt.pk }}{% endif %}"{% if zeigen == wert %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+  </div>
+  {% if kunden %}
+  <label class="field field-inline">
+    <span class="visually-hidden">Kunde</span>
+    <select name="kunde" data-auto-submit>
+      <option value="">Alle Kunden</option>
+      {% for k in kunden %}<option value="{{ k.pk }}"{% if kontakt.pk == k.pk %} selected{% endif %}>{{ k }}</option>{% endfor %}
+    </select>
+  </label>
+  <input type="hidden" name="zeigen" value="{{ zeigen }}">
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+  {% endif %}
+  {% if kontakt %}<a class="link" href="{% url 'zahlungen:kontoauszug' kontakt.pk %}">{% icon "file" %}Kontoauszug {{ kontakt }}</a>{% endif %}
+</form>
+
+{% if rechnungen %}
+<div class="table-wrap">
+  <table class="table archive">
+    <thead>
+      <tr>
+        <th scope="col">Fällig am</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Kunde</th>
+        <th scope="col">Status</th>
+        <th scope="col" class="num">Betrag</th>
+        <th scope="col" class="num">Offen</th>
+        <th scope="col"><span class="visually-hidden">Aktion</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rechnungen %}
+      <tr class="data-row">
+        <td class="docnr">{{ r.faellig|date:"d.m.Y" }}</td>
+        <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{{ r.nummer }}</a></td>
+        <td><a href="?zeigen={{ zeigen }}&amp;kunde={{ r.kontakt.pk }}">{{ r.kontakt }}</a></td>
+        <td>{% include "zahlungen/zahlstand.html" %}</td>
+        <td class="num"><span class="amount">{{ r.korrigierter_betrag|euro }}</span></td>
+        <td class="num"><span class="amount">{{ r.offen|euro }}</span></td>
+        <td class="cell-action">{% if r.offen > 0 %}<a class="btn btn-sm" href="{% url 'invoicing:bearbeiten' r.pk %}#zahlungen" data-zahlung="{% url 'zahlungen:buchen' r.pk %}" data-betrag="{{ r.offen|zahl:2 }}" data-titel="Rechnung {{ r.nummer }} · {{ r.kontakt }} · offen {{ r.offen|euro }}">{% icon "banknote" %}Zahlung</a>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  {% if zeigen == "offen" %}
+  <h2>Alles bezahlt</h2>
+  <p class="muted">Keine Rechnung ist offen. Sobald Sie eine Rechnung festschreiben, steht sie hier, bis das Geld da ist.</p>
+  {% elif zeigen == "ueberfaellig" %}
+  <h2>Nichts überfällig</h2>
+  <p class="muted">Alle offenen Rechnungen sind noch innerhalb ihres Zahlungsziels.</p>
+  {% else %}
+  <h2>Keine Rechnungen</h2>
+  <p class="muted">Hier erscheinen Rechnungen, die Sie in Kontorfreund festgeschrieben haben.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% include "zahlungen/zahlung_dialog.html" %}
+{% endblock %}

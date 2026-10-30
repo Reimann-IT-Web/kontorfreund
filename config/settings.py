@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "contacts",
     "invoicing",
     "angebote",
+    "zahlungen",
     "artikel",
     "archive",
     "backups",

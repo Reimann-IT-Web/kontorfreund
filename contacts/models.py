@@ -148,6 +148,11 @@ class Kontakt(models.Model):
     def anschrift_vollstaendig(self):
         return bool(self.strasse and self.plz and self.ort)
 
+    @property
+    def ist_verbraucher(self):
+        """Personen gelten beim Verzug als Verbraucher (§ 288 Abs. 1 und 2 BGB)."""
+        return self.art == self.Art.PERSON
+
     def anschrift_zeilen(self):
         """Anschrift für Belege, Zeile für Zeile."""
         zeilen = [self.anzeigename]

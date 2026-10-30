@@ -2217,6 +2217,117 @@ input[type="file"]::file-selector-button {
   }
 }
 
+/* ---------- Offene Posten und Mahnungen ---------- */
+
+.grid-tight {
+  gap: var(--s3);
+  margin-bottom: 0;
+}
+
+.facts-buchung dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: var(--fs-sm);
+}
+
+.facts-buchung .btn-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: 0;
+  padding: 0;
+}
+
+.facts-summe {
+  padding-top: var(--s2);
+  border-top: 1px solid var(--line-strong);
+  font-weight: 700;
+}
+
+.plain-list {
+  display: grid;
+  gap: var(--s1);
+  margin: 0 0 var(--s3);
+  padding: 0;
+  list-style: none;
+}
+
+.disclosure {
+  margin-top: var(--s3);
+}
+
+.disclosure > summary {
+  padding: var(--s2) 0;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.disclosure[open] > summary {
+  margin-bottom: var(--s2);
+}
+
+.op-summen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  margin-bottom: var(--s5);
+}
+
+.op-summen div {
+  display: grid;
+  gap: var(--s1);
+}
+
+.op-summen dt {
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.op-summen dd {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.op-summen dd + dd {
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+}
+
+.op-summen .is-danger {
+  color: var(--danger);
+}
+
+.aufstellung {
+  width: 100%;
+  margin-bottom: var(--s3);
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.aufstellung td {
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.aufstellung td + td {
+  padding-left: var(--s3);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.aufstellung tfoot td {
+  border-bottom: 0;
+  font-size: var(--fs);
+  font-weight: 700;
+}
+
 /* ---------- Kleinere Bildschirme ---------- */
 
 @media (max-width: 100rem) {

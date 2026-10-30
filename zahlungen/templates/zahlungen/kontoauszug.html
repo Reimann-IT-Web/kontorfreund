@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Kontoauszug {{ kontakt }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'zahlungen:liste' %}">Offene Posten</a></li>
+    <li aria-current="page">Kontoauszug {{ kontakt }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Kontoauszug {{ kontakt }}</h1>
+    <p class="muted">{{ kontakt.kundennummer }} · Rechnungen, Stornos, Korrekturen und Zahlungen nach Datum. {% if saldo > 0 %}Offen: <strong class="amount">{{ saldo|euro }}</strong>{% elif saldo < 0 %}Der Kunde hat <strong class="amount">{{ zu_viel|euro }}</strong> zu viel gezahlt.{% else %}Alles ausgeglichen.{% endif %}</p>
+  </div>
+</div>
+
+{% if eintraege %}
+<div class="table-wrap">
+  <table class="table archive">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Vorgang</th>
+        <th scope="col" class="num">Forderung</th>
+        <th scope="col" class="num">Zahlung</th>
+        <th scope="col" class="num">Saldo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in eintraege %}
+      <tr class="data-row">
+        <td class="docnr">{{ e.datum|date:"d.m.Y" }}</td>
+        <td><a href="{{ e.url }}">{{ e.text }}</a></td>
+        <td class="num"><span class="amount">{% if e.soll is not None %}{{ e.soll|euro }}{% endif %}</span></td>
+        <td class="num"><span class="amount">{% if e.haben is not None %}{{ e.haben|euro }}{% endif %}</span></td>
+        <td class="num"><span class="amount">{{ e.saldo|euro }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <h2>Noch keine Rechnungen</h2>
+  <p class="muted">Für {{ kontakt }} gibt es noch keine festgeschriebene Rechnung in Kontorfreund.</p>
+</div>
+{% endif %}
+{% endblock %}

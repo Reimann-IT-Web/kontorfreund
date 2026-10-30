@@ -206,7 +206,7 @@ def absaetze(text):
     ]
 
 
-def _girocode(b):
+def girocode_svg(b):
     """SEPA-Überweisungscode (EPC069-12) als SVG."""
     a = b["absender"]
     code = qr.make_epc_qr(
@@ -279,7 +279,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "brutto": euro(b["brutto"]),
         "steuerhinweis": b["steuerhinweis"],
         "zahlung": zahlung,
-        "girocode": _girocode(b)
+        "girocode": girocode_svg(b)
         if b["girocode"] and Decimal(b["brutto"]) > 0
         else None,
         "fusstext": absaetze(b["fusstext"]),

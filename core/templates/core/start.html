@@ -15,7 +15,7 @@
   <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>
   <a class="btn" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Neue Adresse</a>
-  <a class="btn" href="{% url 'core:platzhalter' 'offene-posten' %}">{% icon "banknote" %}Zahlung buchen</a>
+  <a class="btn" href="{% url 'zahlungen:liste' %}">{% icon "banknote" %}Zahlung buchen</a>
 </nav>
 
 <div class="split">
@@ -51,6 +51,25 @@
       </ol>
     {% else %}
       <h2 id="heute">Heute zu tun</h2>
+      {% if ueberfaellig %}
+      <div class="group">
+        <h3 class="group-head">Überfällige Rechnungen <span class="count">{{ ueberfaellig|length }}</span></h3>
+        <ul class="rows">
+          {% for r in ueberfaellig %}
+          <li class="row">
+            <span class="status status-danger">{% icon "alert" %}seit {{ r.faellig|date:"d.m.Y" }}</span>
+            <div class="row-main">
+              <p class="row-title">{{ r.kontakt }}</p>
+              <p class="row-meta">Rechnung {{ r.nummer }} vom {{ r.datum|date:"d.m.Y" }}{% if r.mahnstufe %} · {{ r.mahnstufe }} fällig{% endif %}</p>
+            </div>
+            <span class="amount">{{ r.offen|euro }}</span>
+            {% if r.mahnstufe %}<a class="btn btn-sm" href="{% url 'zahlungen:mahnen' r.pk %}">{% icon "mail" %}{{ r.mahnstufe }}</a>
+            {% else %}<a class="btn btn-sm" href="{% url 'invoicing:bearbeiten' r.pk %}#zahlungen">{% icon "banknote" %}Zahlung buchen</a>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
       {% if offene_angebote %}
       <div class="group">
         <h3 class="group-head">Offene Angebote <span class="count">{{ offene_angebote|length }}</span></h3>
@@ -68,7 +87,7 @@
           {% endfor %}
         </ul>
       </div>
-      {% else %}
+      {% elif not ueberfaellig %}
       <div class="empty empty-inline">
         <h3>Heute ist nichts fällig</h3>
         <p class="muted">Fällige Rechnungen, Wiedervorlagen und offene Angebote erscheinen hier, sobald es sie gibt.</p>
@@ -80,7 +99,13 @@
   <aside class="side" aria-label="Überblick">
     <section class="side-section" aria-labelledby="geld">
       <h2 id="geld" class="panel-title">Offene Beträge</h2>
+      {% if posten %}
+      <p class="facts-line"><span>Offen ({{ anzahl_offen }})</span><span class="amount">{{ summe_offen|euro }}</span></p>
+      <p class="facts-line"><span>davon überfällig</span><span class="amount{% if summe_ueberfaellig %} is-warn-text{% endif %}">{{ summe_ueberfaellig|euro }}</span></p>
+      <p class="small"><a href="{% url 'zahlungen:liste' %}">Zu den offenen Posten</a></p>
+      {% else %}
       <p class="small muted">Noch keine Rechnungen. Offene und überfällige Beträge stehen hier, sobald Sie Rechnungen festschreiben.</p>
+      {% endif %}
     </section>
 
     {% if firma.kleinunternehmer %}

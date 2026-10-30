@@ -100,7 +100,22 @@
 #for absatz in d.kopftext { par(zeilen(absatz)) }
 
 #v(1mm)
-#table(
+// Mahnungen haben statt Positionen eine Aufstellung der Forderung: (Text, Betrag).
+#if "aufstellung" in d {
+  table(
+    columns: (1fr, 30mm),
+    column-gutter: 2.5mm,
+    inset: (x: 0pt, y: 5.5pt),
+    stroke: none,
+    align: (left, right),
+    table.header(
+      ..([Forderung], [Betrag]).map(t => text(size: 8.5pt, fill: leise, t)),
+      table.hline(stroke: 0.6pt + tinte),
+    ),
+    ..d.aufstellung.map(((posten, betrag)) => (posten, betrag, table.hline(stroke: 0.4pt + linie))).flatten(),
+  )
+}
+#if d.positionen.len() > 0 { table(
   columns: (9mm, 1fr, 26mm, 25mm, 25mm),
   column-gutter: 2.5mm,
   inset: (x: 0pt, y: 5.5pt),
@@ -126,7 +141,7 @@
       table.hline(stroke: 0.4pt + linie),
     ))
     .flatten(),
-)
+) }
 
 #align(right, block(width: 80mm, breakable: false, grid(
   columns: (1fr, auto),

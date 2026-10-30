@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Mahnwesen einstellen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'zahlungen:liste' %}">Offene Posten</a></li>
+    <li aria-current="page">Mahnwesen einstellen</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Mahnwesen einstellen</h1>
+    <p class="muted">Wann Kontorfreund welches Schreiben vorschlägt, mit welcher Frist, Gebühr und welchem Text.</p>
+  </div>
+</div>
+
+<p class="callout">{% icon "alert" %}<span>Mahngebühren dürfen nur tatsächliche Kosten wie Porto und Papier abdecken, nicht Ihre Arbeitszeit. Das Schreiben, das den Kunden erst in Verzug setzt – meist die Zahlungserinnerung –, darf nichts kosten. Per E-Mail entstehen kaum Kosten; im Zweifel 0 € eintragen.</span></p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% for titel, f in stufen %}
+  <section class="form-section" aria-labelledby="stufe-{{ forloop.counter }}">
+    <h2 class="form-title" id="stufe-{{ forloop.counter }}">{{ titel }}</h2>
+    <div class="grid-2">
+      {% include "core/feld.html" with f=f.abstand %}
+      {% include "core/feld.html" with f=f.frist %}
+    </div>
+    <div class="grid-2">
+      {% include "core/feld.html" with f=f.gebuehr %}
+      <label class="choice">{{ f.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">Nur wenn der Kunde schon in Verzug ist; Kontorfreund prüft das selbst.</span></span></label>
+    </div>
+    {% include "core/feld.html" with f=f.text %}
+  </section>
+  {% endfor %}
+  <p class="actions"><button class="btn btn-primary" type="submit" name="aktion" value="stufen">{% icon "check" %}Mahnstufen speichern</button></p>
+</form>
+
+<section class="form-section" aria-labelledby="basiszins-titel">
+  <h2 class="form-title" id="basiszins-titel">Basiszinssatz</h2>
+  <p class="muted">Grundlage der Verzugszinsen (§ 247 BGB). Die Deutsche Bundesbank gibt ihn zum 1. Januar und 1. Juli bekannt.{% if veraltet %} <strong class="is-warn-text">Der letzte Eintrag ist nicht mehr aktuell.</strong>{% endif %}</p>
+  {% if basiszinsen %}
+  <div class="table-wrap">
+    <table class="table archive">
+      <thead><tr><th scope="col">Gültig ab</th><th scope="col" class="num">Satz</th><th scope="col"><span class="visually-hidden">Löschen</span></th></tr></thead>
+      <tbody>
+        {% for b in basiszinsen %}
+        <tr class="data-row">
+          <td class="docnr">{{ b.gueltig_ab|date:"d.m.Y" }}</td>
+          <td class="num"><span class="amount">{{ b.satz|zahl:2 }} %</span></td>
+          <td class="cell-action"><form method="post" action="{% url 'zahlungen:basiszins_loeschen' b.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-icon" type="submit" data-confirm="Diesen Eintrag löschen?">{% icon "x" %}<span class="visually-hidden">Eintrag vom {{ b.gueltig_ab|date:"d.m.Y" }} löschen</span></button></form></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <form class="grid-2" method="post" novalidate>
+    {% csrf_token %}
+    {% include "core/feld.html" with f=zins_form.gueltig_ab %}
+    {% include "core/feld.html" with f=zins_form.satz %}
+    <p class="actions"><button class="btn" type="submit" name="aktion" value="basiszins">{% icon "plus" %}Basiszinssatz eintragen</button></p>
+  </form>
+</section>
+{% endblock %}

@@ -40,8 +40,7 @@
           {% elif r.ist_storno %}<span class="status status-void">{% icon "x" %}Storno zu {{ r.storno_zu.nummer }}</span>
           {% elif r.ist_korrektur %}<span class="status status-void">{% icon "pencil" %}Korrektur zu {{ r.korrektur_zu.nummer }}</span>
           {% elif r.storniert %}<span class="status status-void">{% icon "x" %}Storniert</span>
-          {% elif r.versendet_am %}<span class="status status-ok">{% icon "check" %}Versendet</span>
-          {% else %}<span class="status status-open">{% icon "lock" %}Festgeschrieben</span>{% endif %}
+          {% else %}{% include "zahlungen/zahlstand.html" %}{% endif %}
         </td>
         <td class="num"><span class="amount">{% if r.ist_entwurf %}<span class="muted">–</span>{% else %}{{ r.brutto|euro }}{% endif %}</span></td>
       </tr>

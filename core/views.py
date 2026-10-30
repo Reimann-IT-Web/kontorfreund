@@ -11,6 +11,8 @@ from archive.models import Altbeleg
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
+from zahlungen import mahnen
+from zahlungen.models import Mahnstufe
 
 from .forms import FirmendatenForm
 from .models import Firmendaten
@@ -36,6 +38,11 @@ def start(request):
         ).aggregate(s=Sum("netto"))["s"]
         or Decimal("0.00")
     )
+    offen = [r for r in mahnen.posten() if r.offen > 0]
+    ueberfaellig = [r for r in offen if r.ueberfaellig]
+    mahnstufe = dict(mahnen.vorschlaege(ueberfaellig, Mahnstufe.alle()))
+    for r in ueberfaellig:
+        r.mahnstufe = mahnstufe.get(r)
     return render(
         request,
         "core/start.html",
@@ -44,6 +51,13 @@ def start(request):
             "anzahl_kontakte": anzahl,
             "erste_schritte": not (firma.vollstaendig and anzahl),
             "zuletzt": kontakte.order_by("-geaendert")[:5],
+            # Offene Posten: Summen in der Seitenleiste, Überfälliges in der Arbeitsliste.
+            "posten": bool(offen)
+            or Rechnung.objects.filter(status=Rechnung.Status.FESTGESCHRIEBEN).exists(),
+            "summe_offen": sum((r.offen for r in offen), Decimal("0.00")),
+            "summe_ueberfaellig": sum((r.offen for r in ueberfaellig), Decimal("0.00")),
+            "anzahl_offen": len(offen),
+            "ueberfaellig": sorted(ueberfaellig, key=lambda r: r.faellig),
             # Fertig, aber noch ohne Antwort; die zuerst ablaufen, stehen oben.
             "offene_angebote": sorted(
                 Angebot.objects.filter(
