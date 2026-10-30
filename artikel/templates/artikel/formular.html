@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{% if artikel %}{{ artikel }} bearbeiten{% else %}Neuer Artikel{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'artikel:liste' %}">Artikel</a></li>
+    <li aria-current="page">{% if artikel %}{{ artikel.artikelnummer }}{% else %}Neuer Artikel{% endif %}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{% if artikel %}{{ artikel }}{% if not artikel.aktiv %} <span class="status status-void">{% icon "x" %}Inaktiv</span>{% endif %}{% else %}Neuer Artikel{% endif %}</h1>
+    <p class="muted">{% if artikel %}{{ artikel.artikelnummer }} · zuletzt geändert {{ artikel.geaendert|date:"d.m.Y, H:i" }} Uhr{% else %}Rechnungen übernehmen Bezeichnung, Beschreibung, Einheit und Preis. Ändern Sie den Preis später, bleiben bestehende Rechnungen, wie sie sind.{% endif %}</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-artikel">
+    <h2 class="form-title" id="t-artikel">Artikel</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.bezeichnung breit=True %}
+      {% include "core/feld.html" with f=form.beschreibung breit=True optional=True %}
+      {% include "core/feld.html" with f=form.preis %}
+      {% include "core/feld.html" with f=form.einheit %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}{% if artikel %}Speichern{% else %}Artikel anlegen{% endif %}</button>
+    <a class="btn btn-ghost" href="{% url 'artikel:liste' %}">Abbrechen</a>
+  </div>
+</form>
+
+{% if artikel %}
+<section class="form-section form" aria-labelledby="t-aktiv">
+  <h2 class="form-title" id="t-aktiv">{% if artikel.aktiv %}Nicht mehr anbieten{% else %}Wieder anbieten{% endif %}</h2>
+  <p class="small">{% if artikel.aktiv %}Inaktive Artikel erscheinen nicht mehr in der Auswahl der Rechnung, bleiben aber erhalten.{% else %}Der Artikel erscheint dann wieder in der Auswahl der Rechnung.{% endif %}</p>
+  <form method="post" action="{% url 'artikel:aktiv' artikel.pk %}">
+    {% csrf_token %}
+    <button class="btn" type="submit">{% if artikel.aktiv %}{% icon "x" %}Auf inaktiv setzen{% else %}{% icon "check" %}Wieder aktivieren{% endif %}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

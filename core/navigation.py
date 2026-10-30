@@ -9,7 +9,7 @@ NAVIGATION = [
         "icon": "file",
         "url": "invoicing:liste",
     },
-    {"key": "artikel", "label": "Artikel", "icon": "box", "slug": "artikel"},
+    {"key": "artikel", "label": "Artikel", "icon": "box", "url": "artikel:liste"},
     {
         "key": "offene-posten",
         "label": "Offene Posten",
@@ -40,11 +40,6 @@ NAVIGATION = [
 
 # Bereiche, die noch nicht gebaut sind: (Titel, was kommt, Phase).
 PLATZHALTER = {
-    "artikel": (
-        "Artikel",
-        "Artikel und Leistungen mit Einheit, Preis und Steuersatz.",
-        "Phase 2",
-    ),
     "offene-posten": (
         "Offene Posten",
         "Zahlungseingänge buchen, Mahnungen in drei Stufen, GiroCode.",

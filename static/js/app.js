@@ -308,6 +308,21 @@ if (rechnung) {
     });
   };
 
+  // Artikelauswahl schließt bei Klick daneben und mit Esc.
+  const artikelMenue = rechnung.querySelector("[data-artikel-menue]");
+  if (artikelMenue) {
+    document.addEventListener("click", (e) => {
+      if (!artikelMenue.contains(e.target)) artikelMenue.open = false;
+    });
+    artikelMenue.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && artikelMenue.open) {
+        e.preventDefault();
+        artikelMenue.open = false;
+        artikelMenue.querySelector("summary").focus();
+      }
+    });
+  }
+
   rechnung.addEventListener("input", rechnen);
   rechnung.addEventListener("change", rechnen);
   rechnung.addEventListener("click", (e) => {
@@ -315,6 +330,24 @@ if (rechnung) {
       tbody.append(vorlage.content.cloneNode(true));
       rechnen();
       tbody.lastElementChild.querySelector("[name=bezeichnung]").focus();
+      return;
+    }
+    // Artikel füllen die letzte Position, wenn sie noch leer ist, sonst eine neue.
+    const artikel = e.target.closest("[data-artikel]");
+    if (artikel) {
+      let zeile = tbody.lastElementChild;
+      const leer = ["bezeichnung", "beschreibung", "preis"].every((name) => !zeile.querySelector(`[name=${name}]`).value.trim());
+      if (!leer) {
+        tbody.append(vorlage.content.cloneNode(true));
+        zeile = tbody.lastElementChild;
+      }
+      for (const name of ["bezeichnung", "beschreibung", "einheit", "preis"]) {
+        zeile.querySelector(`[name=${name}]`).value = artikel.dataset[name];
+      }
+      artikelMenue.open = false;
+      rechnen();
+      zeile.querySelector("[name=menge]").select();
+      ansage(`${artikel.dataset.bezeichnung} eingefügt. Bitte die Menge prüfen.`);
       return;
     }
     const entfernen = e.target.closest("[data-remove-position]");

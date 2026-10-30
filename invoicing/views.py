@@ -13,6 +13,7 @@ from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
 from archive.models import Altbeleg
+from artikel.models import Artikel
 from contacts.models import Kontakt
 from core.models import Firmendaten
 
@@ -109,6 +110,7 @@ def _editor(request, rechnung, firma):
             "positionen": positionen,
             "kontakte": kontakte,
             "einheiten": EINHEITEN,
+            "artikel": Artikel.objects.filter(aktiv=True),
             "naechste_nummer": Rechnung.naechste_nummer(rechnung.datum),
             "vorschau": beleg.seitenbilder(_entwurf_pdf(rechnung, firma))
             if rechnung.pk and request.GET.get("vorschau")

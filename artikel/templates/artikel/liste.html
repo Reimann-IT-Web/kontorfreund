@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Artikel{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if inaktiv %}Inaktive Artikel{% else %}Artikel{% endif %}</h1>
+    <p class="muted">
+      {% if inaktiv %}<a href="{% url 'artikel:liste' %}">Zurück zu den {{ anzahl }} aktiven Artikeln</a>
+      {% else %}{{ anzahl }} Artikel{% if anzahl_inaktiv %} · <a href="?inaktiv=1">{{ anzahl_inaktiv }} inaktiv</a>{% endif %}{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'artikel:neu' %}">{% icon "plus" %}Neuer Artikel</a>
+  </div>
+</div>
+
+{% if anzahl or anzahl_inaktiv %}
+<form class="filterbar" method="get" role="search">
+  <label class="field field-search">
+    {% icon "search" %}
+    <span class="visually-hidden">Artikel durchsuchen</span>
+    <input type="search" name="q" value="{{ q }}" placeholder="Bezeichnung, Beschreibung oder Nummer">
+  </label>
+  {% if inaktiv %}<input type="hidden" name="inaktiv" value="1">{% endif %}
+</form>
+{% endif %}
+
+{% if artikel %}
+<div class="table-wrap">
+  <table class="table articles">
+    <thead>
+      <tr>
+        <th scope="col">Nr.</th>
+        <th scope="col">Bezeichnung</th>
+        <th scope="col" class="num">Einzelpreis</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in artikel %}
+      <tr class="data-row">
+        <td class="docnr">{{ a.artikelnummer }}</td>
+        <td>
+          <a class="cell-title" href="{% url 'artikel:bearbeiten' a.pk %}">{{ a.bezeichnung }}</a>
+          {% if a.beschreibung %}<span class="cell-sub">{{ a.beschreibung|linebreaksbr }}</span>{% endif %}
+        </td>
+        <td class="num"><span class="amount">{{ a.preis|euro }}</span> <span class="muted">/ {{ a.einheit }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if q %}<p class="table-foot muted">{{ artikel|length }} Treffer</p>{% endif %}
+
+{% elif q %}
+<div class="empty">
+  <h2>Kein Artikel gefunden</h2>
+  <p class="muted">Für „{{ q }}“ gibt es keinen Treffer. Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. A-0001.</p>
+  <p class="actions"><a class="btn" href="{% url 'artikel:liste' %}{% if inaktiv %}?inaktiv=1{% endif %}">Suche zurücksetzen</a></p>
+</div>
+
+{% elif inaktiv %}
+<div class="empty">
+  <h2>Keine inaktiven Artikel</h2>
+  <p class="muted">Inaktive Artikel erscheinen nicht mehr in der Rechnung, bleiben aber erhalten.</p>
+</div>
+
+{% else %}
+<div class="empty">
+  <h2>Noch keine Artikel</h2>
+  <p class="muted">Legen Sie Leistungen, die Sie öfter berechnen, einmal mit Preis und Einheit an, etwa Ihren Stundensatz oder einen Wartungsvertrag. In der Rechnung wählen Sie sie dann aus.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'artikel:neu' %}">{% icon "plus" %}Ersten Artikel anlegen</a></p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,10 +1,12 @@
 from django.conf import settings
 from django.urls import reverse
 
+from artikel.models import Artikel
 from contacts.models import Kontakt
 
 from .models import Firmendaten
 from .navigation import NAVIGATION
+from .templatetags.kf import euro
 
 
 def product(request):
@@ -33,6 +35,7 @@ def navigation(request):
             "url": reverse("invoicing:neu"),
         },
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
+        {"titel": "Neuer Artikel", "info": "Artikel", "url": reverse("artikel:neu")},
         {
             "titel": "Mein Konto",
             "info": "Kennwort und Zwei-Faktor-Anmeldung",
@@ -64,6 +67,14 @@ def navigation(request):
             "url": f"{liste}?q={k.kundennummer}&offen={k.pk}",
         }
         for k in kontakte[:500]
+    ]
+    suchindex += [
+        {
+            "titel": a.bezeichnung,
+            "info": f"{a.artikelnummer} · {euro(a.preis)} / {a.einheit}",
+            "url": reverse("artikel:bearbeiten", args=[a.pk]),
+        }
+        for a in Artikel.objects.filter(aktiv=True)[:500]
     ]
     return {
         "navigation": eintraege,

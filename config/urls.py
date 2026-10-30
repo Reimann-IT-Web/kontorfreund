@@ -10,6 +10,7 @@ urlpatterns = [
     ),
     path("adressen/", include("contacts.urls")),
     path("rechnungen/", include("invoicing.urls")),
+    path("artikel/", include("artikel.urls")),
     path("ablage/", include("archive.urls")),
     path("datensicherung/", include("backups.urls")),
     path("konto/", include("konten.urls")),

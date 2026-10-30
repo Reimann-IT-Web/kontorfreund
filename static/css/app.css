@@ -1472,7 +1472,7 @@ select {
 }
 
 .positions select {
-  width: 6.5rem;
+  width: 7.5rem;
   padding-right: 1.9rem;
 }
 
@@ -1536,6 +1536,88 @@ select {
   justify-content: space-between;
   gap: var(--s5);
   margin-top: var(--s4);
+}
+
+/* Artikelauswahl: Aufklappliste unter dem Knopf, auf schmalen Bildschirmen ab dem linken Rand. */
+.positions-actions {
+  position: relative;
+  align-items: center;
+}
+
+.positions-actions .hint {
+  max-width: 36ch;
+  margin: 0;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu summary {
+  list-style: none;
+}
+
+.menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu[open] summary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.menu[open] summary .icon:last-child {
+  transform: rotate(180deg);
+}
+
+.menu-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s1));
+  left: 0;
+  width: max-content;
+  max-width: min(30rem, calc(100vw - 2rem));
+  max-height: 22rem;
+  margin: 0;
+  padding: var(--s1);
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.menu-list button {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s5);
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-list button:hover,
+.menu-list button:focus-visible {
+  background: var(--accent-soft);
+}
+
+.menu-list button:focus-visible {
+  outline-offset: -2px;
+}
+
+.menu-meta {
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .totals {
@@ -2239,6 +2321,10 @@ input[type="file"]::file-selector-button {
 @media (max-width: 40rem) {
   h1 {
     font-size: var(--fs-lg);
+  }
+
+  .menu {
+    position: static;
   }
 
   .search-trigger {
