@@ -18,6 +18,17 @@ def runden(wert):
     return wert.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
+def summen(positionen, steuerfall):
+    """(netto, ust, brutto) aus den Positionen eines Belegs, kaufmännisch gerundet."""
+    netto = sum((p.gesamt for p in positionen), Decimal("0.00"))
+    ust = (
+        runden(netto * UST_SATZ / 100)
+        if steuerfall == Rechnung.Steuerfall.REGEL
+        else Decimal("0.00")
+    )
+    return netto, ust, netto + ust
+
+
 class Festgeschrieben(ValidationError):
     """Festgeschriebene Rechnungen sind unveränderbar (GoBD).
 
@@ -208,18 +219,21 @@ class Rechnung(models.Model):
         return self.datum + timedelta(days=self.zahlungsziel)
 
     @property
+    def anhaenge(self):
+        """Dateien für den Versand: (Dateiname, Pfad im Datenordner, MIME-Typ)."""
+        name = f"{self.bezeichnung}-{self.nummer}"
+        dateien = [(f"{name}.pdf", self.datei, "application/pdf")]
+        if self.xml_datei:
+            dateien.append((f"{name}.xml", self.xml_datei, "application/xml"))
+        return dateien
+
+    @property
     def steuerhinweis(self):
         return self.STEUERHINWEIS[self.steuerfall]
 
     def summen(self):
         """(netto, ust, brutto) aus den Positionen, kaufmännisch gerundet."""
-        netto = sum((p.gesamt for p in self.positionen.all()), Decimal("0.00"))
-        ust = (
-            runden(netto * UST_SATZ / 100)
-            if self.steuerfall == self.Steuerfall.REGEL
-            else Decimal("0.00")
-        )
-        return netto, ust, netto + ust
+        return summen(self.positionen.all(), self.steuerfall)
 
     def fehlende_angaben(self, firma):
         """Pflichtangaben nach § 14 Abs. 4 UStG, die noch fehlen."""

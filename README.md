@@ -6,7 +6,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
-**Status:** frühe Entwicklung. Adressen und Firmendaten lassen sich bereits erfassen; Rechnungen speichern folgt in Phase 2. Was entsteht, beschreibt die [Spezifikation](docs/spec/README.md).
+**Status:** frühe Entwicklung. Im Einsatz sind Adressen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was noch entsteht, beschreibt die [Spezifikation](docs/spec/README.md).
 
 ## Entwicklung
 

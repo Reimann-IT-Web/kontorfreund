@@ -1,4 +1,4 @@
-"""Versand festgeschriebener Rechnungen über den eigenen E-Mail-Server (SMTP)."""
+"""Versand festgeschriebener Belege über den eigenen E-Mail-Server (SMTP)."""
 
 import smtplib
 import ssl
@@ -46,7 +46,8 @@ def vorschlag(rechnung, firma):
     }
 
 
-def senden(rechnung, firma, an, betreff, text, kopie):
+def senden(beleg, firma, an, betreff, text, kopie):
+    """Rechnung oder Angebot mit den Dateien aus `beleg.anhaenge` senden."""
     verbindung = SmtpVersand(
         host=firma.mail_server,
         port=firma.mail_port,
@@ -63,21 +64,12 @@ def senden(rechnung, firma, an, betreff, text, kopie):
         to=[an],
         bcc=[firma.email] if kopie else [],
     )
-    nachricht.attach(
-        f"{rechnung.bezeichnung}-{rechnung.nummer}.pdf",
-        (Path(settings.DATA_DIR) / rechnung.datei).read_bytes(),
-        "application/pdf",
-    )
-    if rechnung.xml_datei:
-        nachricht.attach(
-            f"{rechnung.bezeichnung}-{rechnung.nummer}.xml",
-            (Path(settings.DATA_DIR) / rechnung.xml_datei).read_bytes(),
-            "application/xml",
-        )
+    for name, pfad, art in beleg.anhaenge:
+        nachricht.attach(name, (Path(settings.DATA_DIR) / pfad).read_bytes(), art)
     verbindung.send_messages([nachricht])
-    rechnung.versendet_am = timezone.now()
-    rechnung.versendet_an = an
-    rechnung.save(update_fields=["versendet_am", "versendet_an"])
+    beleg.versendet_am = timezone.now()
+    beleg.versendet_an = an
+    beleg.save(update_fields=["versendet_am", "versendet_an"])
 
 
 def fehlertext(fehler):

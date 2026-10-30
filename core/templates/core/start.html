@@ -13,7 +13,7 @@
 
 <nav class="quickstart" aria-label="Schnellstart">
   <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
-  <a class="btn" href="{% url 'invoicing:neu' %}">{% icon "file" %}Neues Angebot</a>
+  <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>
   <a class="btn" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Neue Adresse</a>
   <a class="btn" href="{% url 'core:platzhalter' 'offene-posten' %}">{% icon "banknote" %}Zahlung buchen</a>
 </nav>
@@ -51,10 +51,29 @@
       </ol>
     {% else %}
       <h2 id="heute">Heute zu tun</h2>
+      {% if offene_angebote %}
+      <div class="group">
+        <h3 class="group-head">Offene Angebote <span class="count">{{ offene_angebote|length }}</span></h3>
+        <ul class="rows">
+          {% for a in offene_angebote %}
+          <li class="row">
+            {% if a.abgelaufen %}<span class="status status-today">{% icon "clock" %}Abgelaufen</span>{% else %}<span class="status status-open">{% icon "clock" %}bis {{ a.gueltig_bis|date:"d.m.Y" }}</span>{% endif %}
+            <div class="row-main">
+              <p class="row-title">{{ a.kontakt }}</p>
+              <p class="row-meta">Angebot {{ a.nummer }} vom {{ a.datum|date:"d.m.Y" }}{% if a.betreff %} · {{ a.betreff }}{% endif %}</p>
+            </div>
+            <span class="amount">{{ a.brutto|euro }}</span>
+            <a class="btn btn-sm" href="{% url 'angebote:bearbeiten' a.pk %}">{% icon "check" %}Antwort eintragen</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
       <div class="empty empty-inline">
         <h3>Heute ist nichts fällig</h3>
         <p class="muted">Fällige Rechnungen, Wiedervorlagen und offene Angebote erscheinen hier, sobald es sie gibt.</p>
       </div>
+      {% endif %}
     {% endif %}
   </section>
 

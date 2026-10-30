@@ -10,9 +10,12 @@
     <p class="muted">Ihre Rechnungen aus Kontorfreund.{% if altrechnungen %} Die {{ altrechnungen }} Rechnungen aus Ihrem bisherigen Programm finden Sie in der <a href="{% url 'archive:liste' %}?art=rechnung">Ablage</a>.{% endif %}</p>
   </div>
   <div class="actions">
+    <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>
     <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   </div>
 </div>
+
+{% include "invoicing/belegarten.html" %}
 
 {% if rechnungen %}
 <div class="table-wrap">

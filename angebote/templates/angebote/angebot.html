@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ titel }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'angebote:liste' %}">Angebote &amp; Rechnungen</a></li>
+    <li aria-current="page">{{ titel }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ titel }} <span class="status status-draft">{% icon "pencil" %}Entwurf</span></h1>
+    <p class="muted">Beim Fertigstellen erhält das Angebot die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
+  </div>
+</div>
+
+<form class="editor" id="angebot-form" method="post" data-invoice data-beleg="angebot" data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-adressen="{% url 'contacts:liste' %}" novalidate>
+  {% csrf_token %}
+  <div class="editor-main">
+    <nav class="steps" aria-label="Schritte">
+      <ol>
+        <li><a href="#schritt-1" aria-current="step"><span class="step-nr">1</span><span class="step-long">Empfänger &amp; Bedingungen</span><span class="step-short" aria-hidden="true">Empfänger</span></a></li>
+        <li><a href="#schritt-2"><span class="step-nr">2</span>Positionen</a></li>
+        <li><a href="#schritt-3"><span class="step-nr">3</span><span class="step-long">Prüfen &amp; fertigstellen</span><span class="step-short" aria-hidden="true">Prüfen</span></a></li>
+      </ol>
+    </nav>
+
+    <section class="step" id="schritt-1" aria-labelledby="s1">
+      <h2 id="s1"><span class="step-nr">1</span>Empfänger &amp; Bedingungen</h2>
+      <div class="grid-2">
+        <div class="stack">
+          <div class="field{% if form.kontakt.errors %} has-error{% endif %}">
+            <label for="kontakt">Empfänger</label>
+            <select id="kontakt" name="kontakt">
+              <option value="">Adresse wählen …</option>
+              {% for k in kontakte %}
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
+              {% endfor %}
+            </select>
+            {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
+          </div>
+          <address class="address-card" data-address-card hidden></address>
+          <p class="hint is-warn-text" data-address-missing hidden>Für das Angebot fehlen Straße, PLZ oder Ort. <a href="#" data-address-edit>Adresse ergänzen</a></p>
+        </div>
+
+        <div class="stack">
+          {% include "core/feld.html" with f=form.datum %}
+          <div class="field">
+            <label for="bindefrist">Gültig</label>
+            {{ form.bindefrist }}
+            <p class="hint">bis <span data-due>{{ angebot.gueltig_bis|date:"d.m.Y" }}</span>; das Datum steht auf dem Angebot.</p>
+          </div>
+          <div class="field">
+            <label for="steuerfall">Umsatzsteuer</label>
+            {{ form.steuerfall }}
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="betreff">Betreff <span class="optional">optional</span></label>
+        {{ form.betreff }}
+      </div>
+      <div class="field">
+        <label for="kopftext">Text vor den Positionen</label>
+        {{ form.kopftext }}
+      </div>
+    </section>
+
+    <section class="step" id="schritt-2" aria-labelledby="s2">
+      <h2 id="s2"><span class="step-nr">2</span>Positionen</h2>
+      <div class="table-wrap">
+        <table class="table positions">
+          <thead>
+            <tr>
+              <th scope="col" class="col-pos">Pos.</th>
+              <th scope="col">Bezeichnung</th>
+              <th scope="col" class="num">Menge</th>
+              <th scope="col">Einheit</th>
+              <th scope="col" class="num">Einzelpreis</th>
+              <th scope="col" class="num">Gesamt</th>
+              <th scope="col"><span class="visually-hidden">Entfernen</span></th>
+            </tr>
+          </thead>
+          <tbody data-positions>
+            {% for p in positionen %}{% include "invoicing/position.html" %}{% empty %}{% include "invoicing/position.html" %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <template id="position-vorlage">{% include "invoicing/position.html" %}</template>
+      <div class="positions-foot">
+        <div class="actions positions-actions">
+          <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
+          {% if artikel %}
+          <details class="menu" data-artikel-menue>
+            <summary class="btn btn-sm">{% icon "box" %}Artikel einfügen{% icon "chevron-down" %}</summary>
+            <ul class="menu-list" aria-label="Artikel">
+              {% for a in artikel %}
+              <li><button type="button" data-artikel data-bezeichnung="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}"><span>{{ a.bezeichnung }}</span><span class="menu-meta">{{ a.preis|euro }} / {{ a.einheit }}</span></button></li>
+              {% endfor %}
+            </ul>
+          </details>
+          {% else %}
+          <p class="hint">Was Sie öfter anbieten, legen Sie einmal unter <a href="{% url 'artikel:liste' %}">Artikel</a> an und fügen es hier mit einem Klick ein.</p>
+          {% endif %}
+        </div>
+        <dl class="totals">
+          <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
+          <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
+          <div class="totals-sum"><dt>Gesamtbetrag</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
+        </dl>
+      </div>
+      <p class="tax-note" data-tax-note></p>
+    </section>
+
+    <section class="step" id="schritt-3" aria-labelledby="s3">
+      <h2 id="s3"><span class="step-nr">3</span>Prüfen &amp; fertigstellen</h2>
+      <div class="field">
+        <label for="fusstext">Text nach den Positionen</label>
+        {{ form.fusstext }}
+        <p class="hint">Bis wann das Angebot gilt, druckt Kontorfreund automatisch darüber.</p>
+      </div>
+      <p class="callout">{% icon "lock" %}<span>Beim Fertigstellen erhält das Angebot seine Nummer und wird als PDF abgelegt, so wie Ihr Kunde es bekommt. Danach bleibt es unverändert; für eine geänderte Fassung legen Sie eine Kopie an. Prüfen Sie es deshalb vorher in der Vorschau.</span></p>
+    </section>
+  </div>
+
+  <a class="check-bar is-missing" href="#pruefung" data-check-bar>
+    <span>Angaben <span class="check-bar-state" data-check-bar-state></span></span>
+    {% icon "chevron-down" %}
+  </a>
+
+  <aside class="editor-side" id="pruefung" aria-label="Prüfung">
+    <div class="panel sticky">
+      <p class="panel-title">Gesamtbetrag</p>
+      <p class="total" data-sum-side>0,00&nbsp;€</p>
+      <p class="small muted">gültig bis <span data-due>{{ angebot.gueltig_bis|date:"d.m.Y" }}</span></p>
+
+      <h2 class="panel-title checks-head">Angaben <span class="count" data-check-count></span></h2>
+      <ul class="checklist">
+        <li data-check="empfaenger">{% icon "check" %}{% icon "alert" %}<span>Name und Anschrift des Empfängers</span></li>
+        <li data-check="absender">{% icon "check" %}{% icon "alert" %}<span>Ihre Anschrift und Steuernummer{% if not firma.vollstaendig %} – {% include "invoicing/einstellungen_ergaenzen.html" %}{% endif %}</span></li>
+        <li data-check="datum">{% icon "check" %}{% icon "alert" %}<span>Angebotsdatum</span></li>
+        <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
+        <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>Angebotsbetrag</span></li>
+      </ul>
+      <p class="small check-message" data-check-message role="status"></p>
+      <button class="btn btn-primary btn-block" type="button" data-submit disabled>{% icon "lock" %}Fertigstellen …</button>
+      <button class="btn btn-block" type="submit" name="aktion" value="speichern">{% icon "check" %}Entwurf speichern</button>
+      <button class="btn btn-block" type="submit" name="aktion" value="vorschau">{% icon "eye" %}Vorschau als PDF</button>
+      {% if angebot.pk %}<button class="btn btn-ghost btn-block" type="submit" form="loeschen-form" data-confirm="Diesen Entwurf wirklich löschen?">{% icon "x" %}Entwurf löschen</button>{% endif %}
+    </div>
+  </aside>
+</form>
+
+{% if angebot.pk %}
+<form id="loeschen-form" method="post" action="{% url 'angebote:loeschen' angebot.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+
+<dialog class="notice-dialog" id="fertigstellen-dialog" aria-labelledby="fertigstellen-titel" data-abschluss-dialog>
+  <form method="dialog">
+    <h2 id="fertigstellen-titel">Angebot fertigstellen?</h2>
+    <p>Das Angebot erhält die Nummer <strong>{{ naechste_nummer }}</strong> und wird als PDF abgelegt. Danach lässt es sich nicht mehr ändern, nur noch kopieren.</p>
+    <p class="actions">
+      <button class="btn" value="abbrechen">Abbrechen</button>
+      <button class="btn btn-primary" type="submit" form="angebot-form" name="aktion" value="fertigstellen">{% icon "lock" %}Fertigstellen</button>
+    </p>
+  </form>
+</dialog>
+
+{% if vorschau %}
+<dialog class="preview-dialog" aria-labelledby="vorschau-titel" data-open-on-load>
+  <div class="preview-head">
+    <h2 id="vorschau-titel">Vorschau</h2>
+    <a class="btn btn-sm" href="{% url 'angebote:pdf' angebot.pk %}" target="_blank" rel="noopener">Als PDF öffnen</a>
+    <form method="dialog"><button class="btn btn-sm btn-primary">Schließen</button></form>
+  </div>
+  <div class="preview-body">
+    {% for bild in vorschau %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="Angebotsentwurf, Seite {{ forloop.counter }} von {{ vorschau|length }}">{% endfor %}
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}

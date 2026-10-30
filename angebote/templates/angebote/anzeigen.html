@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ angebot }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'angebote:liste' %}">Angebote &amp; Rechnungen</a></li>
+    <li aria-current="page">{{ angebot }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ angebot }} {% include "angebote/stand.html" with a=angebot %}</h1>
+    <p class="muted">{{ angebot.kontakt }} · {{ angebot.datum|date:"d.m.Y" }} · <span class="amount">{{ angebot.brutto|euro }}</span> · gültig bis {{ angebot.gueltig_bis|date:"d.m.Y" }}{% if angebot.versendet_am %} · gesendet am {{ angebot.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ angebot.versendet_an }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    <button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>
+    <a class="btn" href="{% url 'angebote:pdf' angebot.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
+    <a class="btn" href="{% url 'angebote:pdf' angebot.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+  </div>
+</div>
+
+<div class="beleg-ansicht">
+  <div class="beleg-bilder">
+    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="{{ angebot }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
+    {% empty %}<p class="muted">Die PDF-Datei fehlt im Archiv.</p>{% endfor %}
+  </div>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="antwort-titel">
+      <h2 class="panel-title" id="antwort-titel">Antwort des Kunden</h2>
+      {% if angebot.antwort == "angenommen" %}
+        <p class="small">Angenommen am {{ angebot.antwort_am|date:"d.m.Y" }}.</p>
+        {% if angebot.rechnung %}
+        <p><a class="btn btn-primary btn-block" href="{% url 'invoicing:bearbeiten' angebot.rechnung.pk %}">{% icon "file" %}{% if angebot.rechnung.nummer %}Zur Rechnung {{ angebot.rechnung.nummer }}{% else %}Zum Rechnungsentwurf{% endif %}</a></p>
+        {% else %}
+        <p class="small muted">Kontorfreund übernimmt Empfänger, Betreff und alle Positionen in einen Rechnungsentwurf. Den Leistungszeitraum tragen Sie dort ein.</p>
+        <button class="btn btn-primary btn-block" type="submit" form="rechnung-form">{% icon "file" %}Rechnung erstellen</button>
+        <button class="btn btn-ghost btn-block" type="submit" form="antwort-form" name="antwort" value="">Antwort zurücknehmen</button>
+        {% endif %}
+      {% elif angebot.antwort == "abgelehnt" %}
+        <p class="small">Abgelehnt am {{ angebot.antwort_am|date:"d.m.Y" }}.</p>
+        <button class="btn btn-ghost btn-block" type="submit" form="antwort-form" name="antwort" value="">Antwort zurücknehmen</button>
+      {% else %}
+        {% if angebot.abgelaufen %}
+        <p class="small is-warn-text">Die Frist ist am {{ angebot.gueltig_bis|date:"d.m.Y" }} abgelaufen. Vielleicht lohnt eine kurze Nachfrage beim Kunden.</p>
+        {% else %}
+        <p class="small">Das Angebot gilt bis {{ angebot.gueltig_bis|date:"d.m.Y" }}. Tragen Sie hier ein, wie der Kunde entschieden hat.</p>
+        {% endif %}
+        <button class="btn btn-primary btn-block" type="submit" form="antwort-form" name="antwort" value="angenommen">{% icon "check" %}Angenommen</button>
+        <button class="btn btn-block" type="submit" form="antwort-form" name="antwort" value="abgelehnt">{% icon "x" %}Abgelehnt</button>
+      {% endif %}
+    </section>
+
+    {% if not angebot.antwort %}
+    <section class="panel" aria-labelledby="versand-titel">
+      <h2 class="panel-title" id="versand-titel">{% if angebot.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}</h2>
+      {% if firma.mail_bereit %}
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        {% include "core/feld.html" with f=form.an %}
+        {% include "core/feld.html" with f=form.betreff %}
+        {% include "core/feld.html" with f=form.text %}
+        <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
+        <p class="small muted">Anhang: Angebot-{{ angebot.nummer }}.pdf</p>
+        <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
+      </form>
+      {% else %}
+      <p class="small">Laden Sie das PDF herunter und hängen Sie es in Ihrem E-Mail-Programm an.</p>
+      {% if user.ist_inhaber %}<p class="small muted">Kontorfreund kann es auch selbst senden, wenn Sie in den <a href="{% url 'core:einstellungen' %}#t-mail">Einstellungen</a> den E-Mail-Versand einrichten.</p>{% endif %}
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="panel" aria-labelledby="ablage-titel">
+      <h2 class="panel-title" id="ablage-titel">Ablage</h2>
+      <dl class="facts small">
+        <div><dt>Fertiggestellt</dt><dd>{{ angebot.fertiggestellt_am|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt>Format</dt><dd>PDF/A-3</dd></div>
+      </dl>
+      <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ angebot.sha256 }}</code></p>
+    </section>
+  </aside>
+</div>
+
+<form id="kopieren-form" method="post" action="{% url 'angebote:kopieren' angebot.pk %}" hidden>{% csrf_token %}</form>
+<form id="antwort-form" method="post" action="{% url 'angebote:antwort' angebot.pk %}" hidden>{% csrf_token %}</form>
+{% if not angebot.rechnung %}
+<form id="rechnung-form" method="post" action="{% url 'angebote:rechnung_erstellen' angebot.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+{% endblock %}

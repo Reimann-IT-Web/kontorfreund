@@ -1,0 +1,6 @@
+<div class="filterbar">
+  <nav class="segmented" aria-label="Belegart">
+    <a href="{% url 'invoicing:liste' %}"{% if belegart == "rechnungen" %} aria-current="page"{% endif %}>Rechnungen</a>
+    <a href="{% url 'angebote:liste' %}"{% if belegart == "angebote" %} aria-current="page"{% endif %}>Angebote</a>
+  </nav>
+</div>

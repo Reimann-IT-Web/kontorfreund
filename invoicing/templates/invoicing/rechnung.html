@@ -4,25 +4,6 @@
 {% block title %}{{ titel }}{% endblock %}
 
 {% block content %}
-{% partialdef position %}
-<tr data-position>
-  <td class="col-pos" data-pos-nr>{{ p.nr|default:1 }}</td>
-  <td>
-    <input class="input-title" name="bezeichnung" type="text" value="{{ p.bezeichnung }}" placeholder="Was haben Sie geliefert oder geleistet?" aria-label="Bezeichnung">
-    <textarea class="input-sub" name="beschreibung" rows="1" placeholder="Beschreibung (optional)" aria-label="Beschreibung">{{ p.beschreibung }}</textarea>
-  </td>
-  <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% elif rechnung.ist_korrektur %}-1{% else %}1{% endif %}" aria-label="Menge"></td>
-  <td>
-    <select name="einheit" aria-label="Einheit">
-      {% for e in einheiten %}<option{% if e == p.einheit %} selected{% endif %}>{{ e }}</option>{% endfor %}
-    </select>
-  </td>
-  <td class="num"><input class="num" name="preis" type="text" inputmode="decimal" value="{% if p %}{{ p.preis|zahl:2 }}{% endif %}" placeholder="0,00" aria-label="Einzelpreis in Euro"></td>
-  <td class="num amount" data-line-total>0,00&nbsp;€</td>
-  <td class="cell-action"><button class="btn btn-ghost btn-icon" type="button" data-remove-position>{% icon "x" %}<span class="visually-hidden">Position entfernen</span></button></td>
-</tr>
-{% endpartialdef %}
-
 <nav aria-label="Sie sind hier">
   <ol class="crumbs">
     <li><a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a></li>
@@ -36,6 +17,7 @@
     {% if rechnung.ist_korrektur %}{% with o=rechnung.korrektur_zu %}
     <p class="muted">Korrigiert die <a href="{% url 'invoicing:bearbeiten' o.pk %}">Rechnung {{ o.nummer }}</a> vom {{ o.datum|date:"d.m.Y" }} über <span class="amount">{{ o.brutto|euro }}</span>. Mindern lässt sie sich noch um höchstens <span class="amount">{{ o.korrigierter_betrag|euro }}</span>.</p>
     {% endwith %}{% endif %}
+    {% if rechnung.angebot %}<p class="muted">Aus dem <a href="{% url 'angebote:bearbeiten' rechnung.angebot.pk %}">Angebot {{ rechnung.angebot.nummer }}</a> vom {{ rechnung.angebot.datum|date:"d.m.Y" }}.{% if not rechnung.leistung_von %} Tragen Sie noch den Leistungszeitraum ein.{% endif %}</p>{% endif %}
     <p class="muted">Beim Festschreiben erhält die {{ rechnung.bezeichnung }} die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
   </div>
 </div>
@@ -123,11 +105,11 @@
             </tr>
           </thead>
           <tbody data-positions>
-            {% for p in positionen %}{% partial position %}{% empty %}{% partial position %}{% endfor %}
+            {% for p in positionen %}{% include "invoicing/position.html" %}{% empty %}{% include "invoicing/position.html" %}{% endfor %}
           </tbody>
         </table>
       </div>
-      <template id="position-vorlage">{% partial position %}</template>
+      <template id="position-vorlage">{% include "invoicing/position.html" %}</template>
       <div class="positions-foot">
         <div class="actions positions-actions">
           <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
@@ -204,7 +186,7 @@
 <form id="loeschen-form" method="post" action="{% url 'invoicing:loeschen' rechnung.pk %}" hidden>{% csrf_token %}</form>
 {% endif %}
 
-<dialog class="notice-dialog" id="festschreiben-dialog" aria-labelledby="festschreiben-titel">
+<dialog class="notice-dialog" id="festschreiben-dialog" aria-labelledby="festschreiben-titel" data-abschluss-dialog>
   <form method="dialog">
     <h2 id="festschreiben-titel">{{ rechnung.bezeichnung }} festschreiben?</h2>
     <p>Die {{ rechnung.bezeichnung }} erhält die Nummer <strong>{{ naechste_nummer }}</strong> und wird als PDF unveränderbar abgelegt. Danach lässt sie sich nicht mehr ändern.</p>

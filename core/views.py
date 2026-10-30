@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.http import Http404
 from django.shortcuts import redirect, render
 
+from angebote.models import Angebot
 from archive.models import Altbeleg
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
@@ -43,6 +44,13 @@ def start(request):
             "anzahl_kontakte": anzahl,
             "erste_schritte": not (firma.vollstaendig and anzahl),
             "zuletzt": kontakte.order_by("-geaendert")[:5],
+            # Fertig, aber noch ohne Antwort; die zuerst ablaufen, stehen oben.
+            "offene_angebote": sorted(
+                Angebot.objects.filter(
+                    status=Angebot.Status.FERTIG, antwort=""
+                ).select_related("kontakt"),
+                key=lambda a: a.gueltig_bis,
+            ),
             "umsatz": umsatz,
             "grenze": KLEINUNTERNEHMER_GRENZE,
             "grenze_prozent": round(umsatz / KLEINUNTERNEHMER_GRENZE * 100),

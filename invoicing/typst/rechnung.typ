@@ -1,4 +1,4 @@
-// Rechnung nach DIN 5008 Form B. Alle Texte kommen fertig formatiert aus Python (beleg.py)
+// Rechnung oder Angebot nach DIN 5008 Form B. Alle Texte kommen fertig formatiert aus Python (beleg.py)
 // und werden als reiner Text gesetzt, nie als Typst-Code ausgewertet.
 
 #let d = json(bytes(sys.inputs.daten))

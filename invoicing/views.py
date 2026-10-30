@@ -32,6 +32,7 @@ def liste(request):
         "invoicing/liste.html",
         {
             "bereich": "rechnungen",
+            "belegart": "rechnungen",
             "rechnungen": Rechnung.objects.select_related(
                 "kontakt", "storno_zu", "stornorechnung", "korrektur_zu"
             ),

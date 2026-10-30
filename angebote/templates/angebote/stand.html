@@ -1,0 +1,6 @@
+{% load kf %}{% if a.stand == "entwurf" %}<span class="status status-draft">{% icon "pencil" %}Entwurf</span>
+{% elif a.stand == "angenommen" %}<span class="status status-ok">{% icon "check" %}Angenommen</span>
+{% elif a.stand == "abgelehnt" %}<span class="status status-void">{% icon "x" %}Abgelehnt</span>
+{% elif a.stand == "abgelaufen" %}<span class="status status-today">{% icon "clock" %}Abgelaufen</span>
+{% elif a.stand == "versendet" %}<span class="status status-open">{% icon "send" %}Versendet</span>
+{% else %}<span class="status status-open">{% icon "clock" %}Offen</span>{% endif %}

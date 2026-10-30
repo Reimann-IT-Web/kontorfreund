@@ -1,0 +1,16 @@
+{% load kf %}<tr data-position>
+  <td class="col-pos" data-pos-nr>{{ p.nr|default:1 }}</td>
+  <td>
+    <input class="input-title" name="bezeichnung" type="text" value="{{ p.bezeichnung }}" placeholder="{% if angebot %}Was bieten Sie an?{% else %}Was haben Sie geliefert oder geleistet?{% endif %}" aria-label="Bezeichnung">
+    <textarea class="input-sub" name="beschreibung" rows="1" placeholder="Beschreibung (optional)" aria-label="Beschreibung">{{ p.beschreibung }}</textarea>
+  </td>
+  <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% elif rechnung.ist_korrektur %}-1{% else %}1{% endif %}" aria-label="Menge"></td>
+  <td>
+    <select name="einheit" aria-label="Einheit">
+      {% for e in einheiten %}<option{% if e == p.einheit %} selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+  </td>
+  <td class="num"><input class="num" name="preis" type="text" inputmode="decimal" value="{% if p %}{{ p.preis|zahl:2 }}{% endif %}" placeholder="0,00" aria-label="Einzelpreis in Euro"></td>
+  <td class="num amount" data-line-total>0,00&nbsp;€</td>
+  <td class="cell-action"><button class="btn btn-ghost btn-icon" type="button" data-remove-position>{% icon "x" %}<span class="visually-hidden">Position entfernen</span></button></td>
+</tr>

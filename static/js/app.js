@@ -170,10 +170,11 @@ if (kontaktForm) {
   umschalten();
 }
 
-// ---------- Rechnung: rechnen und Pflichtangaben prüfen ----------
+// ---------- Rechnung und Angebot: rechnen und Pflichtangaben prüfen ----------
 
 const rechnung = document.querySelector("[data-invoice]");
 if (rechnung) {
+  const angebot = rechnung.dataset.beleg === "angebot";
   const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
   const zahl = (text) => {
     const wert = Number(String(text).trim().replace(/\./g, "").replace(",", "."));
@@ -183,7 +184,7 @@ if (rechnung) {
   const feld = (name) => rechnung.elements[name];
   const tbody = rechnung.querySelector("[data-positions]");
   const vorlage = document.getElementById("position-vorlage");
-  const festschreibenDialog = document.getElementById("festschreiben-dialog");
+  const festschreibenDialog = document.querySelector("[data-abschluss-dialog]");
 
   const STEUERHINWEIS = {
     kleinunternehmer: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
@@ -202,6 +203,11 @@ if (rechnung) {
   // Rechnungskorrektur: nur Minderungen (negative Mengen), höchstens um den offenen Betrag.
   const korrektur = rechnung.dataset.korrektur;
   if (korrektur) PRUEFPUNKT.entgelt = "Korrekturbetrag";
+  if (angebot) {
+    PRUEFPUNKT.datum = "Angebotsdatum";
+    PRUEFPUNKT.entgelt = "Angebotsbetrag";
+  }
+  const abschluss = angebot ? ["fertigstellen", "Fertigstellen"] : ["festschreiben", "Festschreiben"];
 
   const pruefen = (ergebnis) => {
     const punkte = [...rechnung.querySelectorAll("[data-check]")].filter((li) => !li.hidden);
@@ -216,7 +222,7 @@ if (rechnung) {
     const meldung = rechnung.querySelector("[data-check-message]");
     meldung.textContent = fehlt.length
       ? `Es fehlt noch: ${fehlt.join(", ")}.`
-      : "Alles vollständig. Sie können festschreiben.";
+      : `Alles vollständig. Sie können ${abschluss[0]}.`;
     meldung.classList.toggle("is-ok", fehlt.length === 0);
     rechnung.querySelector("[data-submit]").disabled = fehlt.length > 0;
 
@@ -225,7 +231,7 @@ if (rechnung) {
     leiste.classList.toggle("is-missing", fehlt.length > 0);
     rechnung.querySelector("[data-check-bar-state]").textContent = fehlt.length
       ? `${punkte.length - fehlt.length} von ${punkte.length} · Es fehlt: ${fehlt.join(", ")}`
-      : `${punkte.length} von ${punkte.length} · bereit zum Festschreiben`;
+      : `${punkte.length} von ${punkte.length} · bereit zum ${abschluss[1]}`;
   };
 
   const auswahl = feld("kontakt");
@@ -278,10 +284,11 @@ if (rechnung) {
     steuerhinweis.textContent = STEUERHINWEIS[fall];
     steuerhinweis.hidden = !STEUERHINWEIS[fall];
 
+    // Fälligkeit der Rechnung bzw. Gültigkeit des Angebots
     const datum = feld("datum").valueAsDate;
     if (datum) {
       const faellig = new Date(datum);
-      faellig.setDate(faellig.getDate() + Number(feld("zahlungsziel").value));
+      faellig.setDate(faellig.getDate() + Number(feld(angebot ? "bindefrist" : "zahlungsziel").value));
       const text = faellig.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
       rechnung.querySelectorAll("[data-due]").forEach((el) => {
         el.textContent = text;
@@ -289,14 +296,17 @@ if (rechnung) {
     }
 
     // Empfänger mit XRechnung: Käuferreferenz aus der Adresse und eigene Pflichtangaben.
+    // Angebote kennen weder XRechnung noch Leistungszeitraum.
     const empfaenger = auswahl.selectedOptions[0];
-    const xrechnung = empfaenger?.dataset.xrechnung === "1";
-    rechnung.querySelector("[data-check=xrechnung]").hidden = !xrechnung;
-    rechnung.querySelector("[data-format]").textContent = xrechnung ? "ZUGFeRD und XRechnung" : "ZUGFeRD";
-    feld("referenz").placeholder = empfaenger?.dataset.referenz || "";
+    const xrechnung = !angebot && empfaenger?.dataset.xrechnung === "1";
+    if (!angebot) {
+      rechnung.querySelector("[data-check=xrechnung]").hidden = !xrechnung;
+      rechnung.querySelector("[data-format]").textContent = xrechnung ? "ZUGFeRD und XRechnung" : "ZUGFeRD";
+      feld("referenz").placeholder = empfaenger?.dataset.referenz || "";
+    }
 
-    const von = feld("leistung_von").value;
-    const bis = feld("leistung_bis").value;
+    const von = feld("leistung_von")?.value;
+    const bis = feld("leistung_bis")?.value;
     pruefen({
       empfaenger: anschriftZeigen(),
       absender: rechnung.dataset.absender === "1",
@@ -357,7 +367,7 @@ if (rechnung) {
         rechnen();
         ansage("Position entfernt.");
       } else {
-        ansage("Eine Rechnung braucht mindestens eine Position.");
+        ansage(angebot ? "Ein Angebot braucht mindestens eine Position." : "Eine Rechnung braucht mindestens eine Position.");
       }
       return;
     }

@@ -113,6 +113,55 @@ def grussformel(firma):
     return "Mit freundlichen Grüßen\n\n" + (firma.inhaber or firma.name)
 
 
+def absender_daten(firma):
+    return {
+        feld: getattr(firma, feld)
+        for feld in (
+            "name",
+            "marke",
+            "inhaber",
+            "strasse",
+            "plz",
+            "ort",
+            "steuernummer",
+            "ust_id",
+            "email",
+            "telefon",
+            "iban",
+            "bank",
+        )
+    }
+
+
+def empfaenger_daten(k):
+    return {
+        "zeilen": k.anschrift_zeilen() if k else [],
+        "name": k.anzeigename if k else "",
+        "kundennummer": k.kundennummer if k else "",
+        "strasse": k.strasse if k else "",
+        "plz": k.plz if k else "",
+        "ort": k.ort if k else "",
+        "land": k.land if k else "",
+        "ust_id": k.ust_id if k else "",
+        "email": k.email if k else "",
+    }
+
+
+def positionen_daten(positionen):
+    return [
+        {
+            "nr": p.nr,
+            "bezeichnung": p.bezeichnung,
+            "beschreibung": p.beschreibung,
+            "menge": str(p.menge),
+            "einheit": p.einheit,
+            "preis": str(p.preis),
+            "gesamt": str(p.gesamt),
+        }
+        for p in positionen
+    ]
+
+
 def beleg_daten(rechnung, firma, nummer):
     """Alle Angaben des Belegs. Beim Festschreiben eingefroren, danach nie neu berechnet."""
     netto, ust, brutto = rechnung.summen()
@@ -142,53 +191,16 @@ def beleg_daten(rechnung, firma, nummer):
         "kopftext": rechnung.kopftext,
         "fusstext": rechnung.fusstext,
         "girocode": bool(rechnung.girocode and firma.iban),
-        "absender": {
-            feld: getattr(firma, feld)
-            for feld in (
-                "name",
-                "marke",
-                "inhaber",
-                "strasse",
-                "plz",
-                "ort",
-                "steuernummer",
-                "ust_id",
-                "email",
-                "telefon",
-                "iban",
-                "bank",
-            )
-        },
-        "empfaenger": {
-            "zeilen": k.anschrift_zeilen() if k else [],
-            "name": k.anzeigename if k else "",
-            "kundennummer": k.kundennummer if k else "",
-            "strasse": k.strasse if k else "",
-            "plz": k.plz if k else "",
-            "ort": k.ort if k else "",
-            "land": k.land if k else "",
-            "ust_id": k.ust_id if k else "",
-            "email": k.email if k else "",
-        },
-        "positionen": [
-            {
-                "nr": p.nr,
-                "bezeichnung": p.bezeichnung,
-                "beschreibung": p.beschreibung,
-                "menge": str(p.menge),
-                "einheit": p.einheit,
-                "preis": str(p.preis),
-                "gesamt": str(p.gesamt),
-            }
-            for p in rechnung.positionen.all()
-        ],
+        "absender": absender_daten(firma),
+        "empfaenger": empfaenger_daten(k),
+        "positionen": positionen_daten(rechnung.positionen.all()),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
     }
 
 
-def _absaetze(text):
+def absaetze(text):
     return [
         absatz.splitlines() for absatz in text.strip().split("\n\n") if absatz.strip()
     ]
@@ -225,14 +237,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         art = "Leitweg-ID" if ist_leitweg_id(b["referenz"]) else "Ihre Referenz"
         info.append((art, b["referenz"]))
 
-    summen = []
-    if b["steuerfall"] == Rechnung.Steuerfall.REGEL:
-        summen = [
-            ["Nettobetrag", euro(b["netto"])],
-            ["Umsatzsteuer 19 %", euro(b["ust"])],
-        ]
-
-    iban = " ".join(a["iban"][i : i + 4] for i in range(0, len(a["iban"]), 4))
+    iban = iban_lesbar(a["iban"])
     zahlung = [
         f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
         "Einen bereits gezahlten Betrag erhalten Sie zurück."
@@ -263,6 +268,32 @@ def druckdaten(b, entwurf=False, logo=b""):
         "entwurf": entwurf,
         "titel": titel,
         "logo": list(logo) or None,
+        **briefkopf(a),
+        "empfaenger": e["zeilen"],
+        "info": info,
+        "betreff": b["betreff"],
+        "kopftext": absaetze(b["kopftext"]),
+        "positionen": druck_positionen(b["positionen"]),
+        "summen": druck_summen(b),
+        "summe_titel": "Korrekturbetrag" if korrektur else "Rechnungsbetrag",
+        "brutto": euro(b["brutto"]),
+        "steuerhinweis": b["steuerhinweis"],
+        "zahlung": zahlung,
+        "girocode": _girocode(b)
+        if b["girocode"] and Decimal(b["brutto"]) > 0
+        else None,
+        "fusstext": absaetze(b["fusstext"]),
+    }
+
+
+def iban_lesbar(iban):
+    return " ".join(iban[i : i + 4] for i in range(0, len(iban), 4))
+
+
+def briefkopf(a):
+    """Absender für Kopf, Rücksendeangabe und Fußzeile, gleich für jede Belegart."""
+    iban = iban_lesbar(a["iban"])
+    return {
         "absender_name": a["name"],
         "marke": a["marke"],
         "kopf": [
@@ -278,30 +309,6 @@ def druckdaten(b, entwurf=False, logo=b""):
         "ruecksende": " · ".join(
             z for z in (a["name"], a["strasse"], f"{a['plz']} {a['ort']}".strip()) if z
         ),
-        "empfaenger": e["zeilen"],
-        "info": info,
-        "betreff": b["betreff"],
-        "kopftext": _absaetze(b["kopftext"]),
-        "positionen": [
-            {
-                "nr": str(p["nr"]),
-                "bezeichnung": p["bezeichnung"],
-                "beschreibung": p["beschreibung"].splitlines(),
-                "menge": f"{zahl(p['menge'])} {p['einheit']}".strip(),
-                "preis": euro(p["preis"]),
-                "gesamt": euro(p["gesamt"]),
-            }
-            for p in b["positionen"]
-        ],
-        "summen": summen,
-        "summe_titel": "Korrekturbetrag" if korrektur else "Rechnungsbetrag",
-        "brutto": euro(b["brutto"]),
-        "steuerhinweis": b["steuerhinweis"],
-        "zahlung": zahlung,
-        "girocode": _girocode(b)
-        if b["girocode"] and Decimal(b["brutto"]) > 0
-        else None,
-        "fusstext": _absaetze(b["fusstext"]),
         "fuss": [
             [
                 z
@@ -335,15 +342,44 @@ def druckdaten(b, entwurf=False, logo=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b"", format="pdf"):
+def druck_positionen(positionen):
+    return [
+        {
+            "nr": str(p["nr"]),
+            "bezeichnung": p["bezeichnung"],
+            "beschreibung": p["beschreibung"].splitlines(),
+            "menge": f"{zahl(p['menge'])} {p['einheit']}".strip(),
+            "preis": euro(p["preis"]),
+            "gesamt": euro(p["gesamt"]),
+        }
+        for p in positionen
+    ]
+
+
+def druck_summen(b):
+    """Netto und Umsatzsteuer über dem Gesamtbetrag, nur wenn Steuer ausgewiesen wird."""
+    if b["steuerfall"] != Rechnung.Steuerfall.REGEL:
+        return []
+    return [
+        ["Nettobetrag", euro(b["netto"])],
+        ["Umsatzsteuer 19 %", euro(b["ust"])],
+    ]
+
+
+def setzen(druck, format="pdf"):
+    """Druckdaten mit der Typst-Vorlage setzen, als PDF/A-3b oder als Bild."""
     return typst.compile(
         str(VORLAGE),
         font_paths=[str(SCHRIFTEN)],
         ignore_system_fonts=True,
-        sys_inputs={"daten": json.dumps(druckdaten(b, entwurf, logo))},
+        sys_inputs={"daten": json.dumps(druck)},
         format=format,
         **({"pdf_standards": "a-3b"} if format == "pdf" else {"ppi": 110}),
     )
+
+
+def pdf(b, entwurf=False, logo=b"", format="pdf"):
+    return setzen(druckdaten(b, entwurf, logo), format)
 
 
 def logo_lesbar(daten):

@@ -85,6 +85,7 @@
             </div>
             <div class="detail-actions">
               <a class="btn btn-sm btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Rechnung schreiben</a>
+              <a class="btn btn-sm" href="{% url 'angebote:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Angebot schreiben</a>
               <a class="btn btn-sm" href="{% url 'contacts:bearbeiten' k.pk %}">{% icon "pencil" %}Bearbeiten</a>
               <form method="post" action="{% url 'contacts:archivieren' k.pk %}">
                 {% csrf_token %}

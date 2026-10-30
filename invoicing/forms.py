@@ -62,10 +62,11 @@ class RechnungForm(forms.ModelForm):
                 self.fields[name].disabled = True
 
 
-def positionen_lesen(post, korrektur=False):
+def positionen_lesen(post, korrektur=False, modell=Position):
     """Positionszeilen aus dem Editor; leere Zeilen fallen weg.
 
     Negative Mengen nur in einer Rechnungskorrektur, negative Preise nie (BR-27).
+    `modell` ist die Positionsklasse der Belegart, z. B. die des Angebots.
     """
     spalten = [
         post.getlist(name)
@@ -89,7 +90,7 @@ def positionen_lesen(post, korrektur=False):
             )
             continue
         positionen.append(
-            Position(
+            modell(
                 nr=len(positionen) + 1,
                 bezeichnung=bez.strip()[:200],
                 beschreibung=besch.strip(),
