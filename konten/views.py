@@ -15,6 +15,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from core.models import Firmendaten
+from protokoll.erfassen import anmeldung
+from protokoll.models import Eintrag
 
 from . import totp
 from .forms import (
@@ -59,10 +61,12 @@ def _anmelden(request, benutzer, ziel):
     benutzer.entsperren()
     login(request, benutzer, backend="django.contrib.auth.backends.ModelBackend")
     logger.info("Angemeldet: %s", benutzer.email)
+    anmeldung(Eintrag.Aktion.ANMELDUNG, str(benutzer), benutzer, benutzer.email)
     return redirect(ziel)
 
 
-def _fehlversuch(benutzer, text):
+def _fehlversuch(benutzer, text, email, grund):
+    anmeldung(Eintrag.Aktion.FEHLVERSUCH, email, benutzer, grund)
     if not benutzer:
         return text
     benutzer.fehlversuch()
@@ -80,6 +84,7 @@ def anmelden(request):
         email = form.cleaned_data["email"]
         benutzer = Benutzer.objects.filter(email__iexact=email, is_active=True).first()
         if benutzer and benutzer.gesperrt:
+            anmeldung(Eintrag.Aktion.FEHLVERSUCH, email, benutzer, "Konto gesperrt")
             form.add_error(None, _gesperrt(benutzer))
         elif geprueft := authenticate(
             request, username=email, password=form.cleaned_data["kennwort"]
@@ -96,7 +101,12 @@ def anmelden(request):
             logger.warning("Anmeldung fehlgeschlagen: %s", email)
             form.add_error(
                 None,
-                _fehlversuch(benutzer, "E-Mail-Adresse oder Kennwort stimmt nicht."),
+                _fehlversuch(
+                    benutzer,
+                    "E-Mail-Adresse oder Kennwort stimmt nicht.",
+                    email,
+                    "Kennwort falsch" if benutzer else "Unbekannte E-Mail-Adresse",
+                ),
             )
     return render(
         request,
@@ -115,6 +125,9 @@ def code(request):
     form = CodeForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         if benutzer.gesperrt:
+            anmeldung(
+                Eintrag.Aktion.FEHLVERSUCH, benutzer.email, benutzer, "Konto gesperrt"
+            )
             form.add_error(None, _gesperrt(benutzer))
         elif schritt := totp.pruefen(
             benutzer.totp_geheimnis, form.cleaned_data["code"], benutzer.totp_schritt
@@ -130,6 +143,8 @@ def code(request):
                 _fehlversuch(
                     benutzer,
                     "Der Code stimmt nicht. Geben Sie den aktuellen aus Ihrer App ein.",
+                    benutzer.email,
+                    "Code der Zwei-Faktor-Anmeldung falsch",
                 ),
             )
     return render(request, "konten/code.html", {"form": form})

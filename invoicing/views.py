@@ -16,6 +16,7 @@ from archive.models import Altbeleg
 from artikel.models import Artikel
 from contacts.models import Kontakt
 from core.models import Firmendaten
+from protokoll.erfassen import positionen_geaendert, positionen_text
 
 from . import beleg, versand
 from .forms import RechnungForm, VersandForm, positionen_lesen
@@ -79,12 +80,14 @@ def _editor(request, rechnung, firma):
             request.POST, korrektur=rechnung.ist_korrektur
         )
         if form.is_valid() and not fehler:
+            vorher = positionen_text(rechnung.positionen.all()) if rechnung.pk else ""
             with transaction.atomic():
                 rechnung = form.save()
                 rechnung.positionen.all().delete()
                 for position in positionen:
                     position.rechnung = rechnung
                     position.save()
+                positionen_geaendert(rechnung, vorher)
             return _nach_speichern(request, rechnung, firma)
         for meldung in fehler:
             messages.error(request, meldung)

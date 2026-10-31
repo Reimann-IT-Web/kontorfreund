@@ -64,6 +64,11 @@ def navigation(request):
                 "info": "Sichern und wiederherstellen",
                 "url": reverse("backups:uebersicht"),
             },
+            {
+                "titel": "Protokoll",
+                "info": "Wer wann was geändert hat",
+                "url": reverse("protokoll:liste"),
+            },
         ]
     suchindex += [
         {

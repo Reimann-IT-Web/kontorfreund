@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "archive",
     "backups",
     "konten",
+    "protokoll",
 ]
 
 MIDDLEWARE = [
@@ -63,6 +64,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "protokoll.middleware.anfrage_merken",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "konten.rechte.zwei_faktor_pflicht",

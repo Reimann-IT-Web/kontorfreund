@@ -43,6 +43,7 @@
             {% if sicherung.warnung %}<span class="nav-count is-warn" title="{{ sicherung.warnung }}"><span class="visually-hidden">{{ sicherung.warnung }}</span><span aria-hidden="true">!</span></span>{% endif %}
           </a>
         </li>
+        <li><a class="nav-link" href="{% url 'protokoll:liste' %}"{% if bereich == "protokoll" %} aria-current="page"{% endif %}>{% icon "list" %}<span class="nav-label">Protokoll</span></a></li>
         {% endif %}
         <li><a class="nav-link" href="{% url 'core:platzhalter' 'hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
       </ul>

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Protokoll{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Protokoll</h1>
+    <p class="muted">Wer wann etwas angelegt, geändert oder gelöscht hat, dazu jede Anmeldung. Die Einträge lassen sich von niemandem ändern oder löschen.</p>
+  </div>
+</div>
+
+{% if seite.object_list %}
+<div class="table-wrap">
+  <table class="table protokoll">
+    <thead>
+      <tr>
+        <th scope="col">Zeit</th>
+        <th scope="col">Wer</th>
+        <th scope="col">Was</th>
+        <th scope="col">Änderungen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in seite %}
+      <tr>
+        <td class="docnr">{{ e.zeit|date:"d.m.Y H:i" }}</td>
+        <td>{{ e.wer|default:"–" }}</td>
+        <td>
+          <span class="cell-title">{{ e.get_aktion_display }}</span>
+          {% if e.art or e.beschreibung %}<span class="cell-sub">{% if e.art %}{{ e.art }}: {% endif %}{{ e.beschreibung }}</span>{% endif %}
+        </td>
+        <td>
+          {% if e.aenderungen %}
+          <dl class="aenderungen">
+            {% for feld, alt, neu in e.aenderungen %}
+            <div><dt>{{ feld }}</dt><dd>{% if alt %}<del>{{ alt }}</del> <span aria-label="wurde zu">→</span> {% endif %}<ins>{{ neu|default:"(leer)" }}</ins></dd></div>
+            {% endfor %}
+          </dl>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if seite.has_other_pages %}
+<nav class="actions table-foot" aria-label="Seiten">
+  {% if seite.has_previous %}<a class="btn btn-sm" href="?seite={{ seite.previous_page_number }}">Neuere Einträge</a>{% endif %}
+  <span class="muted">Seite {{ seite.number }} von {{ seite.paginator.num_pages }}</span>
+  {% if seite.has_next %}<a class="btn btn-sm" href="?seite={{ seite.next_page_number }}">Ältere Einträge</a>{% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty">
+  <h2>Noch keine Einträge</h2>
+  <p class="muted">Sobald jemand Daten anlegt, ändert oder sich anmeldet, steht es hier.</p>
+</div>
+{% endif %}
+{% endblock %}

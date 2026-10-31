@@ -21,6 +21,7 @@ from invoicing import versand
 from invoicing.forms import VersandForm, positionen_lesen
 from invoicing.models import Rechnung
 from invoicing.views import EINHEITEN
+from protokoll.erfassen import positionen_geaendert, positionen_text
 
 from . import beleg
 from .forms import AngebotForm
@@ -75,12 +76,14 @@ def _editor(request, angebot, firma):
         form = AngebotForm(request.POST, instance=angebot)
         positionen, fehler = positionen_lesen(request.POST, modell=Position)
         if form.is_valid() and not fehler:
+            vorher = positionen_text(angebot.positionen.all()) if angebot.pk else ""
             with transaction.atomic():
                 angebot = form.save()
                 angebot.positionen.all().delete()
                 for position in positionen:
                     position.angebot = angebot
                     position.save()
+                positionen_geaendert(angebot, vorher)
             return _nach_speichern(request, angebot, firma)
         for meldung in fehler:
             messages.error(request, meldung)

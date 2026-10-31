@@ -1457,6 +1457,31 @@ select {
   flex: 0 0 4.5rem;
 }
 
+.aenderungen {
+  display: grid;
+  gap: var(--s1);
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.aenderungen dt {
+  font-weight: 600;
+}
+
+.aenderungen dd {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.aenderungen del {
+  color: var(--ink-2);
+}
+
+.aenderungen ins {
+  text-decoration: none;
+}
+
 .address-card {
   padding: var(--s3) var(--s4);
   border-radius: var(--r-sm);
