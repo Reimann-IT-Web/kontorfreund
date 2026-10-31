@@ -64,7 +64,7 @@
 
 {% if rechnungen %}
 <div class="table-wrap">
-  <table class="table archive">
+  <table class="table archive stapel">
     <thead>
       <tr>
         <th scope="col">Fällig am</th>
@@ -79,12 +79,12 @@
     <tbody>
       {% for r in rechnungen %}
       <tr class="data-row">
-        <td class="docnr">{{ r.faellig|date:"d.m.Y" }}</td>
+        <td class="docnr" data-label="fällig">{{ r.faellig|date:"d.m.Y" }}</td>
         <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{{ r.nummer }}</a></td>
         <td><a href="?zeigen={{ zeigen }}&amp;kunde={{ r.kontakt.pk }}">{{ r.kontakt }}</a></td>
         <td>{% include "zahlungen/zahlstand.html" %}</td>
-        <td class="num"><span class="amount">{{ r.korrigierter_betrag|euro }}</span></td>
-        <td class="num"><span class="amount">{{ r.offen|euro }}</span></td>
+        <td class="num" data-label="Betrag"><span class="amount">{{ r.korrigierter_betrag|euro }}</span></td>
+        <td class="num" data-label="offen"><span class="amount">{{ r.offen|euro }}</span></td>
         <td class="cell-action">{% if r.offen > 0 %}<a class="btn btn-sm" href="{% url 'invoicing:bearbeiten' r.pk %}#zahlungen" data-zahlung="{% url 'zahlungen:buchen' r.pk %}" data-betrag="{{ r.offen|zahl:2 }}" data-titel="Rechnung {{ r.nummer }} · {{ r.kontakt }} · offen {{ r.offen|euro }}">{% icon "banknote" %}Zahlung</a>{% endif %}</td>
       </tr>
       {% endfor %}

@@ -39,7 +39,7 @@ class RechnungForm(forms.ModelForm):
         max_value=10,
         decimal_places=2,
         localize=True,
-        widget=forms.TextInput(attrs={"inputmode": "decimal", "placeholder": "0"}),
+        widget=forms.TextInput(attrs={"inputmode": "decimal"}),
     )
     skonto_tage = forms.IntegerField(
         label="Skonto innerhalb von Tagen",

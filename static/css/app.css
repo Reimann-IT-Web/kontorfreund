@@ -57,6 +57,8 @@
   --ink-3: #61686c;
   --line: #e0ddd6;
   --line-strong: #c6c3bb;
+  /* Rahmen von Eingabefeldern und Knöpfen: mindestens 3:1 zu Fläche und Hintergrund (WCAG 1.4.11). */
+  --line-control: #8a867f;
   --accent: #1d5f6e;
   --accent-hover: #174e5b;
   --accent-ink: #17535f;
@@ -87,6 +89,7 @@
     --ink-3: #9aa1a4;
     --line: #2e3438;
     --line-strong: #454c51;
+    --line-control: #6b7378;
     --accent: #6fb3c2;
     --accent-hover: #8cc4d0;
     --accent-ink: #8cc4d0;
@@ -117,6 +120,7 @@
   --ink-3: #9aa1a4;
   --line: #2e3438;
   --line-strong: #454c51;
+  --line-control: #6b7378;
   --accent: #6fb3c2;
   --accent-hover: #8cc4d0;
   --accent-ink: #8cc4d0;
@@ -528,7 +532,7 @@ kbd {
   gap: var(--s3);
   min-height: 2.5rem;
   padding: 0.4rem 0.6rem 0.4rem 0.75rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: var(--r);
   background: var(--surface);
   color: var(--ink-3);
@@ -631,7 +635,7 @@ kbd {
   gap: var(--s2);
   min-height: 2.5rem;
   padding: 0.45rem 1rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink);
@@ -1056,7 +1060,7 @@ textarea {
   width: 100%;
   min-height: 2.5rem;
   padding: 0.45rem 0.75rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink);
@@ -1480,6 +1484,57 @@ select {
 
 .aenderungen ins {
   text-decoration: none;
+}
+
+/* Listen auf dem Handy: jede Zeile ein Eintrag, die Angaben brechen um statt seitwärts zu laufen. */
+@media (max-width: 40rem) {
+  .stapel,
+  .stapel tbody {
+    display: block;
+  }
+
+  .stapel thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .stapel tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s1) var(--s3);
+    padding: var(--s3);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stapel td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .stapel td.voll {
+    flex-basis: 100%;
+  }
+
+  .stapel td.num {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .stapel td.cell-action {
+    width: auto;
+  }
+
+  .stapel td[data-label]::before {
+    content: attr(data-label) " ";
+    color: var(--ink-2);
+    font-size: var(--fs-sm);
+  }
 }
 
 .address-card {
@@ -1906,7 +1961,7 @@ select {
   gap: var(--s2);
   min-height: 2.5rem;
   padding: 0.4rem 0.95rem 0.4rem 0.75rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: 999px;
   background: var(--surface);
   font-weight: 600;
@@ -2150,7 +2205,7 @@ input[type="file"]::file-selector-button {
   min-height: 2.5rem;
   margin-right: var(--s3);
   padding: 0.45rem 1rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink);

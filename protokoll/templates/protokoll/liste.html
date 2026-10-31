@@ -13,7 +13,7 @@
 
 {% if seite.object_list %}
 <div class="table-wrap">
-  <table class="table protokoll">
+  <table class="table protokoll stapel">
     <thead>
       <tr>
         <th scope="col">Zeit</th>
@@ -27,11 +27,11 @@
       <tr>
         <td class="docnr">{{ e.zeit|date:"d.m.Y H:i" }}</td>
         <td>{{ e.wer|default:"–" }}</td>
-        <td>
+        <td class="voll">
           <span class="cell-title">{{ e.get_aktion_display }}</span>
           {% if e.art or e.beschreibung %}<span class="cell-sub">{% if e.art %}{{ e.art }}: {% endif %}{{ e.beschreibung }}</span>{% endif %}
         </td>
-        <td>
+        <td class="voll">
           {% if e.aenderungen %}
           <dl class="aenderungen">
             {% for feld, alt, neu in e.aenderungen %}

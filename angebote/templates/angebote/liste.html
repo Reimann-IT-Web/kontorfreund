@@ -19,7 +19,7 @@
 
 {% if angebote %}
 <div class="table-wrap">
-  <table class="table archive">
+  <table class="table archive stapel">
     <thead>
       <tr>
         <th scope="col">Datum</th>
@@ -40,7 +40,7 @@
           {% include "angebote/stand.html" %}
           {% if a.rechnung %}<br><a class="small" href="{% url 'invoicing:bearbeiten' a.rechnung.pk %}">{% if a.rechnung.nummer %}Rechnung {{ a.rechnung.nummer }}{% else %}Rechnungsentwurf{% endif %}</a>{% endif %}
         </td>
-        <td class="docnr">{% if a.ist_entwurf %}<span class="muted">–</span>{% else %}{{ a.gueltig_bis|date:"d.m.Y" }}{% endif %}</td>
+        <td class="docnr"{% if not a.ist_entwurf %} data-label="gültig bis"{% endif %}>{% if a.ist_entwurf %}<span class="muted">–</span>{% else %}{{ a.gueltig_bis|date:"d.m.Y" }}{% endif %}</td>
         <td class="num"><span class="amount">{% if a.ist_entwurf %}<span class="muted">–</span>{% else %}{{ a.brutto|euro }}{% endif %}</span></td>
       </tr>
       {% endfor %}
