@@ -82,6 +82,7 @@
               <address class="plain">{% for zeile in k.anschrift_zeilen %}{{ zeile }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</address>
               {% if k.notiz %}<h3 class="detail-title detail-gap">Notiz</h3><p>{{ k.notiz|linebreaksbr }}</p>{% endif %}
               {% if k.anzahl_belege %}<h3 class="detail-title detail-gap">Belege</h3><p><a class="link" href="{% url 'archive:liste' %}?kontakt={{ k.pk }}">{% icon "folder" %}{{ k.anzahl_belege }} Beleg{{ k.anzahl_belege|pluralize:"e" }} in der Ablage</a></p>{% endif %}
+              {% if k.anzahl_eingang %}<h3 class="detail-title detail-gap">Eingangsrechnungen</h3><p><a class="link" href="{% url 'eingang:liste' %}?kontakt={{ k.pk }}">{% icon "inbox" %}{{ k.anzahl_eingang }} Rechnung{{ k.anzahl_eingang|pluralize:"en" }} von dieser Adresse</a></p>{% endif %}
             </div>
             <div class="detail-actions">
               <a class="btn btn-sm btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Rechnung schreiben</a>

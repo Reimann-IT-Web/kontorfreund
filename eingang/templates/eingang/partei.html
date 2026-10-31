@@ -1,0 +1,15 @@
+<address class="plain">
+  <strong>{{ p.name }}</strong>{% if p.handelsname %}<br>{{ p.handelsname }}{% endif %}
+  {% for zeile in p.zeilen %}<br>{{ zeile }}{% endfor %}
+  {% if p.plz or p.ort %}<br>{{ p.plz }} {{ p.ort }}{% endif %}
+  {% if p.land and p.land != "DE" %}<br>{{ p.landname }}{% endif %}
+</address>
+{% if p.person or p.telefon or p.email or p.ust_id or p.steuernummer %}
+<dl class="angaben">
+  {% if p.person %}<dt>Kontakt</dt><dd>{{ p.person }}</dd>{% endif %}
+  {% if p.telefon %}<dt>Telefon</dt><dd>{{ p.telefon }}</dd>{% endif %}
+  {% if p.email %}<dt>E-Mail</dt><dd>{{ p.email }}</dd>{% endif %}
+  {% if p.ust_id %}<dt>USt-IdNr.</dt><dd>{{ p.ust_id }}</dd>{% endif %}
+  {% if p.steuernummer %}<dt>Steuernummer</dt><dd>{{ p.steuernummer }}</dd>{% endif %}
+</dl>
+{% endif %}

@@ -14,6 +14,7 @@ urlpatterns = [
     path("offene-posten/", include("zahlungen.urls")),
     path("artikel/", include("artikel.urls")),
     path("ablage/", include("archive.urls")),
+    path("eingangsrechnungen/", include("eingang.urls")),
     path("datensicherung/", include("backups.urls")),
     path("konto/", include("konten.urls")),
     path("protokoll/", include("protokoll.urls")),

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "zahlungen",
     "artikel",
     "archive",
+    "eingang",
     "backups",
     "konten",
     "protokoll",

@@ -17,6 +17,12 @@ NAVIGATION = [
         "url": "zahlungen:liste",
     },
     {
+        "key": "eingang",
+        "label": "Eingangsrechnungen",
+        "icon": "inbox",
+        "url": "eingang:liste",
+    },
+    {
         "key": "wiedervorlagen",
         "label": "Wiedervorlagen",
         "icon": "clock",

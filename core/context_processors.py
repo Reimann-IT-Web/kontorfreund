@@ -42,6 +42,11 @@ def navigation(request):
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
         {"titel": "Neuer Artikel", "info": "Artikel", "url": reverse("artikel:neu")},
         {
+            "titel": "E-Rechnung hochladen",
+            "info": "Eingangsrechnungen",
+            "url": reverse("eingang:liste"),
+        },
+        {
             "titel": "Mein Konto",
             "info": "Kennwort und Zwei-Faktor-Anmeldung",
             "url": reverse("konten:konto"),

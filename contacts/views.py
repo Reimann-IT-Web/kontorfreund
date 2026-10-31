@@ -27,7 +27,8 @@ def liste(request):
     kategorie = request.GET.get("kategorie", "")
     archiv = request.GET.get("archiv") == "1"
     kontakte = Kontakt.objects.filter(archiviert=archiv).annotate(
-        anzahl_belege=Count("altbelege")
+        anzahl_belege=Count("altbelege", distinct=True),
+        anzahl_eingang=Count("eingangsrechnungen", distinct=True),
     )
     if kategorie in Kontakt.Kategorie.values:
         kontakte = kontakte.filter(kategorie=kategorie)

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load kf geld %}
+
+{% block title %}Eingangsrechnungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Eingangsrechnungen</h1>
+    <p class="muted">E-Rechnungen Ihrer Lieferanten, lesbar angezeigt und unverändert aufbewahrt.</p>
+  </div>
+</div>
+
+<form class="panel upload" method="post" action="{% url 'eingang:hochladen' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="field">
+    <label for="dateien">E-Rechnung hochladen</label>
+    <div class="upload-zeile">
+      <input type="file" id="dateien" name="dateien" accept=".xml,.pdf" multiple required aria-describedby="dateien-hinweis">
+      <button class="btn btn-primary" type="submit">{% icon "upload" %}Hochladen</button>
+    </div>
+    <p class="hint" id="dateien-hinweis">XRechnung als XML-Datei oder ZUGFeRD/Factur-X als PDF, auch mehrere auf einmal.</p>
+  </div>
+</form>
+
+{% if gesamt %}
+<form class="filterbar" method="get" role="search">
+  <label class="field field-search">
+    {% icon "search" %}
+    <span class="visually-hidden">Eingangsrechnungen durchsuchen</span>
+    <input type="search" name="q" value="{{ q }}" placeholder="Nummer oder Lieferant">
+  </label>
+  <label class="field field-inline">
+    <span class="visually-hidden">Jahr</span>
+    <select name="jahr" data-auto-submit>
+      <option value="">Alle Jahre</option>
+      {% for j in jahre %}<option value="{{ j }}"{% if jahr == j|stringformat:"s" %} selected{% endif %}>{{ j }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if kontakt %}<input type="hidden" name="kontakt" value="{{ kontakt }}">{% endif %}
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+</form>
+{% endif %}
+
+{% if rechnungen %}
+<div class="table-wrap">
+  <table class="table stapel">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Lieferant</th>
+        <th scope="col">fällig</th>
+        <th scope="col" class="num">Betrag</th>
+        <th scope="col"><span class="visually-hidden">Ansehen</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rechnungen %}
+      <tr class="data-row">
+        <td class="docnr">{{ r.datum|date:"d.m.Y" }}</td>
+        <td class="docnr">{{ r.nummer }}{% if r.art != "380" %}<span class="cell-sub">{{ r }}</span>{% endif %}</td>
+        <td class="voll">{% if r.kontakt %}{{ r.kontakt }}{% else %}{{ r.lieferant }}<span class="cell-sub">keiner Adresse zugeordnet</span>{% endif %}</td>
+        <td data-label="fällig">{% if r.faellig %}{{ r.faellig|date:"d.m.Y" }}{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="num" data-label="Betrag"><span class="amount{% if r.zahlbetrag < 0 %} is-danger{% endif %}">{{ r.zahlbetrag|geld:r.waehrung }}</span></td>
+        <td class="cell-action"><a class="btn btn-ghost btn-icon" href="{% url 'eingang:anzeigen' r.pk %}">{% icon "eye" %}<span class="visually-hidden">{{ r }} von {{ r.lieferant }} ansehen</span></a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">{{ rechnungen|length }} Rechnung{{ rechnungen|length|pluralize:"en" }}</p>
+
+{% elif gesamt %}
+<div class="empty">
+  <h2>Keine Rechnung gefunden</h2>
+  <p class="muted">Prüfen Sie Suchbegriff und Jahr.</p>
+  <p class="actions"><a class="btn" href="{% url 'eingang:liste' %}">Filter zurücksetzen</a></p>
+</div>
+
+{% else %}
+<div class="empty">
+  <h2>Noch keine Eingangsrechnungen</h2>
+  <p class="muted">Seit 2025 müssen Sie E-Rechnungen von Unternehmen annehmen können. Laden Sie die XML- oder PDF-Datei aus der E-Mail hier hoch: Kontorfreund zeigt sie lesbar an, ordnet sie dem Lieferanten zu und bewahrt das Original unverändert auf.</p>
+</div>
+{% endif %}
+{% endblock %}

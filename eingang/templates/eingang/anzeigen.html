@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load kf geld %}
+
+{% block title %}{{ r }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'eingang:liste' %}">Eingangsrechnungen</a></li>
+    <li aria-current="page">{{ r }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ r }}</h1>
+    <p class="muted">{{ r.kontakt|default:r.lieferant }} · {{ r.datum|date:"d.m.Y" }} · <span class="amount">{{ r.zahlbetrag|geld:r.waehrung }}</span>{% if r.faellig %} · fällig am {{ r.faellig|date:"d.m.Y" }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    {% if r.format == "pdf" %}<a class="btn" href="{% url 'eingang:datei' r.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>{% endif %}
+    <a class="btn" href="{% url 'eingang:datei' r.pk %}?herunterladen">{% icon "download" %}Original herunterladen</a>
+  </div>
+</div>
+
+{% if fehler %}<div class="notice notice-warn" role="alert"><strong>{{ fehler }}</strong></div>{% endif %}
+
+<div class="beleg-ansicht">
+  <div>
+  {% if d %}
+  <article class="erechnung" aria-label="Inhalt der E-Rechnung">
+    {% if d.nur_kopfdaten %}<p class="callout">{% icon "alert" %}<span>Im Profil {{ d.profil }} stehen nur die Kopfdaten, keine Positionen. Das gilt nicht als E-Rechnung im Sinne von § 14 UStG; maßgeblich ist hier das PDF.</span></p>{% endif %}
+
+    <div class="erechnung-kopf">
+      <section aria-labelledby="t-von">
+        <h2 class="detail-title" id="t-von">Von</h2>
+        {% include "eingang/partei.html" with p=d.verkaeufer %}
+      </section>
+      <section aria-labelledby="t-an">
+        <h2 class="detail-title" id="t-an">An</h2>
+        {% include "eingang/partei.html" with p=d.kaeufer %}
+      </section>
+      <section aria-labelledby="t-rechnung">
+        <h2 class="detail-title" id="t-rechnung">{{ d.art_text }}</h2>
+        <dl class="angaben">
+          <dt>Nummer</dt><dd>{{ d.nummer }}</dd>
+          <dt>Datum</dt><dd>{{ d.datum|date:"d.m.Y" }}</dd>
+          {% if d.faellig %}<dt>fällig am</dt><dd>{{ d.faellig|date:"d.m.Y" }}</dd>{% endif %}
+          {% if d.lieferdatum %}<dt>Leistungsdatum</dt><dd>{{ d.lieferdatum|date:"d.m.Y" }}</dd>{% endif %}
+          {% if d.zeitraum_von or d.zeitraum_bis %}<dt>Leistungszeitraum</dt><dd>{{ d.zeitraum_von|date:"d.m.Y" }} – {{ d.zeitraum_bis|date:"d.m.Y" }}</dd>{% endif %}
+          {% for name, wert in d.angaben %}<dt>{{ name }}</dt><dd>{{ wert }}</dd>{% endfor %}
+        </dl>
+      </section>
+    </div>
+
+    {% if d.hinweise %}
+    <section aria-labelledby="t-hinweise">
+      <h2 class="detail-title" id="t-hinweise">Hinweise</h2>
+      {% for h in d.hinweise %}<p class="small">{{ h|linebreaksbr }}</p>{% endfor %}
+    </section>
+    {% endif %}
+
+    {% if d.positionen %}
+    <section aria-labelledby="t-positionen">
+      <h2 class="detail-title" id="t-positionen">Positionen</h2>
+      <div class="table-wrap">
+        <table class="table stapel">
+          <thead>
+            <tr>
+              <th scope="col">Pos.</th>
+              <th scope="col">Bezeichnung</th>
+              <th scope="col" class="num">Menge</th>
+              <th scope="col" class="num">Einzelpreis</th>
+              <th scope="col" class="num">USt</th>
+              <th scope="col" class="num">Netto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in d.positionen %}
+            <tr{% if p.unter %} class="position-unter"{% endif %}>
+              <td class="docnr">{{ p.nr }}</td>
+              <td class="voll">
+                <span class="cell-title">{{ p.name }}</span>
+                {% if p.beschreibung %}<span class="cell-sub">{{ p.beschreibung|linebreaksbr }}</span>{% endif %}
+                {% if p.artikelnummer %}<span class="cell-sub">Artikel-Nr. {{ p.artikelnummer }}</span>{% endif %}
+                {% if p.von or p.bis %}<span class="cell-sub">{{ p.von|date:"d.m.Y" }} – {{ p.bis|date:"d.m.Y" }}</span>{% endif %}
+                {% for z in p.zu_abschlaege %}<span class="cell-sub">{{ z.grund }}: {% if not z.zuschlag %}−{% endif %}{{ z.betrag|geld:d.waehrung }}</span>{% endfor %}
+                {% if p.notiz %}<span class="cell-sub">{{ p.notiz|linebreaksbr }}</span>{% endif %}
+              </td>
+              <td class="num" data-label="Menge">{% if p.menge is not None %}{{ p.menge|zahl }} {{ p.einheit }}{% endif %}</td>
+              <td class="num" data-label="Einzelpreis">{{ p.preis|geld:d.waehrung }}{% if p.preis_je and p.preis_je != 1 %} je {{ p.preis_je|zahl }}{% endif %}</td>
+              <td class="num" data-label="USt">{% if p.satz is not None %}{{ p.satz|zahl }} %{% endif %}</td>
+              <td class="num" data-label="Netto"><span class="amount">{{ p.netto|geld:d.waehrung }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+    <div class="erechnung-summen">
+      <div class="small muted">
+        {% for s in d.steuern %}{% if s.grund %}<p>{{ s.grund }}</p>{% endif %}{% endfor %}
+      </div>
+      <dl class="totals">
+        {% if d.zu_abschlaege %}<div><dt>Summe Positionen</dt><dd class="amount">{{ d.summen.positionen|geld:d.waehrung }}</dd></div>{% endif %}
+        {% for z in d.zu_abschlaege %}<div><dt>{{ z.grund }}{% if z.prozent %} ({{ z.prozent|zahl }} %){% endif %}</dt><dd class="amount">{% if not z.zuschlag %}−{% endif %}{{ z.betrag|geld:d.waehrung }}</dd></div>{% endfor %}
+        <div><dt>Nettobetrag</dt><dd class="amount">{{ d.summen.netto|geld:d.waehrung }}</dd></div>
+        {% for s in d.steuern %}<div><dt>{% if s.kategorie == "S" %}Umsatzsteuer {{ s.satz|zahl }} %{% else %}{{ s.art }}{% endif %}{% if d.steuern|length > 1 %} auf {{ s.basis|geld:d.waehrung }}{% endif %}</dt><dd class="amount">{{ s.betrag|geld:d.waehrung }}</dd></div>{% endfor %}
+        <div class="totals-sum"><dt>Gesamtbetrag</dt><dd class="amount">{{ d.summen.brutto|geld:d.waehrung }}</dd></div>
+        {% if d.summen.gezahlt %}<div><dt>bereits gezahlt</dt><dd class="amount">−{{ d.summen.gezahlt|geld:d.waehrung }}</dd></div>{% endif %}
+        {% if d.summen.rundung %}<div><dt>Rundung</dt><dd class="amount">{{ d.summen.rundung|geld:d.waehrung }}</dd></div>{% endif %}
+        {% for x in d.summen.dritte %}<div><dt>{{ x.text }}</dt><dd class="amount">{{ x.betrag|geld:d.waehrung }}</dd></div>{% endfor %}
+        {% if d.summen.zahlbetrag != d.summen.brutto %}<div class="totals-sum"><dt>Zu zahlen</dt><dd class="amount">{{ d.summen.zahlbetrag|geld:d.waehrung }}</dd></div>{% endif %}
+      </dl>
+    </div>
+
+    <div class="erechnung-kopf">
+      {% if d.zahlung.wege or d.zahlung.bedingungen or d.zahlung.verwendungszweck %}
+      <section aria-labelledby="t-zahlung">
+        <h2 class="detail-title" id="t-zahlung">Zahlung</h2>
+        <dl class="angaben">
+          {% for w in d.zahlung.wege %}
+          <dt>Zahlungsart</dt><dd>{{ w.art }}{% if w.info %} ({{ w.info }}){% endif %}</dd>
+          {% if w.iban %}<dt>IBAN</dt><dd>{{ w.iban|iban }}</dd>{% endif %}
+          {% if w.bic %}<dt>BIC</dt><dd>{{ w.bic }}</dd>{% endif %}
+          {% if w.inhaber %}<dt>Kontoinhaber</dt><dd>{{ w.inhaber }}</dd>{% endif %}
+          {% if w.lastschrift_iban %}<dt>Abbuchung von</dt><dd>{{ w.lastschrift_iban|iban }}</dd>{% endif %}
+          {% if w.karte %}<dt>Karte</dt><dd>{{ w.karte }}</dd>{% endif %}
+          {% endfor %}
+          {% if d.zahlungsempfaenger %}<dt>Empfänger</dt><dd>{{ d.zahlungsempfaenger }}</dd>{% endif %}
+          {% if d.zahlung.verwendungszweck %}<dt>Verwendungszweck</dt><dd>{{ d.zahlung.verwendungszweck }}</dd>{% endif %}
+          {% if d.zahlung.mandat %}<dt>Mandatsreferenz</dt><dd>{{ d.zahlung.mandat }}</dd>{% endif %}
+          {% if d.zahlung.glaeubiger_id %}<dt>Gläubiger-ID</dt><dd>{{ d.zahlung.glaeubiger_id }}</dd>{% endif %}
+        </dl>
+        {% for b in d.zahlung.bedingungen %}<p class="small">{{ b }}</p>{% endfor %}
+      </section>
+      {% endif %}
+
+      {% if d.lieferanschrift %}
+      <section aria-labelledby="t-lieferung">
+        <h2 class="detail-title" id="t-lieferung">Lieferanschrift</h2>
+        {% include "eingang/partei.html" with p=d.lieferanschrift %}
+      </section>
+      {% endif %}
+
+      {% if d.anhaenge %}
+      <section aria-labelledby="t-anhaenge">
+        <h2 class="detail-title" id="t-anhaenge">Anhänge</h2>
+        <ul class="plain-list">
+          {% for a in d.anhaenge %}
+          <li>
+            {% if a.base64 %}<a class="link" href="{% url 'eingang:anhang' r.pk forloop.counter0 %}">{% icon "download" %}{{ a.dateiname|default:a.kennung }}</a>{% else %}{{ a.kennung }}{% endif %}
+            {% if a.beschreibung %}<span class="cell-sub">{{ a.beschreibung }}</span>{% endif %}
+            {% if a.uri %}<span class="cell-sub">Verweis auf {{ a.uri }}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </div>
+  </article>
+  {% endif %}
+  </div>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="lieferant-titel">
+      <h2 class="panel-title" id="lieferant-titel">Lieferant</h2>
+      {% if r.kontakt %}
+      <p><a class="link" href="{% url 'contacts:liste' %}?q={{ r.kontakt.kundennummer }}&amp;offen={{ r.kontakt.pk }}">{% icon "users" %}{{ r.kontakt }}</a> <span class="muted">{{ r.kontakt.kundennummer }}</span></p>
+      <p class="small"><a class="link" href="{% url 'eingang:liste' %}?kontakt={{ r.kontakt.pk }}">Alle Rechnungen dieses Lieferanten</a></p>
+      {% else %}
+      <p class="small">Noch keiner Adresse zugeordnet. Kontorfreund ordnet beim Hochladen selbst zu, wenn USt-IdNr. oder Name zu genau einer Adresse passen.</p>
+      {% endif %}
+      <form class="stack zuordnen" method="post" action="{% url 'eingang:zuordnen' r.pk %}">
+        {% csrf_token %}
+        <div class="field">
+          <label for="kontakt">{% if r.kontakt %}Andere Adresse{% else %}Adresse{% endif %}</label>
+          <select id="kontakt" name="kontakt">
+            <option value="">keine</option>
+            {% if lieferanten %}<optgroup label="Lieferanten">{% for k in lieferanten %}<option value="{{ k.pk }}"{% if k.pk == r.kontakt_id %} selected{% endif %}>{{ k }} ({{ k.kundennummer }})</option>{% endfor %}</optgroup>{% endif %}
+            {% if weitere %}<optgroup label="Weitere Adressen">{% for k in weitere %}<option value="{{ k.pk }}"{% if k.pk == r.kontakt_id %} selected{% endif %}>{{ k }} ({{ k.kundennummer }})</option>{% endfor %}</optgroup>{% endif %}
+          </select>
+        </div>
+        <button class="btn btn-block" type="submit">{% icon "check" %}Zuordnen</button>
+        {% if d and not r.kontakt %}<button class="btn btn-block" type="submit" name="neu" value="1">{% icon "user-plus" %}Als neue Adresse anlegen</button>{% endif %}
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="ablage-titel">
+      <h2 class="panel-title" id="ablage-titel">Aufbewahrung</h2>
+      <dl class="facts small">
+        <div><dt>Hochgeladen</dt><dd>{{ r.hochgeladen|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt>Aufbewahren bis</dt><dd>31.12.{{ r.datum.year|add:8 }}</dd></div>
+        <div><dt>Format</dt><dd>{% if d %}{{ d.profil }}, {% endif %}{{ r.syntax }}</dd></div>
+        <div><dt>Datei</dt><dd>{{ r.get_format_display }}</dd></div>
+      </dl>
+      <p class="small muted">Originaldatei<br>{{ r.originalname }}</p>
+      <p class="small muted">Prüfsumme (SHA-256){% if d %}, eben geprüft: unverändert{% endif %}<br><code class="hash">{{ r.sha256 }}</code></p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

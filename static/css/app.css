@@ -2301,6 +2301,85 @@ input[type="file"]::file-selector-button {
   }
 }
 
+/* ---------- Eingangsrechnungen ---------- */
+
+.upload {
+  margin-bottom: var(--s5);
+}
+
+.upload-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.zuordnen {
+  margin-top: var(--s3);
+}
+
+.erechnung {
+  display: grid;
+  gap: var(--s5);
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.erechnung .callout {
+  margin-top: 0;
+}
+
+.erechnung-kopf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--s5);
+}
+
+.erechnung address {
+  line-height: 1.45;
+}
+
+.angaben {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s1) var(--s3);
+  margin: var(--s3) 0 0;
+  font-size: var(--fs-sm);
+}
+
+.angaben dt {
+  color: var(--ink-2);
+}
+
+.angaben dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.erechnung-summen {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s5);
+}
+
+.erechnung-summen .totals dd {
+  text-align: right;
+}
+
+.position-unter td:nth-child(2) {
+  padding-left: var(--s5);
+}
+
+@media (max-width: 40rem) {
+  .erechnung {
+    padding: var(--s4);
+  }
+}
+
 /* ---------- Offene Posten und Mahnungen ---------- */
 
 .grid-tight {
