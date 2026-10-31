@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django import forms
 
-from artikel.forms import Betrag
+from invoicing.forms import Betrag
 
 from .models import Basiszins, Mahnstufe, Zahlung
 
@@ -29,7 +29,11 @@ class ZahlungForm(forms.Form):
     )
     art = forms.ChoiceField(
         label="Art",
-        choices=[c for c in Zahlung.Art.choices if c[0] != Zahlung.Art.AUSBUCHUNG],
+        choices=[
+            c
+            for c in Zahlung.Art.choices
+            if c[0] not in (Zahlung.Art.AUSBUCHUNG, Zahlung.Art.SKONTO)
+        ],
     )
     notiz = forms.CharField(label="Notiz", required=False, max_length=200)
 

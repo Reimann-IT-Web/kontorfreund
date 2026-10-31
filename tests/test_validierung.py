@@ -33,20 +33,26 @@ pytestmark = [
 REP = {"rep": "http://www.xoev.de/de/validator/varl/1"}
 LEITWEG_ID = "991-33333TEST-33"
 
-# Name, Steuerfall, Angaben der Adresse; dazu je eine Stornorechnung und Rechnungskorrektur.
+SKONTO = {"skonto_prozent": "2", "skonto_tage": "7"}
+
+# Name, Steuerfall, Angaben der Adresse, weitere Angaben der Rechnung;
+# dazu je eine Stornorechnung und Rechnungskorrektur.
 FAELLE = [
-    ("kleinunternehmer", "kleinunternehmer", {}),
-    ("regel", "regel", {}),
-    ("13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}),
+    ("kleinunternehmer", "kleinunternehmer", {}, {}),
+    ("regel", "regel", {}, {}),
+    ("skonto", "regel", {}, SKONTO),
+    ("13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}, {}),
     (
         "xrechnung-leitweg",
         "kleinunternehmer",
         {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
+        {},
     ),
     (
         "xrechnung-mail",
         "regel",
         {"kaeuferreferenz": "Kostenstelle 4711", "xrechnung": True},
+        SKONTO,
     ),
 ]
 
@@ -60,7 +66,7 @@ def java(*argumente):
     )
 
 
-def festschreiben(client, adresse, kunde, steuerfall, *mengen):
+def festschreiben(client, adresse, kunde, steuerfall, *mengen, **mehr):
     """Neue Rechnung oder Entwurf mit zwei Positionen festschreiben."""
     client.post(
         adresse,
@@ -79,6 +85,7 @@ def festschreiben(client, adresse, kunde, steuerfall, *mengen):
             "einheit": ["Std.", "Monat"],
             "preis": ["80,00", "9,99"],
             "aktion": "festschreiben",
+            **mehr,
         },
     )
     rechnung = Rechnung.objects.filter(kontakt=kunde).latest("pk")
@@ -103,7 +110,7 @@ def rechnungen(client, settings):
     f.save()
 
     dateien = {}
-    for name, steuerfall, adresse in FAELLE:
+    for name, steuerfall, adresse, mehr in FAELLE:
         kunde = Kontakt.objects.create(
             firmenname=f"Kunde {name}",
             strasse="Lindenweg 4",
@@ -114,10 +121,10 @@ def rechnungen(client, settings):
         )
 
         neu = reverse("invoicing:neu")
-        original = festschreiben(client, neu, kunde, steuerfall, "29,5", "12")
+        original = festschreiben(client, neu, kunde, steuerfall, "29,5", "12", **mehr)
         client.post(reverse("invoicing:stornieren", args=[original.pk]))
         storno = Rechnung.objects.get(storno_zu=original)
-        zweite = festschreiben(client, neu, kunde, steuerfall, "29,5", "12")
+        zweite = festschreiben(client, neu, kunde, steuerfall, "29,5", "12", **mehr)
         client.post(reverse("invoicing:korrigieren", args=[zweite.pk]))
         entwurf = reverse(
             "invoicing:bearbeiten", args=[Rechnung.objects.get(korrektur_zu=zweite).pk]

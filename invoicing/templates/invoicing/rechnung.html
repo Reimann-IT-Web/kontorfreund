@@ -42,7 +42,7 @@
             <select id="kontakt" name="kontakt"{% if rechnung.ist_korrektur %} disabled{% endif %}>
               <option value="">Adresse wählen …</option>
               {% for k in kontakte %}
-                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}" data-verbraucher="{{ k.ist_verbraucher|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
               {% endfor %}
             </select>
             {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
@@ -72,6 +72,17 @@
             {{ form.zahlungsziel }}
             <p class="hint">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span></p>
           </div>
+          <fieldset class="field{% if form.skonto_prozent.errors or form.skonto_tage.errors %} has-error{% endif %}"{% if rechnung.ist_korrektur %} hidden{% endif %}>
+            <legend>Skonto <span class="optional">optional</span></legend>
+            <div class="range range-skonto">
+              <label><span class="visually-hidden">Skonto in Prozent</span>{{ form.skonto_prozent }}</label>
+              <span aria-hidden="true">% bei Zahlung in</span>
+              <label><span class="visually-hidden">Skontofrist in Tagen</span>{{ form.skonto_tage }}</label>
+              <span aria-hidden="true">Tagen</span>
+            </div>
+            {% for fehler in form.skonto_prozent.errors|add:form.skonto_tage.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+            <p class="hint" data-skonto-hinweis>Leer lassen, wenn Sie kein Skonto gewähren.</p>
+          </fieldset>
           <div class="field">
             <label for="steuerfall">Umsatzsteuer</label>
             {{ form.steuerfall }}
@@ -146,6 +157,12 @@
         {{ form.girocode }}
         <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den {% if user.ist_inhaber %}<a href="{% url 'core:einstellungen' %}">Einstellungen</a>{% else %}Einstellungen; der Inhaber trägt sie ein{% endif %}.{% endif %}</span></span>
       </label>
+      {% if not rechnung.ist_korrektur %}
+      <label class="choice" data-verzugshinweis hidden>
+        {{ form.verzugshinweis }}
+        <span><strong>Hinweis auf Zahlungsverzug drucken</strong><br><span class="muted">Privatkunden geraten ohne diesen Hinweis erst durch eine Mahnung in Verzug. Mit ihm sind sie es 30 Tage nach Fälligkeit von selbst, und Sie können ab dann Verzugszinsen verlangen (§ 286 Abs. 3 BGB).</span></span>
+      </label>
+      {% endif %}
       <p class="callout">{% icon "lock" %}<span>Beim Festschreiben wird die Rechnung als ZUGFeRD-PDF unveränderbar abgelegt und 8 Jahre aufbewahrt. Korrigieren können Sie sie danach nur mit einer Rechnungskorrektur oder Stornorechnung. Prüfen Sie sie deshalb vorher in der Vorschau.</span></p>
     </section>
   </div>

@@ -1453,6 +1453,10 @@ select {
   flex: 1;
 }
 
+.range-skonto label {
+  flex: 0 0 4.5rem;
+}
+
 .address-card {
   padding: var(--s3) var(--s4);
   border-radius: var(--r-sm);

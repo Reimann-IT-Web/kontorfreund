@@ -65,12 +65,15 @@ class Rechnung(models.Model):
         "leistung_von",
         "leistung_bis",
         "zahlungsziel",
+        "skonto_prozent",
+        "skonto_tage",
         "steuerfall",
         "referenz",
         "betreff",
         "kopftext",
         "fusstext",
         "girocode",
+        "verzugshinweis",
     )
 
     status = models.CharField(
@@ -89,6 +92,12 @@ class Rechnung(models.Model):
     leistung_von = models.DateField("Leistung von", null=True, blank=True)
     leistung_bis = models.DateField("Leistung bis", null=True, blank=True)
     zahlungsziel = models.PositiveSmallIntegerField("Zahlungsziel in Tagen", default=14)
+    skonto_prozent = models.DecimalField(
+        "Skonto in Prozent", max_digits=4, decimal_places=2, default=0
+    )
+    skonto_tage = models.PositiveSmallIntegerField(
+        "Skonto innerhalb von Tagen", default=0
+    )
     steuerfall = models.CharField(
         max_length=20, choices=Steuerfall.choices, default=Steuerfall.KLEINUNTERNEHMER
     )
@@ -97,6 +106,10 @@ class Rechnung(models.Model):
     kopftext = models.TextField("Text vor den Positionen", blank=True)
     fusstext = models.TextField("Text nach den Positionen", blank=True)
     girocode = models.BooleanField("GiroCode drucken", default=True)
+    # Wirkt nur bei Verbrauchern, siehe zahlungen/zinsen.py.
+    verzugshinweis = models.BooleanField(
+        "Hinweis auf Zahlungsverzug drucken", default=True
+    )
     storno_zu = models.OneToOneField(
         "self",
         verbose_name="Storniert die Rechnung",
@@ -269,6 +282,25 @@ class Rechnung(models.Model):
     @property
     def faellig(self):
         return self.datum + timedelta(days=self.zahlungsziel)
+
+    @property
+    def skonto_bis(self):
+        return self.datum + timedelta(days=self.skonto_tage)
+
+    @property
+    def skonto(self):
+        """Skonto auf den zu zahlenden Betrag; 0, wenn keins vereinbart ist."""
+        return runden(self.korrigierter_betrag * self.skonto_prozent / 100)
+
+    @property
+    def skonto_offen(self):
+        """Ob der Kunde heute noch mit Skonto zahlen kann."""
+        return (
+            self.skonto_prozent > 0
+            and self.offen > 0
+            and date.today() <= self.skonto_bis
+            and not any(z.ist_skonto for z in self.zahlungen.all())
+        )
 
     @property
     def anhaenge(self):

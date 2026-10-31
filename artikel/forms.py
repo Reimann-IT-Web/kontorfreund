@@ -1,24 +1,8 @@
-from decimal import InvalidOperation
-
 from django import forms
 
-from invoicing.forms import dezimal
+from invoicing.forms import Betrag
 
 from .models import Artikel
-
-
-class Betrag(forms.DecimalField):
-    """Euro in deutscher Schreibweise wie im Rechnungseditor, z. B. 1.250,00."""
-
-    def to_python(self, value):
-        if isinstance(value, str) and value.strip():
-            try:
-                value = dezimal(value)
-            except InvalidOperation:
-                raise forms.ValidationError(
-                    self.error_messages["invalid"], code="invalid"
-                ) from None
-        return super().to_python(value)
 
 
 class ArtikelForm(forms.ModelForm):

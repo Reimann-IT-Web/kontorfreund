@@ -14,9 +14,38 @@ def dezimal(text):
     return Decimal(text.strip().replace(".", "").replace(",", ".") or "0")
 
 
+class Betrag(forms.DecimalField):
+    """Euro in deutscher Schreibweise wie im Rechnungseditor, z. B. 1.250,00."""
+
+    def to_python(self, value):
+        if isinstance(value, str) and value.strip():
+            try:
+                value = dezimal(value)
+            except InvalidOperation:
+                raise forms.ValidationError(
+                    self.error_messages["invalid"], code="invalid"
+                ) from None
+        return super().to_python(value)
+
+
 class RechnungForm(forms.ModelForm):
     zahlungsziel = forms.TypedChoiceField(
         label="Zahlungsziel", choices=ZAHLUNGSZIELE, coerce=int, initial=14
+    )
+    skonto_prozent = Betrag(
+        label="Skonto in Prozent",
+        required=False,
+        min_value=0,
+        max_value=10,
+        decimal_places=2,
+        localize=True,
+        widget=forms.TextInput(attrs={"inputmode": "decimal", "placeholder": "0"}),
+    )
+    skonto_tage = forms.IntegerField(
+        label="Skonto innerhalb von Tagen",
+        required=False,
+        min_value=0,
+        widget=forms.TextInput(attrs={"inputmode": "numeric"}),
     )
 
     class Meta:
@@ -27,12 +56,15 @@ class RechnungForm(forms.ModelForm):
             "leistung_von",
             "leistung_bis",
             "zahlungsziel",
+            "skonto_prozent",
+            "skonto_tage",
             "steuerfall",
             "referenz",
             "betreff",
             "kopftext",
             "fusstext",
             "girocode",
+            "verzugshinweis",
         ]
         widgets = {
             "datum": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
@@ -56,10 +88,38 @@ class RechnungForm(forms.ModelForm):
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
         self.fields["kontakt"].queryset = Kontakt.objects.filter(archiviert=False)
+        if not self.instance.skonto_prozent:
+            # Leere Felder statt „0“, sonst wird aus einer eingetippten 2 eine 20.
+            self.initial["skonto_prozent"] = self.initial["skonto_tage"] = None
         if self.instance.ist_korrektur:
             # Die Korrektur gilt für Empfänger und Steuerfall des Originals; zu zahlen ist nichts.
-            for name in ("kontakt", "steuerfall", "zahlungsziel", "girocode"):
+            for name in (
+                "kontakt",
+                "steuerfall",
+                "zahlungsziel",
+                "skonto_prozent",
+                "skonto_tage",
+                "girocode",
+            ):
                 self.fields[name].disabled = True
+
+    def clean(self):
+        daten = super().clean()
+        prozent = daten.get("skonto_prozent") or Decimal("0")
+        tage = daten.get("skonto_tage") or 0
+        ziel = daten.get("zahlungsziel")
+        if not prozent:
+            tage = 0
+        elif ziel == 0:
+            self.add_error("skonto_prozent", "Bei „sofort“ gibt es kein Skonto.")
+        elif not tage:
+            self.add_error("skonto_tage", "Bitte die Tage für das Skonto eintragen.")
+        elif ziel is not None and tage >= ziel:
+            self.add_error(
+                "skonto_tage", "Die Skontofrist muss kürzer sein als das Zahlungsziel."
+            )
+        daten["skonto_prozent"], daten["skonto_tage"] = prozent, tage
+        return daten
 
 
 def positionen_lesen(post, korrektur=False, modell=Position):

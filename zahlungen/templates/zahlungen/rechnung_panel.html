@@ -14,6 +14,7 @@
   </dl>
   {% if rechnung.ueberfaellig %}<p class="small is-warn-text">Fällig war die Rechnung am {{ rechnung.faellig|date:"d.m.Y" }}.</p>
   {% elif offen > 0 %}<p class="small muted">Fällig am {{ rechnung.faellig|date:"d.m.Y" }}.</p>{% endif %}
+  {% if rechnung.skonto_offen %}<p class="small">Bis {{ rechnung.skonto_bis|date:"d.m.Y" }} darf der Kunde {{ rechnung.skonto_prozent|zahl }} % Skonto abziehen ({{ rechnung.skonto|euro }}). Buchen Sie einfach, was eingegangen ist; das Skonto zieht Kontorfreund selbst ab.</p>{% endif %}
 
   {% if offen > 0 %}
   <form class="stack" method="post" action="{% url 'zahlungen:buchen' rechnung.pk %}" novalidate>

@@ -23,6 +23,7 @@ class Zahlung(models.Model):
         LASTSCHRIFT = "lastschrift", "Lastschrift"
         SONSTIGE = "sonstige", "Sonstige"
         AUSBUCHUNG = "ausbuchung", "Ausgebucht"
+        SKONTO = "skonto", "Skonto"
 
     rechnung = models.ForeignKey(
         Rechnung, on_delete=models.PROTECT, related_name="zahlungen"
@@ -48,7 +49,12 @@ class Zahlung(models.Model):
 
     @property
     def ist_ausbuchung(self):
-        return self.art == self.Art.AUSBUCHUNG
+        """Kein Geldeingang: ausgebuchter Rest oder abgezogenes Skonto."""
+        return self.art in (self.Art.AUSBUCHUNG, self.Art.SKONTO)
+
+    @property
+    def ist_skonto(self):
+        return self.art == self.Art.SKONTO
 
     @property
     def eingang(self):

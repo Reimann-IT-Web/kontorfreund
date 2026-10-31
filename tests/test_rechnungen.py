@@ -135,6 +135,88 @@ def test_festschreiben_legt_zugferd_pdf_ab(client, firma, kunde, daten):
     assert 'src="data:image/png;base64,' in ansicht.content.decode()
 
 
+def seitentext(pfad):
+    """Text der ersten Seite ohne die Zeilenumbrüche des Satzes."""
+    return " ".join(
+        PdfReader(BytesIO(pfad.read_bytes())).pages[0].extract_text().split()
+    )
+
+
+def test_skonto_steht_in_pdf_und_xml(client, firma, kunde, daten):
+    client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, skonto_prozent="2", skonto_tage="7"),
+    )
+    rechnung = Rechnung.objects.get()
+    assert rechnung.beleg["skonto"] == {
+        "prozent": "2.00",
+        "tage": 7,
+        "bis": "2026-11-05",
+        "betrag": "47.20",
+        "zahlbetrag": "2312.80",
+    }
+    text = seitentext(daten / rechnung.datei)
+    assert "Bei Zahlung bis zum 05.11.2026 ziehen Sie 2 % Skonto ab" in text
+    assert "2.312,80" in text
+    xml = (
+        PdfReader(BytesIO((daten / rechnung.datei).read_bytes()))
+        .attachments["factur-x.xml"][0]
+        .decode()
+    )
+    assert "#SKONTO#TAGE=7#PROZENT=2.00#" in xml
+
+    # Die Kopie übernimmt das Skonto, die Stornorechnung nicht.
+    assert rechnung.kopieren().skonto_prozent == Decimal("2.00")
+    client.post(reverse("invoicing:stornieren", args=[rechnung.pk]))
+    storno = Rechnung.objects.get(storno_zu=rechnung)
+    assert storno.skonto_prozent == 0 and storno.beleg["skonto"] is None
+
+
+@pytest.mark.parametrize(
+    ("mehr", "fehler"),
+    [
+        ({"skonto_tage": "14"}, "kürzer sein als das Zahlungsziel"),
+        ({"skonto_tage": ""}, "Tage für das Skonto"),
+        ({"skonto_tage": "7", "zahlungsziel": "0"}, "gibt es kein Skonto"),
+        ({"skonto_tage": "7", "skonto_prozent": "12"}, "kleiner oder gleich 10"),
+    ],
+)
+def test_skonto_wird_geprueft(client, firma, kunde, mehr, fehler):
+    antwort = client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, aktion="speichern", **{"skonto_prozent": "2", **mehr}),
+    )
+    assert fehler in antwort.content.decode()
+    assert not Rechnung.objects.exists()
+
+
+def test_verzugshinweis_nur_bei_privatkunden(client, firma, kunde, daten):
+    privat = Kontakt.objects.create(
+        art=Kontakt.Art.PERSON,
+        anrede="Frau",
+        vorname="Erika",
+        nachname="Beispiel",
+        strasse="Ahornweg 2",
+        plz="55116",
+        ort="Mainz",
+    )
+    editor = client.get(reverse("invoicing:neu")).content.decode()
+    assert 'name="verzugshinweis" id="verzugshinweis" checked' in editor
+
+    for empfaenger in (kunde, privat):
+        client.post(reverse("invoicing:neu"), formular(empfaenger, verzugshinweis="on"))
+    firmenrechnung, privatrechnung = Rechnung.objects.order_by("pk")
+    assert not firmenrechnung.beleg["verzugshinweis"]
+    assert privatrechnung.beleg["verzugshinweis"]
+    assert "nach § 286 Abs. 3 BGB auch ohne Mahnung in Verzug" in seitentext(
+        daten / privatrechnung.datei
+    )
+    assert "§ 286" not in seitentext(daten / firmenrechnung.datei)
+
+    client.post(reverse("invoicing:neu"), formular(privat))
+    assert not Rechnung.objects.latest("pk").beleg["verzugshinweis"]
+
+
 def test_festgeschriebene_rechnung_ist_unveraenderbar(client, firma, kunde, daten):
     client.post(reverse("invoicing:neu"), formular(kunde))
     rechnung = Rechnung.objects.get()

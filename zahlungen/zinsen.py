@@ -6,8 +6,9 @@ Bewusst vorsichtig gerechnet, damit keine Forderung zu hoch ausfällt:
   Verzug, also ab dem Tag nach der Frist der ersten Mahnung.
 - Unternehmen kommen spätestens 30 Tage nach Fälligkeit und Zugang der Rechnung
   in Verzug (§ 286 Abs. 3 BGB). Als Zugang gilt der Versand per E-Mail, sonst
-  drei Tage nach dem Rechnungsdatum. Verbraucher nur nach Mahnung, weil die
-  Rechnung den dafür nötigen Hinweis nicht enthält.
+  drei Tage nach dem Rechnungsdatum. Verbraucher ebenso, wenn die Rechnung den
+  Hinweis nach § 286 Abs. 3 BGB enthält (`beleg["verzugshinweis"]`), sonst nur
+  nach Mahnung.
 - Zinsen laufen vom ersten Verzugstag bis zum Vortag des Stichtags, auf den
   jeweils offenen Betrag, mit dem jeweils gültigen Basiszinssatz, 365 Tage im Jahr.
 """
@@ -39,7 +40,9 @@ def verzug_ab(rechnung, mahnungen):
     tage = []
     if mahnungen:
         tage.append(min(m.frist for m in mahnungen) + timedelta(days=1))
-    if rechnung.kontakt and not rechnung.kontakt.ist_verbraucher:
+    if rechnung.kontakt and (
+        not rechnung.kontakt.ist_verbraucher or rechnung.beleg.get("verzugshinweis")
+    ):
         zugang = (
             timezone.localdate(rechnung.versendet_am)
             if rechnung.versendet_am

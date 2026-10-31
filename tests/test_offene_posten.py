@@ -59,7 +59,7 @@ def privatkunde():
     )
 
 
-def rechnung_schreiben(client, kunde, datum="2026-08-03"):
+def rechnung_schreiben(client, kunde, datum="2026-08-03", **mehr):
     """1.000 € (12,5 Std. × 80 €), Kleinunternehmer, 14 Tage Zahlungsziel."""
     client.post(
         reverse("invoicing:neu"),
@@ -77,6 +77,7 @@ def rechnung_schreiben(client, kunde, datum="2026-08-03"):
             "einheit": ["Std."],
             "preis": ["80,00"],
             "aktion": "festschreiben",
+            **mehr,
         },
     )
     rechnung = Rechnung.objects.filter(kontakt=kunde).latest("pk")
@@ -187,6 +188,41 @@ def test_ausbuchen_nur_mit_grund_und_hoechstens_offen(client, firma, firmenkunde
     assert r.zahlstand == "bezahlt"
 
 
+def test_skonto_in_der_frist_bucht_sich_selbst(client, firma, firmenkunde):
+    # 2 % von 1.000 € bis zum 10.08.
+    rechnung = rechnung_schreiben(
+        client, firmenkunde, skonto_prozent="2", skonto_tage="7"
+    )
+    antwort = zahlen(client, rechnung, "980,00", datum="2026-08-10")
+    assert f"{euro(20)} Skonto abgezogen" in antwort.text
+    assert "Die Rechnung ist bezahlt" in antwort.text
+    r = frisch(rechnung)
+    assert r.offen == 0
+    assert r.bezahlt == Decimal("980.00")
+    assert r.zahlstand == "bezahlt"
+    assert [(z.art, z.betrag) for z in r.zahlungen.all()] == [
+        ("ueberweisung", Decimal("980.00")),
+        ("skonto", Decimal("20.00")),
+    ]
+    auszug = client.get(reverse("zahlungen:kontoauszug", args=[firmenkunde.pk]))
+    assert f"Skonto zu Rechnung {rechnung.nummer}" in auszug.text
+
+
+def test_kein_skonto_nach_der_frist_oder_bei_teilzahlung(client, firma, firmenkunde):
+    rechnung = rechnung_schreiben(
+        client, firmenkunde, skonto_prozent="2", skonto_tage="7"
+    )
+    zahlen(client, rechnung, "980,00", datum="2026-08-11")
+    assert frisch(rechnung).offen == Decimal("20.00")
+
+    teilzahlung = rechnung_schreiben(
+        client, firmenkunde, skonto_prozent="2", skonto_tage="7"
+    )
+    zahlen(client, teilzahlung, "500,00", datum="2026-08-05")
+    assert frisch(teilzahlung).offen == Decimal("500.00")
+    assert not Zahlung.objects.filter(art=Zahlung.Art.SKONTO).exists()
+
+
 def test_zahlung_loeschen(client, firma, firmenkunde):
     rechnung = rechnung_schreiben(client, firmenkunde)
     zahlen(client, rechnung, "400,00")
@@ -217,6 +253,14 @@ def test_verzug_unternehmen_30_tage_nach_rechnung(client, firma, firmenkunde):
     # 14 Tage × 1.000 € × 10,52 % / 365
     assert aufstellung["zinsen"] == Decimal("4.04")
     assert aufstellung["gesamt"] == Decimal("1004.04")
+
+
+def test_verbraucher_mit_hinweis_30_tage_nach_rechnung_in_verzug(
+    client, firma, privatkunde
+):
+    rechnung = rechnung_schreiben(client, privatkunde, verzugshinweis="on")
+    assert rechnung.beleg["verzugshinweis"]
+    assert verzug_ab(frisch(rechnung), []) == date(2026, 9, 17)
 
 
 def test_verbraucher_erst_nach_mahnung_in_verzug(client, firma, privatkunde):

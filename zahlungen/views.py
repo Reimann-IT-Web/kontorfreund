@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from contacts.models import Kontakt
 from core.models import Firmendaten
-from core.templatetags.kf import euro
+from core.templatetags.kf import euro, zahl
 from invoicing import versand
 from invoicing.beleg import seitenbilder
 from invoicing.forms import VersandForm
@@ -101,7 +101,9 @@ def kontoauszug(request, pk):
         "rechnung"
     ):
         text = (
-            f"Ausgebucht: {z.notiz}"
+            f"Skonto zu Rechnung {z.rechnung.nummer}"
+            if z.ist_skonto
+            else f"Ausgebucht: {z.notiz}"
             if z.ist_ausbuchung
             else f"{z.get_art_display()} zu Rechnung {z.rechnung.nummer}"
         )
@@ -174,6 +176,7 @@ def buchen(request, pk):
         rest = eingang - max(rechnung.offen, Decimal("0"))
         if rest > 0:
             neben = min(rest, mahnen.offene_nebenkosten(rechnung))
+    skonto = _skonto(rechnung, eingang, d["datum"])
     Zahlung.objects.create(
         rechnung=rechnung,
         datum=d["datum"],
@@ -182,10 +185,21 @@ def buchen(request, pk):
         art=d["art"],
         notiz=d["notiz"],
     )
+    if skonto:
+        Zahlung.objects.create(
+            rechnung=rechnung,
+            datum=d["datum"],
+            betrag=skonto,
+            art=Zahlung.Art.SKONTO,
+            notiz=f"{zahl(rechnung.skonto_prozent)} % bei Zahlung bis "
+            f"{rechnung.skonto_bis:%d.%m.%Y}",
+        )
     offen = _posten(pk).offen
     meldung = f"Zahlung über {euro(eingang)} zu Rechnung {rechnung.nummer} gebucht."
     if neben:
         meldung += f" Davon {euro(neben)} für Mahnkosten und Zinsen."
+    if skonto:
+        meldung += f" {euro(skonto)} Skonto abgezogen."
     if offen == 0:
         meldung += " Die Rechnung ist bezahlt."
     elif offen > 0:
@@ -194,6 +208,21 @@ def buchen(request, pk):
         meldung += f" Der Kunde hat {euro(-offen)} zu viel gezahlt."
     messages.success(request, meldung)
     return _zurueck(request, rechnung)
+
+
+def _skonto(rechnung, eingang, datum):
+    """Was in der Skontofrist am offenen Betrag fehlt, höchstens das vereinbarte Skonto.
+
+    Nur wenn die Zahlung die Rechnung damit ausgleicht und noch kein Skonto gebucht ist.
+    """
+    if (
+        rechnung.skonto_prozent <= 0
+        or datum > rechnung.skonto_bis
+        or any(z.ist_skonto for z in rechnung.zahlungen.all())
+    ):
+        return Decimal("0.00")
+    fehlt = rechnung.offen - eingang
+    return fehlt if 0 < fehlt <= rechnung.skonto else Decimal("0.00")
 
 
 @require_POST

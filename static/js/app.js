@@ -235,6 +235,9 @@ if (rechnung) {
   };
 
   const auswahl = feld("kontakt");
+  const skontoHinweis = rechnung.querySelector("[data-skonto-hinweis]");
+  const ohneSkonto = skontoHinweis?.textContent;
+  const verzugshinweis = rechnung.querySelector("[data-verzugshinweis]");
   const karte = rechnung.querySelector("[data-address-card]");
   const anschriftFehlt = rechnung.querySelector("[data-address-missing]");
 
@@ -295,10 +298,25 @@ if (rechnung) {
       });
     }
 
+    // Skonto zum Mitlesen; ob Frist und Satz passen, prüft der Server.
+    if (skontoHinweis) {
+      const prozent = zahl(feld("skonto_prozent").value);
+      const tage = Number(feld("skonto_tage").value);
+      if (datum && prozent > 0 && tage > 0 && summe > 0) {
+        const bis = new Date(datum);
+        bis.setDate(bis.getDate() + tage);
+        const text = bis.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+        skontoHinweis.textContent = `Zahlt der Kunde bis ${text}, überweist er ${euro.format(cent(summe - cent((summe * prozent) / 100)))}.`;
+      } else {
+        skontoHinweis.textContent = ohneSkonto;
+      }
+    }
+
     // Empfänger mit XRechnung: Käuferreferenz aus der Adresse und eigene Pflichtangaben.
     // Angebote kennen weder XRechnung noch Leistungszeitraum.
     const empfaenger = auswahl.selectedOptions[0];
     const xrechnung = !angebot && empfaenger?.dataset.xrechnung === "1";
+    if (verzugshinweis) verzugshinweis.hidden = empfaenger?.dataset.verbraucher !== "1";
     if (!angebot) {
       rechnung.querySelector("[data-check=xrechnung]").hidden = !xrechnung;
       rechnung.querySelector("[data-format]").textContent = xrechnung ? "ZUGFeRD und XRechnung" : "ZUGFeRD";

@@ -27,11 +27,17 @@ from segno import helpers as qr
 from contacts.models import ist_leitweg_id
 from core.templatetags.kf import euro, zahl
 
-from .models import Rechnung
+from .models import Rechnung, runden
 
 # XRechnung 3.0 in der Syntax CII; gültig ist Version 3.0.2, Version 4.0 erst ab 2027.
 XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
 ABRECHNUNG = "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
+
+# Damit kommen auch Verbraucher ohne Mahnung in Verzug (§ 286 Abs. 3 Satz 1 Halbsatz 2 BGB).
+VERZUGSHINWEIS = (
+    "Zahlen Sie nicht innerhalb von 30 Tagen nach Fälligkeit und Zugang dieser "
+    "Rechnung, kommen Sie nach § 286 Abs. 3 BGB auch ohne Mahnung in Verzug."
+)
 
 VORLAGE = Path(__file__).parent / "typst" / "rechnung.typ"
 SCHRIFTEN = Path(__file__).parent / "schrift"
@@ -162,6 +168,20 @@ def positionen_daten(positionen):
     ]
 
 
+def skonto_daten(rechnung, brutto):
+    """Vereinbartes Skonto (§ 14 Abs. 4 Nr. 7 UStG), nur wenn etwas zu zahlen ist."""
+    if not (rechnung.skonto_prozent > 0 and brutto > 0):
+        return None
+    abzug = runden(brutto * rechnung.skonto_prozent / 100)
+    return {
+        "prozent": f"{rechnung.skonto_prozent:.2f}",
+        "tage": rechnung.skonto_tage,
+        "bis": rechnung.skonto_bis.isoformat(),
+        "betrag": str(abzug),
+        "zahlbetrag": str(brutto - abzug),
+    }
+
+
 def beleg_daten(rechnung, firma, nummer):
     """Alle Angaben des Belegs. Beim Festschreiben eingefroren, danach nie neu berechnet."""
     netto, ust, brutto = rechnung.summen()
@@ -177,6 +197,11 @@ def beleg_daten(rechnung, firma, nummer):
         "datum": rechnung.datum.isoformat(),
         "faellig": rechnung.faellig.isoformat(),
         "zahlungsziel": rechnung.zahlungsziel,
+        "skonto": skonto_daten(rechnung, brutto),
+        # Ohne diesen Hinweis kommen Verbraucher erst durch eine Mahnung in Verzug.
+        "verzugshinweis": bool(
+            rechnung.verzugshinweis and k and k.ist_verbraucher and brutto > 0
+        ),
         "leistung_von": rechnung.leistung_von.isoformat()
         if rechnung.leistung_von
         else "",
@@ -250,11 +275,19 @@ def druckdaten(b, entwurf=False, logo=b""):
         if b["zahlungsziel"] == 0
         else f"Zahlbar ohne Abzug bis zum {datum_de(b['faellig'])}."
     ]
+    if skonto := b.get("skonto"):
+        zahlung.append(
+            f"Bei Zahlung bis zum {datum_de(skonto['bis'])} ziehen Sie "
+            f"{zahl(skonto['prozent'])} % Skonto ab ({euro(skonto['betrag'])}) "
+            f"und überweisen {euro(skonto['zahlbetrag'])}."
+        )
     if iban and not (storno or korrektur):
         konto = ", ".join(z for z in (a["bank"], f"IBAN {iban}") if z)
         zahlung.append(f"Bitte überweisen Sie den Betrag auf folgendes Konto: {konto}")
         if b["nummer"]:
             zahlung.append(f"Verwendungszweck: Rechnung {b['nummer']}")
+    if b.get("verzugshinweis"):
+        zahlung.append(VERZUGSHINWEIS)
 
     art = (
         "Stornorechnung"
@@ -512,6 +545,12 @@ def zugferd(b):
     if zu_zahlen:
         bedingung = PaymentTerms()
         bedingung.due = date.fromisoformat(b["faellig"])
+        if skonto := b.get("skonto"):
+            # Skonto in BT-20 in der Form, die die XRechnung vorgibt (BR-DE-18).
+            prozent = Decimal(skonto["prozent"])
+            bedingung.description = (
+                f"#SKONTO#TAGE={skonto['tage']}#PROZENT={prozent:.2f}#\n"
+            )
         abrechnung.terms.add(bedingung)
 
     steuer = ApplicableTradeTax()
@@ -590,6 +629,8 @@ def stornieren(original, firma):
         storno = original.kopieren(
             storno_zu=original,
             zahlungsziel=0,
+            skonto_prozent=0,
+            skonto_tage=0,
             girocode=False,
             kopftext=f"{briefanrede(original.kontakt)}\n\n"
             f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
@@ -607,6 +648,8 @@ def korrektur_anlegen(original, firma):
         korrektur = original.kopieren(
             korrektur_zu=original,
             zahlungsziel=0,
+            skonto_prozent=0,
+            skonto_tage=0,
             girocode=False,
             kopftext=f"{briefanrede(original.kontakt)}\n\n"
             f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
