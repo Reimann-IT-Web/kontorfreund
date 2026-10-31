@@ -2,23 +2,20 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Sum
 from django.http import Http404
 from django.shortcuts import redirect, render
 
 from angebote.models import Angebot
-from archive.models import Altbeleg
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
 
+from . import umsatz as umsaetze
 from .forms import FirmendatenForm
 from .models import Firmendaten
 from .navigation import PLATZHALTER
-
-KLEINUNTERNEHMER_GRENZE = Decimal("25000.00")
 
 
 def start(request):
@@ -26,18 +23,7 @@ def start(request):
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
     jahr = date.today().year
-    # Übernommene Altbelege plus festgeschriebene Rechnungen aus Kontorfreund (netto).
-    umsatz = (
-        Altbeleg.objects.filter(
-            art__in=Altbeleg.UMSATZWIRKSAM, datum__year=jahr
-        ).aggregate(s=Sum("betrag"))["s"]
-        or Decimal("0.00")
-    ) + (
-        Rechnung.objects.filter(
-            status=Rechnung.Status.FESTGESCHRIEBEN, datum__year=jahr
-        ).aggregate(s=Sum("netto"))["s"]
-        or Decimal("0.00")
-    )
+    umsatz = umsaetze.umsatz(jahr)
     offen = [r for r in mahnen.posten() if r.offen > 0]
     ueberfaellig = [r for r in offen if r.ueberfaellig]
     mahnstufe = dict(mahnen.vorschlaege(ueberfaellig, Mahnstufe.alle()))
@@ -66,9 +52,10 @@ def start(request):
                 key=lambda a: a.gueltig_bis,
             ),
             "umsatz": umsatz,
-            "grenze": KLEINUNTERNEHMER_GRENZE,
-            "grenze_prozent": round(umsatz / KLEINUNTERNEHMER_GRENZE * 100),
-            "naechstes_jahr": date.today().year + 1,
+            "grenze": umsaetze.VORJAHR,
+            "grenze_prozent": round(umsatz / umsaetze.VORJAHR * 100),
+            "grenz_hinweise": umsaetze.hinweise(jahr) if firma.kleinunternehmer else [],
+            "naechstes_jahr": jahr + 1,
         },
     )
 

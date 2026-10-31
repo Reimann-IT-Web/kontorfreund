@@ -1,6 +1,7 @@
 import logging
 import smtplib
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
@@ -15,7 +16,9 @@ from django.views.decorators.http import require_POST
 from archive.models import Altbeleg
 from artikel.models import Artikel
 from contacts.models import Kontakt
+from core import umsatz
 from core.models import Firmendaten
+from core.templatetags.kf import euro
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
 from . import beleg, versand
@@ -116,11 +119,26 @@ def _editor(request, rechnung, firma):
             "einheiten": EINHEITEN,
             "artikel": Artikel.objects.filter(aktiv=True),
             "naechste_nummer": Rechnung.naechste_nummer(rechnung.datum),
+            "grenz_hinweise": umsatz.hinweise(rechnung.datum.year, _netto(rechnung))
+            if _ohne_umsatzsteuer(rechnung)
+            else [],
             "vorschau": beleg.seitenbilder(_entwurf_pdf(rechnung, firma))
             if rechnung.pk and request.GET.get("vorschau")
             else [],
         },
     )
+
+
+def _ohne_umsatzsteuer(rechnung):
+    """Rechnung nach § 19, für die die Umsatzgrenzen gelten (nicht die Korrektur)."""
+    return (
+        rechnung.steuerfall == Rechnung.Steuerfall.KLEINUNTERNEHMER
+        and not rechnung.ist_korrektur
+    )
+
+
+def _netto(rechnung):
+    return rechnung.summen()[0] if rechnung.pk else Decimal("0.00")
 
 
 def _nach_speichern(request, rechnung, firma):
@@ -130,6 +148,18 @@ def _nach_speichern(request, rechnung, firma):
         return redirect(f"{hier}?vorschau=1")
     if aktion != "festschreiben":
         messages.success(request, "Entwurf gespeichert.")
+        return redirect(hier)
+    jahr = rechnung.datum.year
+    if _ohne_umsatzsteuer(rechnung) and umsatz.ueber_laufender_grenze(
+        jahr, _netto(rechnung)
+    ):
+        # § 19 Abs. 1 UStG: Schon dieser Umsatz unterliegt der Regelbesteuerung.
+        messages.error(
+            request,
+            f"Mit dieser Rechnung läge Ihr Umsatz {jahr} über "
+            f"{euro(umsatz.LAUFEND)}. Sie muss deshalb Umsatzsteuer ausweisen: "
+            "Stellen Sie unter „Umsatzsteuer“ auf 19 % um. Entwurf gespeichert.",
+        )
         return redirect(hier)
     fehlt = rechnung.fehlende_angaben(firma)
     if fehlt:
@@ -151,6 +181,9 @@ def _nach_speichern(request, rechnung, firma):
         request,
         f"{rechnung.bezeichnung} {rechnung.nummer} ist festgeschrieben und als PDF abgelegt.",
     )
+    if _ohne_umsatzsteuer(rechnung):
+        for hinweis in umsatz.hinweise(jahr):
+            messages.warning(request, hinweis)
     return redirect(hier)
 
 

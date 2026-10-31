@@ -86,6 +86,7 @@
           <div class="field">
             <label for="steuerfall">Umsatzsteuer</label>
             {{ form.steuerfall }}
+            {% for hinweis in grenz_hinweise %}<p class="hint is-warn-text">{{ hinweis }}</p>{% endfor %}
           </div>
         </div>
       </div>
