@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
+from konten.rechte import nur_inhaber
+
 from . import pruefung
 from .models import Altbeleg, Pruefung
 
@@ -73,6 +75,26 @@ def pruefen(request):
         n = ergebnis.anzahl
         messages.success(
             request, f"Geprüft: keine Abweichung in {n} Datei{'en' if n != 1 else ''}."
+        )
+    return redirect("archive:liste")
+
+
+@nur_inhaber
+@require_POST
+def zurueckholen(request):
+    geholt, beiseite, ergebnis = pruefung.zurueckholen()
+    if n := len(geholt):
+        text = f"{n} Datei{'en' if n != 1 else ''} aus der Datensicherung zurückgeholt."
+        if beiseite:
+            text += f" Was verändert war, liegt jetzt unter {beiseite}."
+        messages.success(request, text)
+    if n := len(ergebnis.befunde):
+        messages.warning(
+            request,
+            f"Für {n} Datei{'en' if n != 1 else ''} fand sich in den Sicherungen kein "
+            "unverändertes Original. Sicherungen, die mit einem früheren Kennwort "
+            "entstanden sind, stellen Sie unter Datensicherung ganz wieder her; was "
+            "seitdem eingegeben wurde, geht dabei verloren.",
         )
     return redirect("archive:liste")
 

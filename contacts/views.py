@@ -2,10 +2,12 @@ import re
 
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from . import plz
 from .forms import KontaktForm
 from .models import Kontakt
 
@@ -107,3 +109,9 @@ def archivieren(request, pk):
     else:
         messages.success(request, f"{kontakt} ist wieder aktiv.")
     return redirect("contacts:liste")
+
+
+def orte(request):
+    """Orte zu einer deutschen PLZ für das Feld „Ort“ (static/js/app.js, data-plz)."""
+    alle, eindeutig = plz.orte(request.GET.get("plz", ""))
+    return JsonResponse({"orte": alle, "ort": eindeutig})

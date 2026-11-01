@@ -6,7 +6,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
-**Status:** frühe Entwicklung, Version 0.8.0. Im Einsatz sind Adressen mit Verlauf und Wiedervorlagen samt Erinnerung über Telegram, Artikel, Angebote, Auftragsbestätigungen und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege mit täglicher Prüfung aller abgelegten Belege, Anmeldung, verschlüsselte Datensicherung und mehrere Firmen mit getrennten Daten. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
+**Status:** frühe Entwicklung, Version 0.9.0. Im Einsatz sind Adressen mit Verlauf und Wiedervorlagen samt Erinnerung über Telegram, Artikel, Angebote, Auftragsbestätigungen und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege mit täglicher Prüfung aller abgelegten Belege, Anmeldung, verschlüsselte Datensicherung und mehrere Firmen mit getrennten Daten. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
 
 ## Installation
 
@@ -64,5 +64,7 @@ Ein Tag `v<Version>` baut über `.github/workflows/paket.yml` die Pakete für al
 Copyright © 2026 Reimann IT & Web.
 
 [AGPL-3.0-only](LICENSE). Eine kommerzielle Lizenz ohne AGPL-Pflichten ist geplant.
+
+Die Orte zu den Postleitzahlen (`contacts/daten/plz.tsv`) stammen aus [OpenPLZ](https://github.com/openpotato/openplzapi.data) und damit aus OpenStreetMap, © OpenStreetMap-Mitwirkende, unter der [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/); die Datei steht unter derselben Lizenz. Die Schrift Atkinson Hyperlegible Next steht unter der SIL Open Font License (`invoicing/schrift/`).
 
 Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).

@@ -6,6 +6,7 @@ SHA-256-Prüfsumme in der Datenbank. `pruefen` vergleicht alle und speichert das
 Ergebnis als `Pruefung`; was fehlt oder abweicht, zeigen Seitenleiste, Übersicht und
 Ablage, bis eine spätere Prüfung die Datei wieder in Ordnung findet. Jede neue
 Abweichung kommt ins Änderungsprotokoll und per Telegram (`nachrichten.ablage`).
+`zurueckholen` legt die Originale aus den Datensicherungen zurück.
 
 Einmal am Tag angestoßen wie die tägliche Sicherung, nach einer Anfrage
 (`middleware`), und vom Befehl `erinnern`, damit sie auch läuft, wenn Kontorfreund
@@ -25,6 +26,7 @@ from django.utils import timezone
 
 from angebote.models import Angebot
 from auftraege.models import Auftragsbestaetigung
+from backups import sicherung
 from eingang.models import Eingangsrechnung
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen
@@ -108,6 +110,32 @@ def pruefen():
             if seit is None:
                 eintragen(Eintrag.Aktion.ABLAGE, beleg, [[datei, "", VORFALL[zustand]]])
         return Pruefung.objects.create(anzahl=anzahl, befunde=befunde)
+
+
+def zurueckholen():
+    """Was die letzte Prüfung fand, aus den Sicherungen zurückholen und neu prüfen.
+
+    Gibt die zurückgeholten Dateien, den Ordner mit veränderten Fassungen (oder None)
+    und die neue Prüfung zurück.
+    """
+    letzte = Pruefung.letzte()
+    offen = {b["datei"] for b in letzte.befunde} if letzte else set()
+    belege = {
+        datei: (beleg, sha256)
+        for beleg, _, _, datei, sha256 in _dateien()
+        if datei in offen
+    }
+    geholt, beiseite = sicherung.zurueckholen(
+        {datei: sha256 for datei, (_, sha256) in belege.items()}
+    )
+    for datei, erstellt in geholt.items():
+        wann = f"{timezone.localtime(erstellt):%d.%m.%Y, %H:%M} Uhr"
+        eintragen(
+            Eintrag.Aktion.ZURUECK,
+            belege[datei][0],
+            [[datei, "", f"aus der Sicherung vom {wann}"]],
+        )
+    return geholt, beiseite, pruefen()
 
 
 def faellig():

@@ -1,5 +1,6 @@
 from django import forms
 
+from contacts.forms import PLZ_ATTRS
 from invoicing.beleg import logo_lesbar
 
 from .models import Firmendaten
@@ -42,8 +43,9 @@ class FirmendatenForm(forms.ModelForm):
         ]
         widgets = {
             "telefon": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
-            "plz": forms.TextInput(
-                attrs={"inputmode": "numeric", "autocomplete": "postal-code"}
+            "plz": forms.TextInput(attrs=PLZ_ATTRS),
+            "ort": forms.TextInput(
+                attrs={"data-ort": "", "autocomplete": "address-level2"}
             ),
             "mail_passwort": forms.PasswordInput(
                 render_value=False, attrs={"autocomplete": "new-password"}

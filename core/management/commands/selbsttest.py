@@ -7,6 +7,7 @@ from django.db import transaction
 from django.templatetags.static import static
 from django.test import Client
 
+from contacts import plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from eingang import lesen
@@ -31,6 +32,7 @@ class Command(BaseCommand):
         for datei in ("css/app.css", "js/app.js", "img/icon.svg"):
             self.pruefen(browser.get(static(datei)).status_code == 200, datei)
         self.pruefen(check_password("probe", make_password("probe")), "Kennwörter")
+        self.pruefen(plz.orte("55116")[1] == "Mainz", "Orte zu Postleitzahlen")
 
         with transaction.atomic():
             kunde = Kontakt.objects.create(

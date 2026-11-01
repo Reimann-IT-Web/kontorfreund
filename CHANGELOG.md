@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.9.0 – 01.11.2026
+
+- Originale zurückholen: Findet die Prüfung der Ablage eine fehlende oder veränderte Datei, holt „Originale zurückholen“ (Ablage, nur für den Inhaber) das Original aus den Datensicherungen zurück, ohne die übrigen Daten anzufassen. Kontorfreund nimmt eine Datei nur, wenn ihre Prüfsumme stimmt, beginnt bei der neuesten Sicherung und legt eine veränderte Fassung in den Ordner „abweichungen“, statt sie zu löschen. Jede zurückgeholte Datei steht im Protokoll.
+- Ort zur Postleitzahl: In Adressen und Firmendaten trägt Kontorfreund nach einer deutschen PLZ den Ort ein, solange Sie ihn nicht von Hand geändert haben. Teilen sich mehrere Gemeinden eine PLZ, stehen sie im Feld Ort zur Auswahl. Die Daten (aus OpenStreetMap) sind im Programm enthalten; es geht nichts ins Internet.
+
 ## 0.8.0 – 01.11.2026
 
 - Tägliche Prüfung der Ablage: Einmal am Tag vergleicht Kontorfreund jede abgelegte Datei – Rechnungen samt XML, Angebote, Auftragsbestätigungen, Mahnungen, Eingangsrechnungen und die Belege aus dem bisherigen Programm – mit der Prüfsumme, die beim Ablegen gespeichert wurde. Fehlt eine Datei oder wurde sie außerhalb des Programms verändert, steht das auf der Übersicht, an der Ablage in der Seitenleiste und auf der Seite Ablage mit dem Hinweis, wie Sie das Original zurückbekommen. Jede neue Abweichung kommt ins Protokoll und, wenn eingerichtet, per Telegram. Unter Ablage lässt sich auch sofort prüfen.

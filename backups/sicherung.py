@@ -660,3 +660,71 @@ def wiederherstellen(pfad, kennwort):
     # Eine ältere Sicherung bekommt die Änderungen der aktuellen Version.
     call_command("migrate", interactive=False, verbosity=0)
     return kopf, vorher
+
+
+# ---------- Einzelne Belege zurückholen ----------
+
+
+def _zuruecklegen(z, name, sha, daten, beiseite):
+    """Beleg aus der geöffneten Sicherung an seinen Platz legen; was dort abweichend
+    liegt, kommt nach `beiseite`, statt gelöscht zu werden."""
+    ziel = (daten / name).resolve()
+    if (
+        not name.startswith("archiv/")
+        or (daten / "archiv").resolve() not in ziel.parents
+    ):
+        raise SicherungFehler(BESCHAEDIGT)
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    tmp = ziel.with_name(ziel.name + ".tmp")
+    pruef = hashlib.sha256()
+    with z.open(name) as quelle, tmp.open("wb") as aus:
+        while stueck := quelle.read(BLOCK):
+            pruef.update(stueck)
+            aus.write(stueck)
+    if pruef.hexdigest() != sha:
+        tmp.unlink()
+        raise SicherungFehler(BESCHAEDIGT)
+    if ziel.exists():
+        (beiseite / name).parent.mkdir(parents=True, exist_ok=True)
+        os.replace(ziel, beiseite / name)
+    os.replace(tmp, ziel)
+
+
+def zurueckholen(gesucht):
+    """Belege aus den Sicherungen zurückholen (Prüfung der Ablage, Spezifikation B-9).
+
+    `gesucht`: {Pfad wie in der Sicherung („archiv/…“): SHA-256 vom Ablegen}. Geht die
+    Sicherungen von der neuesten an durch, soweit der Schlüssel dieser Installation sie
+    öffnet (ältere mit einem früheren Kennwort nicht), und nimmt eine Datei nur, wenn
+    ihre Prüfsumme stimmt. Eine veränderte Fassung wird nach
+    <DATA_DIR>/abweichungen/<Zeit>/ verschoben. Gibt die zurückgeholten Pfade mit der
+    Zeit ihrer Sicherung zurück und den Ordner mit den veränderten Fassungen (oder None).
+    """
+    k = konfig()
+    if "schluessel" not in k:
+        return {}, None
+    daten = Path(settings.DATA_DIR)
+    beiseite = daten / "abweichungen" / f"{timezone.localtime():%Y-%m-%d-%H%M%S}"
+    offen, geholt = dict(gesucht), {}
+    with _sperre:
+        for e in liste():
+            if not offen:
+                break
+            if not e["kopf"] or e["kopf"]["kdf"] != k["kdf"]:
+                continue
+            try:
+                with tempfile.TemporaryFile(dir=daten) as klar:
+                    with open(e["pfad"], "rb") as f:
+                        kopf, aad = _kopf(f)
+                        schluessel = base64.b64decode(k["schluessel"])
+                        _entschluesseln(f, schluessel, kopf, aad, klar)
+                    with zipfile.ZipFile(klar) as z:
+                        enthalten = json.loads(z.read("inhalt.json"))["dateien"]
+                        for name, sha in list(offen.items()):
+                            if enthalten.get(name) == sha:
+                                _zuruecklegen(z, name, sha, daten, beiseite)
+                                geholt[name] = e["erstellt"]
+                                del offen[name]
+            except (OSError, SicherungFehler, zipfile.BadZipFile, KeyError, ValueError):
+                logger.warning("Sicherung %s nicht lesbar", e["name"], exc_info=True)
+    return geholt, beiseite if beiseite.is_dir() else None

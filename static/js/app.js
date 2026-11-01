@@ -170,6 +170,52 @@ if (kontaktForm) {
   umschalten();
 }
 
+// ---------- Anschrift: Ort zur Postleitzahl ----------
+
+// Bei einer deutschen PLZ trägt Kontorfreund den Ort ein, solange er nicht von Hand
+// geändert wurde. Teilen sich mehrere Orte die PLZ, stehen sie im Feld Ort zur Auswahl.
+document.querySelectorAll("[data-plz]").forEach((plz) => {
+  const ort = plz.form.querySelector("[data-ort]");
+  const land = plz.form.querySelector("[data-land]");
+  if (!ort) return;
+  const vorschlaege = document.createElement("datalist");
+  vorschlaege.id = `${ort.id}-vorschlaege`;
+  ort.setAttribute("list", vorschlaege.id);
+  const hinweis = document.createElement("p");
+  hinweis.className = "hint";
+  hinweis.hidden = true;
+  hinweis.setAttribute("aria-live", "polite");
+  ort.after(vorschlaege, hinweis);
+  let vonHand = false;
+  ort.addEventListener("input", () => {
+    vonHand = true;
+  });
+  plz.addEventListener("input", async () => {
+    const wert = plz.value.trim();
+    vorschlaege.replaceChildren();
+    hinweis.hidden = true;
+    if (!/^\d{5}$/.test(wert) || !/^(deutschland|germany|de)?$/i.test(land?.value.trim() ?? "")) return;
+    let daten;
+    try {
+      const antwort = await fetch(`${plz.dataset.plz}?plz=${wert}`);
+      if (!antwort.ok) return;
+      daten = await antwort.json();
+    } catch {
+      return; // Dann trägt man den Ort selbst ein.
+    }
+    if (plz.value.trim() !== wert) return; // inzwischen weitergetippt
+    vorschlaege.replaceChildren(...daten.orte.map((o) => new Option(o)));
+    if (vonHand) return;
+    if (daten.ort) {
+      ort.value = daten.ort;
+    } else if (daten.orte.length > 1) {
+      if (!daten.orte.includes(ort.value)) ort.value = "";
+      hinweis.textContent = `Zur PLZ ${wert} gehören mehrere Orte. Wählen Sie den richtigen im Feld Ort aus.`;
+      hinweis.hidden = false;
+    }
+  });
+});
+
 // ---------- Rechnung, Angebot und Auftragsbestätigung: rechnen und Pflichtangaben prüfen ----------
 
 const rechnung = document.querySelector("[data-invoice]");

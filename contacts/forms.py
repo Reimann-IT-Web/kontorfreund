@@ -1,6 +1,14 @@
 from django import forms
+from django.urls import reverse_lazy
 
 from .models import Kontakt
+
+# Die PLZ füllt den Ort aus (static/js/app.js); dazu gehört ein Feld mit data-ort.
+PLZ_ATTRS = {
+    "inputmode": "numeric",
+    "autocomplete": "postal-code",
+    "data-plz": reverse_lazy("contacts:orte"),
+}
 
 
 class KontaktForm(forms.ModelForm):
@@ -32,9 +40,11 @@ class KontaktForm(forms.ModelForm):
             "kategorie": forms.RadioSelect,
             "telefon": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
             "email": forms.EmailInput(attrs={"autocomplete": "email"}),
-            "plz": forms.TextInput(
-                attrs={"inputmode": "numeric", "autocomplete": "postal-code"}
+            "plz": forms.TextInput(attrs=PLZ_ATTRS),
+            "ort": forms.TextInput(
+                attrs={"data-ort": "", "autocomplete": "address-level2"}
             ),
+            "land": forms.TextInput(attrs={"data-land": ""}),
             "notiz": forms.Textarea(attrs={"rows": 3}),
         }
         help_texts = {

@@ -25,7 +25,17 @@
     <li><a href="{{ b.url }}">{{ b.beleg }}</a> {% if b.zustand == "fehlt" %}fehlt{% else %}ist verändert{% endif %}, festgestellt am {{ b.seit|date:"d.m.Y" }} <span class="muted dateipfad">({{ b.datei }})</span></li>
     {% endfor %}
   </ul>
-  <p>{% if user.ist_inhaber %}So bekommen Sie die Originale zurück: Stellen Sie unter <a href="{% url 'backups:uebersicht' %}">Datensicherung</a> eine Sicherung von vor diesem Tag wieder her. Was seitdem eingegeben wurde, geht dabei verloren; den jetzigen Stand sichert Kontorfreund vorher. Prüfen Sie danach erneut.{% else %}Sagen Sie bitte dem Inhaber Bescheid.{% endif %}</p>
+  {% if not user.ist_inhaber %}
+  <p>Sagen Sie bitte dem Inhaber Bescheid.</p>
+  {% elif sicherung.eingerichtet %}
+  <p>Kontorfreund holt die Originale aus Ihren Datensicherungen zurück. Es nimmt eine Datei nur, wenn ihre Prüfsumme stimmt, und legt eine veränderte Fassung beiseite, statt sie zu löschen. Das dauert je Sicherung einige Sekunden.</p>
+  <form method="post" action="{% url 'archive:zurueckholen' %}">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit">{% icon "restore" %}Originale zurückholen</button>
+  </form>
+  {% else %}
+  <p>Ohne Datensicherung lässt sich das Original nicht zurückholen. Richten Sie unter <a href="{% url 'backups:uebersicht' %}">Datensicherung</a> die tägliche Sicherung ein, damit das künftig geht.</p>
+  {% endif %}
 </div>
 {% elif pruefung.anzahl %}
 <p class="callout">{% icon "check" %}<span>Zuletzt geprüft am {{ pruefung.zeit|date:"d.m.Y \u\m H:i" }} Uhr: keine Abweichung in {{ pruefung.anzahl }} Datei{{ pruefung.anzahl|pluralize:"en" }}. Kontorfreund vergleicht jeden Tag alle abgelegten Rechnungen, Angebote, Auftragsbestätigungen, Mahnungen, Eingangsrechnungen und diese Belege mit der Prüfsumme vom Ablegen.</span></p>

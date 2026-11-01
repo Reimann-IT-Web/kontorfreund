@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from archive import pruefung
 from archive.models import Altbeleg, Pruefung
+from backups import sicherung
 from benachrichtigungen import nachrichten, telegram
 from benachrichtigungen.models import Einstellung
 from contacts.models import Kontakt
@@ -135,7 +136,7 @@ def test_abweichung_gemeldet_protokolliert_und_wieder_in_ordnung(client, belege)
     assert f"Rechnung {rechnung.nummer}, Rechnung 1001 (Altprogramm)." in start
     ablage = client.get(reverse("archive:liste")).content.decode()
     assert f"ist verändert, festgestellt am {HEUTE:%d.%m.%Y}" in ablage
-    assert "Sicherung von vor diesem Tag wieder her" in ablage
+    assert "Ohne Datensicherung lässt sich das Original nicht zurückholen" in ablage
     # Seitenleiste
     assert 'title="2 abgelegte Dateien fehlen oder sind verändert"' in ablage
     assert (
@@ -228,3 +229,67 @@ def test_telegram_meldet_neue_abweichung_einmal(belege, inhaber, monkeypatch):
     pruefung.pruefen()
     nachrichten.erinnern()
     assert [t for t in texte if "Abgelegte" in t] == meldungen
+
+
+KENNWORT = "Pferd Batterie Heftklammer"
+
+
+# Sicherungen brauchen echte Transaktionen der Datenbank.
+@pytest.mark.django_db(transaction=True)
+def test_originale_aus_der_sicherung_zurueckholen(client, belege):
+    rechnung, altbeleg = belege
+    sicherung.einrichten(KENNWORT)
+    sicherung.sichern()
+    original = pfad(rechnung).read_bytes()
+    pfad(rechnung).write_bytes(b"gefaelscht")
+    pfad(altbeleg).unlink()
+    # Die neueste Sicherung enthält schon die Fälschung; das Original kommt aus der älteren.
+    sicherung.sichern()
+    pruefung.pruefen()
+    ablage = client.get(reverse("archive:liste")).content.decode()
+    assert "Originale zurückholen" in ablage
+
+    antwort = client.post(reverse("archive:zurueckholen"), follow=True)
+
+    assert pfad(rechnung).read_bytes() == original
+    assert pfad(altbeleg).read_bytes() == b"%PDF-1.4 Rechnung aus dem Altprogramm"
+    beiseite = list((Path(settings.DATA_DIR) / "abweichungen").rglob("*.pdf"))
+    assert [p.read_bytes() for p in beiseite] == [b"gefaelscht"]
+    assert Pruefung.letzte().befunde == []
+    text = antwort.content.decode()
+    assert "2 Dateien aus der Datensicherung zurückgeholt." in text
+    assert "Was verändert war, liegt jetzt unter" in text
+    eintraege = Eintrag.objects.filter(aktion=Eintrag.Aktion.ZURUECK).order_by("pk")
+    assert [(e.beschreibung, e.aenderungen[0][0]) for e in eintraege] == [
+        (f"Rechnung {rechnung.nummer}", rechnung.datei),
+        ("Rechnung 1001", altbeleg.datei),
+    ]
+    assert eintraege[0].aenderungen[0][2].startswith("aus der Sicherung vom ")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_kein_passendes_original(client, belege):
+    rechnung, _ = belege
+    sicherung.einrichten(KENNWORT)
+    sicherung.sichern()  # mit dem Original, aber unter dem früheren Kennwort
+    sicherung.einrichten("Neues Kennwort für die Sicherung")
+    pfad(rechnung).write_bytes(b"gefaelscht")
+    sicherung.sichern()  # nur die Fälschung
+    pruefung.pruefen()
+
+    antwort = client.post(reverse("archive:zurueckholen"), follow=True)
+
+    assert pfad(rechnung).read_bytes() == b"gefaelscht"
+    assert not (Path(settings.DATA_DIR) / "abweichungen").exists()
+    assert len(Pruefung.letzte().befunde) == 1
+    assert "Für 1 Datei fand sich in den Sicherungen kein unverändertes Original." in (
+        antwort.content.decode()
+    )
+    assert not Eintrag.objects.filter(aktion=Eintrag.Aktion.ZURUECK).exists()
+
+
+def test_zurueckholen_nur_fuer_den_inhaber(belege):
+    anna = Benutzer.objects.create_user("anna@muster.test", name="Anna Beispiel")
+    mitarbeiter = Client()
+    mitarbeiter.force_login(anna)
+    assert mitarbeiter.post(reverse("archive:zurueckholen")).status_code == 403
