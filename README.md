@@ -6,7 +6,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
-**Status:** frühe Entwicklung, Version 0.3.0. Im Einsatz sind Adressen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
+**Status:** frühe Entwicklung, Version 0.3.1. Im Einsatz sind Adressen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
 
 ## Installation
 
@@ -24,6 +24,11 @@ Kontorfreund öffnet sich im Browser unter http://127.0.0.1:8765/. Das kleine Fe
 | Linux | `~/.local/share/Kontorfreund` bzw. `$XDG_DATA_HOME/Kontorfreund` |
 
 Für ein Update installieren Sie die neue Version einfach darüber. Die Datenbank wird beim nächsten Start angepasst, vorher entsteht eine Sicherung. Beim Deinstallieren bleiben die Daten erhalten.
+
+**Zugang verloren?** Nach fünf falschen Kennwörtern oder Codes ist ein Konto 15 Minuten gesperrt, danach geht es wieder. Konten von Mitarbeitern entsperrt der Inhaber unter Einstellungen → Benutzer; dort setzt er auch ein vergessenes Kennwort neu. Für den Inhaber selbst gibt es zwei Befehle, unter Windows in der Eingabeaufforderung im Programmordner (`%LOCALAPPDATA%\Programs\Kontorfreund`):
+
+- `Kontorfreund changepassword <E-Mail>` setzt ein neues Kennwort.
+- `Kontorfreund entsperren <E-Mail> --ohne-zwei-faktor` hebt die Sperre auf und schaltet die Zwei-Faktor-Anmeldung aus, etwa wenn das Telefon verloren ist. Ohne `--ohne-zwei-faktor` hebt er nur die Sperre auf.
 
 ## Entwicklung
 

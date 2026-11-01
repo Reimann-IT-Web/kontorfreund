@@ -1,5 +1,7 @@
 """Installationspaket (Spezifikation D-3): Startprogramm, Version, Selbsttest."""
 
+import runpy
+import sys
 import tomllib
 from pathlib import Path
 
@@ -53,3 +55,13 @@ def test_selbsttest_laesst_keine_daten_zurueck(capsys):
     assert "Selbsttest bestanden." in capsys.readouterr().out
     assert not Kontakt.objects.exists()
     assert not Rechnung.objects.exists()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows schützt den Benutzerordner."
+)
+def test_datenordner_nur_fuer_den_benutzer(monkeypatch, tmp_path):
+    ordner = tmp_path / "Kontorfreund"
+    monkeypatch.setenv("APP_DATA_DIR", str(ordner))
+    runpy.run_path(str(Path(settings.BASE_DIR) / "config" / "settings.py"))
+    assert ordner.stat().st_mode & 0o777 == 0o700

@@ -11,6 +11,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 from pypdf import PdfReader
 
@@ -141,14 +142,21 @@ def _aus_pdf(inhalt):
     )
 
 
+def _ohne_dtd(*_):
+    raise Unlesbar("Die XML-Datei enthält eine Dokumenttyp-Definition.")
+
+
 def _wurzel(xml):
     # Eine E-Rechnung braucht keine Dokumenttyp-Definition; ohne sie gibt es auch
-    # keine Entitäten, mit denen eine Datei den Rechner lahmlegen könnte.
-    if b"<!DOCTYPE" in xml or b"<!ENTITY" in xml:
-        raise Unlesbar("Die XML-Datei enthält eine Dokumenttyp-Definition.")
+    # keine Entitäten, mit denen eine Datei den Rechner lahmlegen könnte. Der Parser
+    # selbst erkennt sie, in jeder Zeichenkodierung, bevor ElementTree sie liest.
+    pruefer = expat.ParserCreate()
+    pruefer.StartDoctypeDeclHandler = _ohne_dtd
+    pruefer.EntityDeclHandler = _ohne_dtd
     try:
+        pruefer.Parse(xml, True)
         wurzel = ElementTree.fromstring(xml)  # noqa: S314 – ohne DTD, siehe oben
-    except ElementTree.ParseError as fehler:
+    except (expat.ExpatError, ElementTree.ParseError) as fehler:
         raise Unlesbar("Die Datei ist weder eine XML- noch eine PDF-Datei.") from fehler
     if wurzel.tag not in WURZELN:
         raise Unlesbar(

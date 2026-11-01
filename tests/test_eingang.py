@@ -244,8 +244,26 @@ def test_anhang_herunterladen(client):
     r = Eingangsrechnung.objects.get()
     antwort = client.get(reverse("eingang:anhang", args=[r.pk, 0]))
     assert b"".join(antwort.streaming_content) == ANHANG
-    assert antwort["Content-Disposition"].startswith("attachment")
+    assert antwort["Content-Disposition"] == 'attachment; filename="stunden.pdf"'
     assert client.get(reverse("eingang:anhang", args=[r.pk, 5])).status_code == 404
+
+
+def test_anhang_bekommt_die_endung_seines_typs(client):
+    """Ein präparierter Anhang wird nie zu einer Datei, die Windows ausführt."""
+    hochladen(
+        client,
+        (
+            "re.xml",
+            UBL.replace(
+                b'mimeCode="application/pdf" filename="stunden.pdf"',
+                b'mimeCode="application/x-msdownload" filename="..\\Rechnung.pdf.exe"',
+            ),
+        ),
+    )
+    r = Eingangsrechnung.objects.get()
+    antwort = client.get(reverse("eingang:anhang", args=[r.pk, 0]))
+    assert antwort["Content-Type"] == "application/octet-stream"
+    assert antwort["Content-Disposition"] == 'attachment; filename="Rechnung.pdf.bin"'
 
 
 def test_xml_wird_heruntergeladen(client):
@@ -364,6 +382,13 @@ def _pdf_ohne_xml():
         (
             "dtd.xml",
             b'<?xml version="1.0"?><!DOCTYPE a [<!ENTITY x "y">]><a>&x;</a>',
+            "Dokumenttyp-Definition",
+        ),
+        (
+            "dtd16.xml",
+            '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE a [<!ENTITY x "y">]><a>&x;</a>'.encode(
+                "utf-16"
+            ),
             "Dokumenttyp-Definition",
         ),
         ("andere.xml", b"<bestellung/>", "keine E-Rechnung im Format"),

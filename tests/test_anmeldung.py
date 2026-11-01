@@ -3,10 +3,12 @@
 import base64
 import time
 from datetime import timedelta
+from io import StringIO
 
 import pytest
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.management import CommandError, call_command
 from django.urls import reverse
 from django.utils import timezone
 
@@ -203,3 +205,22 @@ def test_abmelden_und_automatisch_nach_acht_stunden(client):
     client.post(reverse("konten:abmelden"))
 
     assert client.get(reverse("core:start")).status_code == 302
+
+
+def test_notfall_entsperren(mitarbeiterin):
+    mitarbeiterin.totp_geheimnis = totp.neues_geheimnis()
+    mitarbeiterin.save()
+    for _ in range(5):
+        mitarbeiterin.fehlversuch()
+    assert mitarbeiterin.gesperrt
+
+    ausgabe = StringIO()
+    call_command("entsperren", "ANNA@muster.test", stdout=ausgabe)
+    anna = Benutzer.objects.get(pk=mitarbeiterin.pk)
+    assert not anna.gesperrt and anna.zwei_faktor
+    assert "Sperre für anna@muster.test ist aufgehoben" in ausgabe.getvalue()
+
+    call_command("entsperren", "anna@muster.test", "--ohne-zwei-faktor", stdout=ausgabe)
+    assert not Benutzer.objects.get(pk=mitarbeiterin.pk).zwei_faktor
+    with pytest.raises(CommandError, match="Kein Konto"):
+        call_command("entsperren", "niemand@muster.test")

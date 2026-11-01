@@ -1,6 +1,7 @@
 import base64
 import binascii
 from io import BytesIO
+from pathlib import PurePosixPath
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -17,17 +18,18 @@ from . import lesen
 from .models import Doppelt, Eingangsrechnung
 
 GROESSTE_DATEI = 20 * 1024 * 1024
-# Anhänge werden immer heruntergeladen, nie im Browser geöffnet; nur diese Typen
-# behalten ihre Angabe, alles andere wird zur einfachen Datei.
+# Anhänge werden immer heruntergeladen, nie im Browser geöffnet. Die Endung folgt
+# dem Typ, nicht dem Dateinamen des Absenders: Aus „Rechnung.pdf.exe“ wird so keine
+# Datei, die Windows per Doppelklick startet. Andere Typen werden zur einfachen Datei.
 ANHANG_TYPEN = {
-    "application/pdf",
-    "image/png",
-    "image/jpeg",
-    "text/csv",
-    "application/xml",
-    "text/xml",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/pdf": ".pdf",
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "text/csv": ".csv",
+    "application/xml": ".xml",
+    "text/xml": ".xml",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.oasis.opendocument.spreadsheet": ".ods",
 }
 
 
@@ -208,10 +210,11 @@ def anhang(request, pk, nr):
         inhalt = base64.b64decode(a["base64"], validate=True)
     except binascii.Error:
         raise Http404("Der Anhang ist beschädigt.") from None
+    stamm = PurePosixPath(a["dateiname"].replace("\\", "/")).stem.strip()
     return FileResponse(
         BytesIO(inhalt),
         as_attachment=True,
-        filename=a["dateiname"] or f"Anhang {nr + 1}",
+        filename=(stamm or f"Anhang {nr + 1}") + ANHANG_TYPEN.get(a["mime"], ".bin"),
         content_type=a["mime"]
         if a["mime"] in ANHANG_TYPEN
         else "application/octet-stream",

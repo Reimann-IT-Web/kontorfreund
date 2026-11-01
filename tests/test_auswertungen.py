@@ -236,6 +236,20 @@ def test_ods(client, belege):
     assert zeilen[-1].findall("table:table-cell", ODS)[9].get(wert) == "1099.00"
 
 
+def test_text_wird_keine_formel(client, firma):
+    """Ein Name wie aus einer präparierten E-Rechnung bleibt in Excel reiner Text."""
+    name = '=HYPERLINK("https://example.com","Klick")'
+    kunde = Kontakt.objects.create(
+        firmenname=name, strasse="Markt 3", plz="55116", ort="Mainz"
+    )
+    schreiben(client, kunde, HEUTE.isoformat())
+
+    blatt = load_workbook(BytesIO(_laden(client, "xlsx"))).active
+    assert (blatt["F2"].value, blatt["F2"].data_type) == (name, "s")
+    zeile = _laden(client, "csv").decode("utf-8-sig").splitlines()[1]
+    assert ';"\'=HYPERLINK(""https://example.com"",""Klick"")";' in zeile
+
+
 def test_in_der_seitenleiste(client):
     seite = client.get(reverse("core:start")).content.decode()
     assert reverse("auswertungen:rechnungsausgangsbuch") in seite

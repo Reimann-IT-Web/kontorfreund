@@ -24,6 +24,10 @@ TYPEN = {
 }
 
 
+# Damit beginnt in Excel eine Formel; Namen aus fremden E-Rechnungen dürfen keine werden.
+FORMEL = ("=", "+", "-", "@", "\t", "\r")
+
+
 def _text(wert, art):
     if wert is None:
         return ""
@@ -39,9 +43,13 @@ def csv(spalten, zeilen):
     schreiber = csvmodul.writer(ausgabe, delimiter=";")
     schreiber.writerow([titel for titel, _ in spalten])
     for zeile in zeilen:
-        schreiber.writerow(
-            [_text(wert, art) for wert, (_, art) in zip(zeile, spalten, strict=True)]
-        )
+        werte = []
+        for wert, (_, art) in zip(zeile, spalten, strict=True):
+            text = _text(wert, art)
+            werte.append(
+                f"'{text}" if art == "text" and text.startswith(FORMEL) else text
+            )
+        schreiber.writerow(werte)
     return ausgabe.getvalue().encode("utf-8-sig")
 
 
@@ -58,9 +66,12 @@ def xlsx(spalten, zeilen, name):
     for nr, (titel, art) in enumerate(spalten, start=1):
         buchstabe = blatt.cell(row=1, column=nr).column_letter
         blatt.column_dimensions[buchstabe].width = max(len(titel) + 2, 12)
-        if art in formate:
-            for (zelle,) in blatt.iter_rows(min_row=2, min_col=nr, max_col=nr):
+        for (zelle,) in blatt.iter_rows(min_row=2, min_col=nr, max_col=nr):
+            if art in formate:
                 zelle.number_format = formate[art]
+            elif zelle.data_type == "f":
+                # openpyxl macht aus Text mit „=“ am Anfang eine Formel.
+                zelle.data_type = "s"
     blatt.freeze_panes = "A2"
     ausgabe = BytesIO()
     mappe.save(ausgabe)
