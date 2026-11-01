@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 from decimal import Decimal
 
@@ -7,6 +8,7 @@ from django.db import transaction
 from django.templatetags.static import static
 from django.test import Client
 
+from auswertungen import pruefer
 from contacts import plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
@@ -33,6 +35,12 @@ class Command(BaseCommand):
             self.pruefen(browser.get(static(datei)).status_code == 200, datei)
         self.pruefen(check_password("probe", make_password("probe")), "Kennwörter")
         self.pruefen(plz.orte("55116")[1] == "Mainz", "Orte zu Postleitzahlen")
+        self.pruefen(
+            pruefer.DTD.is_file()
+            and hashlib.sha256(pruefer.DTD.read_bytes()).hexdigest()
+            == pruefer.DTD_SHA256,
+            "Beschreibungsstandard für die Betriebsprüfung",
+        )
 
         with transaction.atomic():
             kunde = Kontakt.objects.create(

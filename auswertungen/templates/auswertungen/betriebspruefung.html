@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Betriebsprüfung{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Betriebsprüfung</h1>
+    <p class="muted">Datenpaket für das Finanzamt {{ text }}, nach dem Beschreibungsstandard für die Datenträgerüberlassung (§ 147 Abs. 6 AO).</p>
+  </div>
+  {% if eintraege %}
+  <div class="actions">
+    <a class="btn btn-primary" href="?jahr={{ jahr }}&amp;zeitraum={{ wahl }}&amp;format=zip">{% icon "download" %}Datenpaket herunterladen</a>
+  </div>
+  {% endif %}
+</div>
+
+{% include "auswertungen/auswahl.html" %}
+
+{% if fehlen %}
+<p class="callout">{% icon "alert" %}<span>{{ fehlen }} Belegdatei{{ fehlen|pluralize:"en" }} fehl{{ fehlen|pluralize:"t,en" }} in der Ablage und {{ fehlen|pluralize:"ist,sind" }} deshalb nicht im Paket. Unter <a href="{% url 'archive:liste' %}">Ablage</a> holen Sie fehlende Originale aus der Datensicherung zurück.</span></p>
+{% endif %}
+
+{% if eintraege %}
+<div class="table-wrap">
+  <table class="table stapel">
+    <thead>
+      <tr>
+        <th scope="col">Tabelle</th>
+        <th scope="col">Inhalt</th>
+        <th scope="col" class="num">Einträge</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tabellen %}
+      <tr class="data-row">
+        <td><span class="cell-title">{{ t.name }}</span><span class="cell-sub">{{ t.datei }}</span></td>
+        <td class="voll">{{ t.beschreibung }}</td>
+        <td class="num" data-label="Einträge">{{ t.zeilen|length }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">Dazu {{ belege }} Belegdatei{{ belege|pluralize:"en" }} (PDF und XML) mit zusammen {{ groesse|filesizeformat }}, die Beschreibung index.xml und die Datei {{ dtd }} der Finanzverwaltung.</p>
+
+<p class="callout">{% icon "help" %}<span>Verlangt der Prüfer die Daten auf einem Datenträger, geben Sie ihm die ZIP-Datei, zum Beispiel auf einem USB-Stick. Seine Prüfsoftware liest sie ohne weitere Erklärung ein. Eine Prüfung umfasst meist mehrere Jahre: Laden Sie für jedes Jahr ein eigenes Paket herunter.</span></p>
+{% else %}
+<div class="empty">
+  <h2>Keine Daten {{ text }}</h2>
+  <p class="muted">In diesem Zeitraum gibt es keine festgeschriebenen Rechnungen, Zahlungen, Mahnungen, Eingangsrechnungen oder Altbelege. Wählen Sie oben ein anderes Jahr.</p>
+</div>
+{% endif %}
+{% endblock %}

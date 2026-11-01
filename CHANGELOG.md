@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.13.0 – 01.11.2026
+
+- Betriebsprüfung: Unter Auswertungen gibt es für den Inhaber den neuen Reiter „Betriebsprüfung“. Er erstellt das Datenpaket, das ein Prüfer des Finanzamts nach § 147 Abs. 6 AO verlangen kann: eine ZIP-Datei nach dem „Beschreibungsstandard für die Datenträgerüberlassung“ der Finanzverwaltung. Darin stehen die Beschreibung index.xml mit der zugehörigen Datei gdpdu-01-08-2002.dtd, Tabellen zu Rechnungsausgang, Rechnungspositionen, Zahlungen, Mahnungen, Eingangsrechnungen, Altbelegen und den beteiligten Adressen sowie alle Belege des Zeitraums als PDF und XML mit ihren Prüfsummen. Die Prüfsoftware der Finanzverwaltung liest das Paket ohne weitere Erklärung ein. Wählen Sie Jahr, Quartal oder Monat; für eine Prüfung über mehrere Jahre laden Sie je Jahr ein Paket herunter.
+
 ## 0.12.1 – 01.11.2026
 
 - Behoben: Die tägliche Prüfung der Ablage konnte mit „database is locked“ scheitern, wenn Sie gerade arbeiteten. Sie hielt die Datenbank gesperrt, während sie die Prüfsummen aller Belege rechnete; schrieb in dieser Zeit eine Seite etwas, ließ sich das Ergebnis der Prüfung nicht speichern. Jetzt sperrt sie nur noch für das Speichern. Außerdem warten gleichzeitige Schreibzugriffe bis zu 20 Sekunden aufeinander, statt abzubrechen. Ihre Daten waren davon nicht betroffen; es fehlte nur das Ergebnis der betroffenen Prüfung.

@@ -1,7 +1,9 @@
 from datetime import date
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import content_disposition_header
@@ -10,7 +12,7 @@ from archive.models import Altbeleg
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
 
-from . import buch, datev, tabelle
+from . import buch, datev, pruefer, tabelle
 from .forms import DatevForm
 from .models import Datev
 
@@ -132,4 +134,40 @@ def datev_einstellungen(request):
         request,
         "auswertungen/datev_einstellungen.html",
         {"bereich": "auswertungen", "form": form},
+    )
+
+
+@nur_inhaber
+def betriebspruefung(request):
+    """Datenpaket für die Betriebsprüfung (Datenträgerüberlassung, Spezifikation D-6)."""
+    jahr, wahl = _auswahl(request)
+    von, bis, name, text = buch.zeitraum(jahr, wahl)
+    if request.GET.get("format") == "zip":
+        return FileResponse(
+            pruefer.paket(von, bis, timezone.localtime()),
+            as_attachment=True,
+            filename=f"Betriebsprüfung {name}.zip",
+            content_type="application/zip",
+        )
+    alle, belege = pruefer.tabellen(von, bis)
+    daten = Path(settings.DATA_DIR)
+    vorhanden = [daten / b for b in belege if (daten / b).is_file()]
+    return render(
+        request,
+        "auswertungen/betriebspruefung.html",
+        {
+            "bereich": "auswertungen",
+            "auswertung": "pruefung",
+            "tabellen": alle,
+            "eintraege": sum(len(t.zeilen) for t in alle),
+            "belege": len(vorhanden),
+            "groesse": sum(b.stat().st_size for b in vorhanden),
+            "fehlen": len(belege) - len(vorhanden),
+            "dtd": pruefer.DTD.name,
+            "jahr": jahr,
+            "jahre": _jahre(),
+            "wahl": wahl,
+            "zeitraeume": buch.ZEITRAEUME,
+            "text": text,
+        },
     )

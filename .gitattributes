@@ -1,3 +1,5 @@
 * text=auto eol=lf
 # Inno Setup zeigt die Datei in einem Windows-Textfeld, das CR/LF braucht.
 packaging/windows/info.txt text eol=crlf
+# DTD des Beschreibungsstandards für die Datenträgerüberlassung: unverändert, mit CR/LF.
+auswertungen/daten/gdpdu-01-08-2002.dtd -text

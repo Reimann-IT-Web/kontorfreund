@@ -2,6 +2,7 @@
   <nav class="segmented" aria-label="Auswertung">
     <a href="{% url 'auswertungen:rechnungsausgangsbuch' %}?jahr={{ jahr }}&amp;zeitraum={{ wahl }}"{% if auswertung == "buch" %} aria-current="page"{% endif %}>Ausgangsbuch</a>
     <a href="{% url 'auswertungen:datev' %}?jahr={{ jahr }}&amp;zeitraum={{ wahl }}"{% if auswertung == "datev" %} aria-current="page"{% endif %}>DATEV-Export</a>
+    {% if user.ist_inhaber %}<a href="{% url 'auswertungen:betriebspruefung' %}?jahr={{ jahr }}&amp;zeitraum={{ wahl }}"{% if auswertung == "pruefung" %} aria-current="page"{% endif %}>Betriebsprüfung</a>{% endif %}
   </nav>
   <label class="field field-inline">
     <span class="visually-hidden">Jahr</span>
