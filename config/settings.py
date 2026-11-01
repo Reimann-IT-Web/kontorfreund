@@ -17,6 +17,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # Marke und Edition getrennt, damit weitere Editionen dieselbe Codebasis nutzen können.
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
+# Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
+VERSION = "0.1.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -60,6 +62,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -122,6 +125,26 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Ohne Debug-Modus liefert WhiteNoise die Dateien direkt aus dem Programmordner aus.
+WHITENOISE_USE_FINDERS = True
+
+# Fehler (Status 500) landen in einer Datei im Datenverzeichnis, für die Fehlersuche.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "datei": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": DATA_DIR / "fehler.log",
+            "maxBytes": 1_000_000,
+            "backupCount": 2,
+            "encoding": "utf-8",
+            "delay": True,
+            "level": "ERROR",
+        },
+    },
+    "root": {"handlers": ["datei"], "level": "ERROR"},
+}
 
 # Nur eigene Quellen, keine Inline-Skripte oder -Styles (Spezifikation 02, Sicherheit).
 SECURE_CSP = {

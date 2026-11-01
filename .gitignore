@@ -8,6 +8,10 @@ __pycache__/
 # Datenverzeichnis: Datenbank, Dateiablage, secret_key
 data/
 
+# Installationspaket (packaging/)
+build/
+dist/
+
 # Arbeitsdateien des Design-Werkzeugs (Prüfbilder, Auswahlseiten)
 .impeccable/questions/
 .impeccable/review/

@@ -17,4 +17,5 @@
     <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   </p>
 </div>
+{% if bereich == "hilfe" %}<p class="small muted">{{ marke }} {{ version }}</p>{% endif %}
 {% endblock %}

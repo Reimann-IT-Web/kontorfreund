@@ -14,6 +14,7 @@ def product(request):
         "product_name": f"{settings.PRODUCT_NAME} ({settings.PRODUCT_EDITION})",
         "marke": settings.PRODUCT_NAME,
         "edition": settings.PRODUCT_EDITION,
+        "version": settings.VERSION,
     }
 
 

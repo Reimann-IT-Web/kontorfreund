@@ -1,0 +1,117 @@
+name: Paket
+
+# Baut die Installationspakete (Spezifikation D-3) und prüft sie mit dem
+# Selbsttest; ein Tag v* legt damit ein Release an.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bauen:
+    name: Paket (${{ matrix.system }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            system: windows
+          - os: macos-latest
+            system: macos
+          - os: ubuntu-latest
+            system: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked --group paket
+      - name: Version prüfen
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          grep -q "^VERSION = \"$version\"" config/settings.py
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "Tag $GITHUB_REF_NAME passt nicht zur Version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Programmordner bauen
+        env:
+          APP_DATA_DIR: ${{ runner.temp }}/bau
+        run: uv run pyinstaller packaging/kontorfreund.spec --noconfirm
+      - name: Selbsttest
+        env:
+          APP_DATA_DIR: ${{ runner.temp }}/selbsttest
+        run: |
+          dist/Kontorfreund/Kontorfreund migrate --verbosity 0
+          dist/Kontorfreund/Kontorfreund selbsttest
+      - name: Start prüfen
+        env:
+          APP_DATA_DIR: ${{ runner.temp }}/start
+          APP_KEIN_BROWSER: "1"
+        run: |
+          dist/Kontorfreund/Kontorfreund &
+          for i in $(seq 1 60); do
+            curl -fsSL -o seite.html http://127.0.0.1:8765/ && break
+            sleep 1
+          done
+          grep -q "Willkommen bei Kontorfreund" seite.html
+          curl -fsS -o /dev/null http://127.0.0.1:8765/static/css/app.css
+          if [[ "$RUNNER_OS" == Windows ]]; then taskkill //F //IM Kontorfreund.exe; else kill %1; fi
+
+      - name: Installationsprogramm bauen
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersion=$env:VERSION" packaging\windows\kontorfreund.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Installieren, prüfen, deinstallieren
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ziel = "$env:RUNNER_TEMP\installiert"
+          Start-Process -Wait "dist\Kontorfreund-Setup-$env:VERSION.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$ziel"
+          $env:APP_DATA_DIR = "$env:RUNNER_TEMP\installiert-daten"
+          & "$ziel\Kontorfreund.exe" migrate --verbosity 0
+          & "$ziel\Kontorfreund.exe" selbsttest
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Start-Process -Wait "$ziel\unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES"
+          if (Test-Path "$ziel\Kontorfreund.exe") { throw "Die Deinstallation hat das Programm nicht entfernt." }
+          if (-not (Test-Path "$env:APP_DATA_DIR\db.sqlite3")) { throw "Die Deinstallation hat die Daten gelöscht." }
+      - name: Archiv packen
+        if: runner.os != 'Windows'
+        run: tar -czf "dist/Kontorfreund-$VERSION-${{ matrix.system }}-$(uname -m).tar.gz" -C dist Kontorfreund
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: paket-${{ matrix.system }}
+          path: |
+            dist/Kontorfreund-Setup-*.exe
+            dist/Kontorfreund-*.tar.gz
+          if-no-files-found: error
+
+  veroeffentlichen:
+    name: Release anlegen
+    needs: bauen
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: pakete
+          merge-multiple: true
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v kopf="## $version " 'index($0, kopf) == 1 {an = 1; next} /^## / {an = 0} an' CHANGELOG.md > notizen.md
+          test -s notizen.md
+          gh release create "$GITHUB_REF_NAME" pakete/* --title "Kontorfreund $version" --notes-file notizen.md
