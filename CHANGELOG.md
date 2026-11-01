@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.10.0 – 01.11.2026
+
+- Artikel beim Tippen auswählen: In Rechnungen, Angeboten und Auftragsbestätigungen bietet das Feld Bezeichnung jeder Position Ihre Artikel mit Preis und Einheit an, sobald Sie zu tippen beginnen. Wählen Sie einen aus, übernimmt die Position Beschreibung, Einheit und Preis. Ein Preis, den Sie danach von Hand ändern, bleibt stehen. Das Menü „Artikel einfügen“ gibt es weiterhin.
+
 ## 0.9.0 – 01.11.2026
 
 - Originale zurückholen: Findet die Prüfung der Ablage eine fehlende oder veränderte Datei, holt „Originale zurückholen“ (Ablage, nur für den Inhaber) das Original aus den Datensicherungen zurück, ohne die übrigen Daten anzufassen. Kontorfreund nimmt eine Datei nur, wenn ihre Prüfsumme stimmt, beginnt bei der neuesten Sicherung und legt eine veränderte Fassung in den Ordner „abweichungen“, statt sie zu löschen. Jede zurückgeholte Datei steht im Protokoll.

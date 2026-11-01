@@ -1,7 +1,7 @@
 {% load kf %}<tr data-position>
   <td class="col-pos" data-pos-nr>{{ p.nr|default:1 }}</td>
   <td>
-    <input class="input-title" name="bezeichnung" type="text" value="{{ p.bezeichnung }}" placeholder="{% if angebot %}Was bieten Sie an?{% elif auftrag %}Was liefern oder leisten Sie?{% else %}Was haben Sie geliefert oder geleistet?{% endif %}" aria-label="Bezeichnung">
+    <input class="input-title" name="bezeichnung" type="text" value="{{ p.bezeichnung }}"{% if artikel %} list="artikel-liste" autocomplete="off"{% endif %} placeholder="{% if angebot %}Was bieten Sie an?{% elif auftrag %}Was liefern oder leisten Sie?{% else %}Was haben Sie geliefert oder geleistet?{% endif %}" aria-label="Bezeichnung">
     <textarea class="input-sub" name="beschreibung" rows="1" placeholder="Beschreibung (optional)" aria-label="Beschreibung">{{ p.beschreibung }}</textarea>
   </td>
   <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% elif rechnung.ist_korrektur %}-1{% else %}1{% endif %}" aria-label="Menge"></td>

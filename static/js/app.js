@@ -403,6 +403,27 @@ if (rechnung) {
     });
   }
 
+  // Artikel auch über die Bezeichnung: Wer einen Artikel aus der Liste wählt oder seinen
+  // Namen tippt, bekommt Beschreibung, Einheit und Preis dazu. Nur beim Wechsel zu einem
+  // anderen Artikel, damit ein geänderter Preis bleibt.
+  const artikelListe = document.getElementById("artikel-liste");
+  if (artikelListe) {
+    tbody.querySelectorAll("[data-position]").forEach((zeile) => {
+      zeile.dataset.artikelName = zeile.querySelector("[name=bezeichnung]").value;
+    });
+    rechnung.addEventListener("input", (e) => {
+      if (e.target.name !== "bezeichnung") return;
+      const zeile = e.target.closest("[data-position]");
+      const gewaehlt = [...artikelListe.options].find((o) => o.value === e.target.value);
+      if (!gewaehlt || zeile.dataset.artikelName === gewaehlt.value) return;
+      zeile.dataset.artikelName = gewaehlt.value;
+      for (const name of ["beschreibung", "einheit", "preis"]) {
+        zeile.querySelector(`[name=${name}]`).value = gewaehlt.dataset[name];
+      }
+      ansage(`Beschreibung, Einheit und Preis von ${gewaehlt.value} übernommen.`);
+    });
+  }
+
   rechnung.addEventListener("input", rechnen);
   rechnung.addEventListener("change", rechnen);
   rechnung.addEventListener("click", (e) => {
@@ -424,6 +445,7 @@ if (rechnung) {
       for (const name of ["bezeichnung", "beschreibung", "einheit", "preis"]) {
         zeile.querySelector(`[name=${name}]`).value = artikel.dataset[name];
       }
+      zeile.dataset.artikelName = artikel.dataset.bezeichnung;
       artikelMenue.open = false;
       rechnen();
       zeile.querySelector("[name=menge]").select();
