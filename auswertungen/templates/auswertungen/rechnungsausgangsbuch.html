@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Rechnungsausgangsbuch{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Rechnungsausgangsbuch</h1>
+    <p class="muted">Alle Rechnungen, Stornos und Korrekturen {{ text }}, mit Zahlungsstand.</p>
+  </div>
+  {% if eintraege %}
+  <div class="actions">
+    {% for endung, name in exporte %}<a class="btn" href="?jahr={{ jahr }}&amp;zeitraum={{ wahl }}&amp;format={{ endung }}">{% icon "download" %}{{ name }}</a>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<form class="filterbar" method="get">
+  <label class="field field-inline">
+    <span class="visually-hidden">Jahr</span>
+    <select name="jahr" data-auto-submit>
+      {% for j in jahre %}<option value="{{ j }}"{% if j == jahr %} selected{% endif %}>{{ j }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field field-inline">
+    <span class="visually-hidden">Zeitraum</span>
+    <select name="zeitraum" data-auto-submit>
+      {% for wert, name in zeitraeume %}<option value="{{ wert }}"{% if wert == wahl %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+</form>
+
+{% if eintraege %}
+<div class="table-wrap">
+  <table class="table stapel">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Kunde</th>
+        <th scope="col" class="num">Netto</th>
+        <th scope="col" class="num">USt</th>
+        <th scope="col" class="num">Brutto</th>
+        <th scope="col">Zahlung</th>
+        <th scope="col" class="num">Offen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for z, url in eintraege %}
+      <tr class="data-row">
+        <td class="docnr">{{ z.datum|date:"d.m.Y" }}</td>
+        <td class="docnr"><a class="link" href="{{ url }}"{% if z.quelle == "Altprogramm" %} target="_blank" rel="noopener"{% endif %}>{{ z.nummer }}</a>{% if z.art != "Rechnung" %}<span class="cell-sub">{{ z.art }}{% if z.bezug %} zu {{ z.bezug }}{% endif %}</span>{% endif %}</td>
+        <td class="voll">{{ z.kunde|default:"–" }}{% if z.kundennummer or z.steuer %}<span class="cell-sub">{{ z.kundennummer }}{% if z.kundennummer and z.steuer %} · {% endif %}{{ z.steuer }}</span>{% endif %}</td>
+        <td class="num" data-label="Netto">{% if z.netto is not None %}{{ z.netto|euro }}{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="num" data-label="USt">{% if z.ust is not None %}{{ z.ust|euro }}{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="num" data-label="Brutto"><span class="amount{% if z.brutto < 0 %} is-danger{% endif %}">{% if z.brutto is not None %}{{ z.brutto|euro }}{% else %}–{% endif %}</span></td>
+        <td data-label="Zahlung">{% if z.stand %}{{ z.stand }}{% if z.bezahlt_am %}<span class="cell-sub">zuletzt {{ z.bezahlt_am|date:"d.m.Y" }}</span>{% endif %}{% elif z.quelle == "Altprogramm" %}<span class="muted">Altprogramm</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="num" data-label="Offen">{% if z.offen %}<span class="amount">{{ z.offen|euro }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row" colspan="3">Summe</th>
+        <td class="num" data-label="Netto">{{ summen.netto|euro }}</td>
+        <td class="num" data-label="USt">{{ summen.ust|euro }}</td>
+        <td class="num" data-label="Brutto"><strong class="amount">{{ summen.brutto|euro }}</strong></td>
+        <td>bezahlt {{ summen.bezahlt|euro }}</td>
+        <td class="num" data-label="Offen">{{ summen.offen|euro }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+<p class="table-foot muted">{{ eintraege|length }} Beleg{{ eintraege|length|pluralize:"e" }}{% if altbelege %} · Belege aus Ihrem bisherigen Programm stehen mit dem gedruckten Betrag dabei; Netto, Umsatzsteuer und Zahlungen kennt Kontorfreund dort nicht.{% endif %}</p>
+
+{% else %}
+<div class="empty">
+  <h2>Keine Rechnungen {{ text }}</h2>
+  <p class="muted">Hier stehen alle festgeschriebenen Rechnungen, Stornos und Korrekturen des gewählten Zeitraums. Wählen Sie oben ein anderes Jahr oder einen anderen Zeitraum.</p>
+</div>
+{% endif %}
+{% endblock %}

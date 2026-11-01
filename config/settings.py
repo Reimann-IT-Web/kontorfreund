@@ -18,7 +18,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "artikel",
     "archive",
     "eingang",
+    "auswertungen",
     "backups",
     "konten",
     "protokoll",

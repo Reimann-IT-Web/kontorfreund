@@ -39,7 +39,7 @@ NAVIGATION = [
         "key": "auswertungen",
         "label": "Auswertungen",
         "icon": "chart",
-        "slug": "auswertungen",
+        "url": "auswertungen:rechnungsausgangsbuch",
         "gruppe": "weitere",
     },
 ]
@@ -50,11 +50,6 @@ PLATZHALTER = {
         "Wiedervorlagen",
         "Erinnerungen mit Fälligkeit, schnell verschieben und erledigen.",
         "Phase 1",
-    ),
-    "auswertungen": (
-        "Auswertungen",
-        "Rechnungsausgangsbuch, Umsatz je Kunde, DATEV-Export.",
-        "Phase 3",
     ),
     "hilfe": (
         "Hilfe",

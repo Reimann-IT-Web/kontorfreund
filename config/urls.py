@@ -15,6 +15,7 @@ urlpatterns = [
     path("artikel/", include("artikel.urls")),
     path("ablage/", include("archive.urls")),
     path("eingangsrechnungen/", include("eingang.urls")),
+    path("auswertungen/", include("auswertungen.urls")),
     path("datensicherung/", include("backups.urls")),
     path("konto/", include("konten.urls")),
     path("protokoll/", include("protokoll.urls")),

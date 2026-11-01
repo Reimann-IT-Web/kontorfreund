@@ -43,6 +43,11 @@ def navigation(request):
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
         {"titel": "Neuer Artikel", "info": "Artikel", "url": reverse("artikel:neu")},
         {
+            "titel": "Rechnungsausgangsbuch",
+            "info": "Auswertungen",
+            "url": reverse("auswertungen:rechnungsausgangsbuch"),
+        },
+        {
             "titel": "E-Rechnung hochladen",
             "info": "Eingangsrechnungen",
             "url": reverse("eingang:liste"),
