@@ -29,6 +29,7 @@ class Eintrag(models.Model):
         GELOESCHT = "geloescht", "Gelöscht"
         ANMELDUNG = "anmeldung", "Angemeldet"
         FEHLVERSUCH = "fehlversuch", "Anmeldung fehlgeschlagen"
+        ABLAGE = "ablage", "Abweichung in der Ablage"
 
     zeit = models.DateTimeField(default=timezone.now)
     # Kein Fremdschlüssel: Das Protokoll bleibt, auch wenn es den Benutzer nicht mehr gibt.

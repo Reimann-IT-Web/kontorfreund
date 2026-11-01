@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.8.0 – 01.11.2026
+
+- Tägliche Prüfung der Ablage: Einmal am Tag vergleicht Kontorfreund jede abgelegte Datei – Rechnungen samt XML, Angebote, Auftragsbestätigungen, Mahnungen, Eingangsrechnungen und die Belege aus dem bisherigen Programm – mit der Prüfsumme, die beim Ablegen gespeichert wurde. Fehlt eine Datei oder wurde sie außerhalb des Programms verändert, steht das auf der Übersicht, an der Ablage in der Seitenleiste und auf der Seite Ablage mit dem Hinweis, wie Sie das Original zurückbekommen. Jede neue Abweichung kommt ins Protokoll und, wenn eingerichtet, per Telegram. Unter Ablage lässt sich auch sofort prüfen.
+- Die Prüfung läuft nach dem ersten Seitenaufruf des Tages im Hintergrund und, wenn Kontorfreund mit eingeschalteten Benachrichtigungen nur im Hintergrund läuft, auch ohne dass jemand eine Seite öffnet.
+
 ## 0.7.0 – 01.11.2026
 
 - Auftragsbestätigungen: Sagt ein Kunde zu, machen Sie aus dem Angebot mit „Auftrag bestätigen“ eine Auftragsbestätigung mit denselben Positionen, oder Sie schreiben sie ohne Angebot neu (Angebote & Rechnungen → Auftragsbestätigungen). Auf Wunsch mit dem Zeitraum der Ausführung. Beim Fertigstellen bekommt sie eine Nummer aus einem eigenen Nummernkreis und wird als PDF abgelegt; danach lässt sie sich per E-Mail senden, kopieren und mit einem Klick in einen Rechnungsentwurf übernehmen, der Ausführung als Leistungszeitraum mitnimmt. Jeder Schritt lässt sich weiterhin überspringen.

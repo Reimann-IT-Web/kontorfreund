@@ -4,6 +4,7 @@
   Wiedervorlagen, wie viele überfällig sind, Rechnungen, die neu überfällig sind, und
   Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an, kommt nichts.
 - Termine: Wiedervorlagen mit Uhrzeit, die eingestellte Zeit vorher.
+- Ablage: sobald die tägliche Prüfung eine Datei neu als fehlend oder verändert findet.
 
 Ohne Namen von Kunden und Lieferanten, denn mit Telegram gibt es keinen Vertrag zur
 Auftragsverarbeitung. Gemeldet merkt sich jede Meldung; schlägt das Senden fehl,
@@ -16,6 +17,7 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 
+from archive.models import Pruefung
 from core.models import Firmendaten
 from core.templatetags.kf import euro
 from eingang.models import Eingangsrechnung
@@ -128,6 +130,21 @@ def termine(einstellung, jetzt):
     return nachrichten
 
 
+def ablage():
+    """Abweichungen, die die letzte Prüfung der Ablage neu gefunden hat, einmal."""
+    letzte = Pruefung.letzte()
+    if not letzte or _gemeldet("ablage", str(letzte.pk)):
+        return None
+    neu = [b["beleg"] for b in letzte.befunde if b["neu"]]
+    if not neu:
+        return None
+    return Nachricht(
+        f"{_kopf()}: Abgelegte Belege fehlen oder sind verändert: {_aufzaehlen(neu)}. "
+        "Näheres in Kontorfreund unter Ablage.",
+        [("ablage", str(letzte.pk))],
+    )
+
+
 def erinnern(jetzt=None):
     """Fällige Nachrichten senden; das Startprogramm ruft das alle fünf Minuten auf."""
     einstellung = Einstellung.laden()
@@ -137,6 +154,7 @@ def erinnern(jetzt=None):
     for nachricht in [
         *termine(einstellung, jetzt),
         tagesuebersicht(einstellung, jetzt),
+        ablage(),
     ]:
         if nachricht is None:
             continue

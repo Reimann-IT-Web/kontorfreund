@@ -2118,6 +2118,10 @@ select {
   background: var(--today-soft);
 }
 
+.dateipfad {
+  overflow-wrap: anywhere;
+}
+
 .is-warn-text {
   color: var(--today);
   font-weight: 600;

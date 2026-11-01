@@ -9,7 +9,27 @@
     <h1>Ablage</h1>
     <p class="muted">{{ gesamt }} Beleg{{ gesamt|pluralize:"e" }} aus Ihrem bisherigen Programm, unverändert als PDF aufbewahrt.</p>
   </div>
+  <form class="actions" method="post" action="{% url 'archive:pruefen' %}">
+    {% csrf_token %}
+    <button class="btn" type="submit">{% icon "check" %}Jetzt prüfen</button>
+  </form>
 </div>
+
+{% if befunde %}
+<div class="notice notice-warn" role="alert">
+  {% with n=befunde|length %}
+  <p><strong>{{ n }} abgelegte Datei{{ n|pluralize:"en" }} {{ n|pluralize:"fehlt,fehlen" }} oder {{ n|pluralize:"ist,sind" }} verändert.</strong> Kontorfreund ändert und löscht abgelegte Belege nie; das ist außerhalb des Programms geschehen, etwa von Hand im Datenordner, durch ein anderes Programm oder einen Fehler der Festplatte. Belege müssen 8 Jahre unverändert erhalten bleiben.</p>
+  {% endwith %}
+  <ul>
+    {% for b in befunde %}
+    <li><a href="{{ b.url }}">{{ b.beleg }}</a> {% if b.zustand == "fehlt" %}fehlt{% else %}ist verändert{% endif %}, festgestellt am {{ b.seit|date:"d.m.Y" }} <span class="muted dateipfad">({{ b.datei }})</span></li>
+    {% endfor %}
+  </ul>
+  <p>{% if user.ist_inhaber %}So bekommen Sie die Originale zurück: Stellen Sie unter <a href="{% url 'backups:uebersicht' %}">Datensicherung</a> eine Sicherung von vor diesem Tag wieder her. Was seitdem eingegeben wurde, geht dabei verloren; den jetzigen Stand sichert Kontorfreund vorher. Prüfen Sie danach erneut.{% else %}Sagen Sie bitte dem Inhaber Bescheid.{% endif %}</p>
+</div>
+{% elif pruefung.anzahl %}
+<p class="callout">{% icon "check" %}<span>Zuletzt geprüft am {{ pruefung.zeit|date:"d.m.Y \u\m H:i" }} Uhr: keine Abweichung in {{ pruefung.anzahl }} Datei{{ pruefung.anzahl|pluralize:"en" }}. Kontorfreund vergleicht jeden Tag alle abgelegten Rechnungen, Angebote, Auftragsbestätigungen, Mahnungen, Eingangsrechnungen und diese Belege mit der Prüfsumme vom Ablegen.</span></p>
+{% endif %}
 
 {% if gesamt %}
 <form class="filterbar" method="get" role="search">

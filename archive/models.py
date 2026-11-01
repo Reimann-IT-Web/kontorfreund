@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from contacts.models import Kontakt
 
@@ -48,3 +49,25 @@ class Altbeleg(models.Model):
 
     def __str__(self):
         return f"{self.get_art_display()} {self.nummer}"
+
+
+class Pruefung(models.Model):
+    """Ergebnis einer Prüfung aller abgelegten Dateien (Spezifikation B-9, pruefung.py)."""
+
+    zeit = models.DateTimeField(default=timezone.now)
+    anzahl = models.PositiveIntegerField("geprüfte Dateien")
+    # Je fehlende oder veränderte Datei: beleg, url, datei, zustand (FEHLT/VERAENDERT),
+    # seit (Datum der ersten Prüfung, die es fand) und neu (diesmal zum ersten Mal).
+    befunde = models.JSONField(default=list)
+
+    class Meta:
+        ordering = ["-zeit", "-pk"]
+        verbose_name = "Prüfung der Ablage"
+        verbose_name_plural = "Prüfungen der Ablage"
+
+    def __str__(self):
+        return f"Prüfung vom {timezone.localtime(self.zeit):%d.%m.%Y %H:%M}"
+
+    @classmethod
+    def letzte(cls):
+        return cls.objects.first()

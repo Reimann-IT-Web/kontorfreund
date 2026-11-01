@@ -11,6 +11,14 @@
   </div>
 </div>
 
+{% if ablage_befunde %}
+<div class="notice notice-warn" role="alert">
+  {% with n=ablage_befunde|length %}
+  <p><strong>{{ n }} abgelegte Datei{{ n|pluralize:"en" }} {{ n|pluralize:"fehlt,fehlen" }} oder {{ n|pluralize:"ist,sind" }} verändert:</strong> {% for b in ablage_befunde|slice:":3" %}{{ b.beleg }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if n > 3 %} und {{ n|add:"-3" }} weitere{% endif %}. Belege müssen 8 Jahre unverändert erhalten bleiben. <a href="{% url 'archive:liste' %}">Ansehen, was zu tun ist</a></p>
+  {% endwith %}
+</div>
+{% endif %}
+
 <nav class="quickstart" aria-label="Schnellstart">
   <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>

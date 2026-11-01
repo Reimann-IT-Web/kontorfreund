@@ -1,6 +1,7 @@
 import pytest
 from django.test import Client
 
+from archive import pruefung
 from konten.models import Benutzer
 
 
@@ -9,6 +10,12 @@ def datenordner(tmp_path, settings):
     """Kein Test schreibt in den echten Datenordner, auch keine Sicherung."""
     settings.DATA_DIR = tmp_path
     settings.HAUPTORDNER = tmp_path
+
+
+@pytest.fixture(autouse=True)
+def ohne_taegliche_pruefung(monkeypatch):
+    """Die tägliche Prüfung der Ablage liefe sonst nach Anfragen in einem eigenen Thread."""
+    monkeypatch.setattr(pruefung, "bei_bedarf", lambda: None)
 
 
 @pytest.fixture

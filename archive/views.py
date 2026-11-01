@@ -1,12 +1,16 @@
+from datetime import date
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import messages
 from django.db.models import Q, Sum
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csp import csp_override
+from django.views.decorators.http import require_POST
 
-from .models import Altbeleg
+from . import pruefung
+from .models import Altbeleg, Pruefung
 
 ARTEN_PLURAL = {
     Altbeleg.Art.RECHNUNG: "Rechnungen",
@@ -35,6 +39,7 @@ def liste(request):
     summe = belege.filter(art__in=Altbeleg.UMSATZWIRKSAM).aggregate(s=Sum("betrag"))[
         "s"
     ]
+    letzte = Pruefung.letzte()
     return render(
         request,
         "archive/liste.html",
@@ -51,8 +56,25 @@ def liste(request):
             ],
             "summe": summe,
             "gesamt": Altbeleg.objects.count(),
+            "pruefung": letzte,
+            "befunde": [
+                dict(b, seit=date.fromisoformat(b["seit"])) for b in letzte.befunde
+            ]
+            if letzte
+            else [],
         },
     )
+
+
+@require_POST
+def pruefen(request):
+    ergebnis = pruefung.pruefen()
+    if not ergebnis.befunde:
+        n = ergebnis.anzahl
+        messages.success(
+            request, f"Geprüft: keine Abweichung in {n} Datei{'en' if n != 1 else ''}."
+        )
+    return redirect("archive:liste")
 
 
 # Der eingebaute PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.

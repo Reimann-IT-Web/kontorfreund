@@ -3,6 +3,7 @@ from datetime import date
 from django.conf import settings
 from django.urls import reverse
 
+from archive.models import Pruefung
 from artikel.models import Artikel
 from contacts.models import Kontakt
 from wiedervorlagen.models import Wiedervorlage
@@ -32,8 +33,18 @@ def navigation(request):
     faellig = (
         Wiedervorlage.offen_fuer(request.user).filter(faellig__lte=date.today()).count()
     )
+    pruefung = Pruefung.letzte()
+    befunde = pruefung.befunde if pruefung else []
     zahlen = {
         "adressen": {"zahl": str(anzahl)} if anzahl else {},
+        "ablage": {
+            "zahl": str(len(befunde)),
+            "warnung": "1 abgelegte Datei fehlt oder ist verändert"
+            if len(befunde) == 1
+            else f"{len(befunde)} abgelegte Dateien fehlen oder sind verändert",
+        }
+        if befunde
+        else {},
         "wiedervorlagen": {
             "zahl": str(faellig),
             "warnung": f"{faellig} Wiedervorlage{'n' if faellig > 1 else ''} fällig",
@@ -142,4 +153,5 @@ def navigation(request):
         "suchindex": suchindex,
         "firma": Firmendaten.laden(),
         "mehrere_firmen": mehrere,
+        "ablage_befunde": befunde,
     }
