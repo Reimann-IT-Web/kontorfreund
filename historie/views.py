@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
+from contacts.datenschutz import zugriff
 from contacts.models import Kontakt
 from wiedervorlagen.models import Wiedervorlage
 
@@ -46,6 +47,7 @@ def _geloescht(request, **bedingung):
 def verlauf(request, pk):
     """Seite einer Adresse: Schnellerfassung, offene Wiedervorlagen, Dateien und Zeitleiste."""
     kontakt = get_object_or_404(Kontakt, pk=pk)
+    zugriff(request, kontakt, aendern=request.method == "POST")
     form = VorgangForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         vorgang = form.save(commit=False)
@@ -89,6 +91,7 @@ def verlauf(request, pk):
 
 def bearbeiten(request, pk):
     vorgang = get_object_or_404(Vorgang.objects.select_related("kontakt"), pk=pk)
+    zugriff(request, vorgang.kontakt, aendern=True)
     form = VorgangForm(request.POST or None, instance=vorgang)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -116,6 +119,7 @@ def bearbeiten(request, pk):
 @require_POST
 def loeschen(request, pk):
     vorgang = get_object_or_404(Vorgang, pk=pk)
+    zugriff(request, vorgang.kontakt, aendern=True)
     dateien = vorgang.dateien.filter(geloescht_am__isnull=True).exists()
     vorgang.delete()
     messages.success(
@@ -132,6 +136,7 @@ def loeschen(request, pk):
 @require_POST
 def hochladen(request, pk):
     kontakt = get_object_or_404(Kontakt, pk=pk)
+    zugriff(request, kontakt, aendern=True)
     dateien = _ablegen(request, kontakt)
     if len(dateien) == 1:
         messages.success(request, f"„{dateien[0]}“ ist abgelegt.")
@@ -147,6 +152,7 @@ def hochladen(request, pk):
 def datei(request, pk):
     """PDF und Bilder zum Ansehen, alles andere nur als Download."""
     datei = get_object_or_404(Datei, pk=pk, geloescht_am__isnull=True)
+    zugriff(request, datei.kontakt)
     if not datei.pfad.is_file():
         raise Http404("Die Datei fehlt im Archiv.")
     ansehen = datei.vorschau and "herunterladen" not in request.GET
@@ -172,6 +178,7 @@ def _zurueck(request, datei):
 @require_POST
 def datei_loeschen(request, pk):
     datei = get_object_or_404(Datei, pk=pk, geloescht_am__isnull=True)
+    zugriff(request, datei.kontakt, aendern=True)
     datei.geloescht_am = timezone.now()
     datei.save(update_fields=["geloescht_am"])
     Datei.aufraeumen()
@@ -181,6 +188,7 @@ def datei_loeschen(request, pk):
 @require_POST
 def datei_zurueckholen(request, pk):
     datei = get_object_or_404(Datei, pk=pk, geloescht_am__isnull=False)
+    zugriff(request, datei.kontakt, aendern=True)
     datei.geloescht_am = None
     datei.save(update_fields=["geloescht_am"])
     messages.success(request, f"„{datei}“ ist wieder da.")

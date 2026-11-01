@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.14.0 – 01.11.2026
+
+- Datenschutz: Jede Adresse hat für den Inhaber den neuen Knopf „Datenschutz“. Verlangt jemand Auskunft über seine Daten (Art. 15 DSGVO), lädt „Auskunft herunterladen“ eine ZIP-Datei herunter: ein Brief mit allen gespeicherten Angaben, Belegen, Zahlungen, Einträgen im Verlauf, Dateien, Wiedervorlagen und früheren Angaben samt den Informationen, die die DSGVO verlangt, dazu dieselben Daten maschinenlesbar (auskunft.json) und Kopien der Belege und Dateien.
+- Verlangt jemand die Löschung (Art. 17 DSGVO) und gibt es zu ihm keine Belege, die noch aufbewahrt werden müssen, löscht „Endgültig löschen“ die Adresse mit Verlauf, Dateien, Wiedervorlagen und Entwürfen, auch Belege, deren Aufbewahrungsfrist abgelaufen ist. Im Änderungsprotokoll bleibt nur, wann wer etwas getan hat; Namen und Werte werden geschwärzt.
+- Müssen Belege noch aufbewahrt werden (Rechnungen 8 Jahre, Angebote und Mahnungen 6 Jahre, jeweils ab Ende des Jahres), sperrt „Adresse sperren“ sie bis dahin (Art. 18 DSGVO): Sie erscheint in keiner Liste und Suche mehr, niemand kann sie ändern, und nur der Inhaber sieht sie unter Adressen bei „gesperrt“. Die Seite zeigt, welcher Beleg bis wann aufbewahrt werden muss.
+
 ## 0.13.0 – 01.11.2026
 
 - Betriebsprüfung: Unter Auswertungen gibt es für den Inhaber den neuen Reiter „Betriebsprüfung“. Er erstellt das Datenpaket, das ein Prüfer des Finanzamts nach § 147 Abs. 6 AO verlangen kann: eine ZIP-Datei nach dem „Beschreibungsstandard für die Datenträgerüberlassung“ der Finanzverwaltung. Darin stehen die Beschreibung index.xml mit der zugehörigen Datei gdpdu-01-08-2002.dtd, Tabellen zu Rechnungsausgang, Rechnungspositionen, Zahlungen, Mahnungen, Eingangsrechnungen, Altbelegen und den beteiligten Adressen sowie alle Belege des Zeitraums als PDF und XML mit ihren Prüfsummen. Die Prüfsoftware der Finanzverwaltung liest das Paket ohne weitere Erklärung ein. Wählen Sie Jahr, Quartal oder Monat; für eine Prüfung über mehrere Jahre laden Sie je Jahr ein Paket herunter.

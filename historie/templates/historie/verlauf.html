@@ -17,14 +17,25 @@
     <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
   </div>
   <div class="actions">
+    {% if kontakt.gesperrt_am %}
+    <a class="btn btn-primary" href="{% url 'contacts:datenschutz' kontakt.pk %}">{% icon "lock" %}Datenschutz</a>
+    {% else %}
     <a class="btn" href="{% url 'contacts:bearbeiten' kontakt.pk %}">{% icon "pencil" %}Bearbeiten</a>
     <a class="btn" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Wiedervorlage</a>
     <a class="btn btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ kontakt.pk }}">{% icon "file" %}Rechnung schreiben</a>
+    {% endif %}
   </div>
 </div>
 
+{% if kontakt.gesperrt_am %}
+<div class="notice notice-warn">
+  <p><strong>Gesperrt seit {{ kontakt.gesperrt_am|date:"d.m.Y" }} (Art. 18 DSGVO).</strong> Sie können hier nur nachsehen; eintragen, ablegen und ändern lässt sich nichts mehr.</p>
+</div>
+{% endif %}
+
 <div class="split">
   <div>
+    {% if not kontakt.gesperrt_am %}
     <section class="form-section" aria-labelledby="t-erfassen">
       <h2 class="form-title" id="t-erfassen">Eintragen</h2>
       <form class="form" method="post" enctype="multipart/form-data" novalidate>
@@ -43,6 +54,7 @@
         <button class="btn btn-primary" type="submit">{% icon "check" %}Eintragen</button>
       </form>
     </section>
+    {% endif %}
 
     {% if offen %}
     <section class="group" aria-labelledby="t-offen">
@@ -55,12 +67,14 @@
 
     <section class="group" aria-labelledby="dateien">
       <h2 class="group-head" id="dateien">Dateien{% if dateien %} <span class="count">{{ dateien|length }}</span>{% endif %}</h2>
-      {% include "historie/dateien.html" %}
+      {% include "historie/dateien.html" with nur_lesen=kontakt.gesperrt_am %}
+      {% if kontakt.gesperrt_am %}{% if not dateien %}<p class="muted">Keine Dateien.</p>{% endif %}{% else %}
       <form class="ablage-form" method="post" action="{% url 'historie:hochladen' kontakt.pk %}" enctype="multipart/form-data">
         {% csrf_token %}
         {% include "historie/ablage.html" with id="dateien-neu" titel="Dateien zur Adresse ablegen" sofort=True %}
         <button class="btn" type="submit">{% icon "upload" %}Hochladen</button>
       </form>
+      {% endif %}
     </section>
 
     <section class="group" aria-labelledby="t-verlauf">
@@ -84,13 +98,13 @@
         <li class="row row-verlauf">
           <span class="status status-void">{% icon p.icon %}{{ p.tag|date:"d.m.Y" }}{% if p.uhrzeit %} {{ p.uhrzeit|time:"H:i" }}{% endif %}</span>
           <div class="row-main">
-            <p class="row-title">{% if p.url %}<a href="{{ p.url }}"{% if p.neues_fenster %} target="_blank" rel="noopener"{% endif %}>{{ p.titel }}</a>{% elif p.vorgang %}<a href="{% url 'historie:bearbeiten' p.vorgang.pk %}">{{ p.titel }}</a>{% else %}{{ p.titel }}{% endif %}</p>
+            <p class="row-title">{% if p.url %}<a href="{{ p.url }}"{% if p.neues_fenster %} target="_blank" rel="noopener"{% endif %}>{{ p.titel }}</a>{% elif p.vorgang and not kontakt.gesperrt_am %}<a href="{% url 'historie:bearbeiten' p.vorgang.pk %}">{{ p.titel }}</a>{% else %}{{ p.titel }}{% endif %}</p>
             {% if p.text %}<p class="verlauf-text">{{ p.text|linebreaksbr }}</p>{% endif %}
             {% if p.dateien %}<p class="verlauf-dateien">{% for d in p.dateien %}<a href="{% url 'historie:datei' d.pk %}"{% if d.vorschau %} target="_blank" rel="noopener"{% endif %}>{% icon "paperclip" %}{{ d.name }}</a>{% endfor %}</p>{% endif %}
             {% if p.benutzer %}<p class="row-meta">{{ p.benutzer }}</p>{% endif %}
           </div>
           <span class="amount">{% if p.betrag is not None %}{{ p.betrag|euro }}{% endif %}</span>
-          {% if p.nachfassen %}<a class="btn btn-sm btn-ghost" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;{{ p.nachfassen }}&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Nachfassen</a>{% endif %}
+          {% if p.nachfassen and not kontakt.gesperrt_am %}<a class="btn btn-sm btn-ghost" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;{{ p.nachfassen }}&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Nachfassen</a>{% endif %}
         </li>
         {% endfor %}
       </ul>

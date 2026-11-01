@@ -1,4 +1,4 @@
-{% load kf %}{% comment %}Dateiliste mit Ansehen, Herunterladen und Löschen. von="vorgang" auf der Seite eines Vorgangs.{% endcomment %}
+{% load kf %}{% comment %}Dateiliste mit Ansehen, Herunterladen und Löschen. von="vorgang" auf der Seite eines Vorgangs, nur_lesen ohne Löschen.{% endcomment %}
 {% if geloescht %}
 <div class="callout rueckgaengig" role="status">
   {% icon "check" %}<span>„{{ geloescht.name }}“ ist gelöscht.</span>
@@ -18,10 +18,12 @@
       <span class="cell-sub">{{ d.art }} · {{ d.groesse|filesizeformat }} · {{ d.erstellt|date:"d.m.Y" }}{% if d.vorgang and not von %} · zu {{ d.vorgang.get_art_display }}{% if d.vorgang.betreff %} „{{ d.vorgang.betreff }}“{% endif %}{% endif %}</span>
     </div>
     {% if d.vorschau %}<a class="btn btn-ghost btn-icon" href="{% url 'historie:datei' d.pk %}?herunterladen">{% icon "download" %}<span class="visually-hidden">{{ d.name }} herunterladen</span></a>{% endif %}
+    {% if not nur_lesen %}
     <form method="post" action="{% url 'historie:datei_loeschen' d.pk %}">
       {% csrf_token %}{% if von %}<input type="hidden" name="von" value="{{ von }}">{% endif %}
       <button class="btn btn-ghost btn-icon" type="submit">{% icon "trash" %}<span class="visually-hidden">{{ d.name }} löschen</span></button>
     </form>
+    {% endif %}
   </li>
   {% endfor %}
 </ul>

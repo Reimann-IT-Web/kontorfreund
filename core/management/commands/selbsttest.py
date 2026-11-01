@@ -7,9 +7,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.templatetags.static import static
 from django.test import Client
+from django.utils import timezone
 
 from auswertungen import pruefer
-from contacts import plz
+from contacts import datenschutz, plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from eingang import lesen
@@ -63,9 +64,16 @@ class Command(BaseCommand):
                 iban="DE02120300000000202051",
             )
             pdf, xml = beleg.endgueltiges_pdf(beleg.beleg_daten(rechnung, firma, "T-1"))
+            jetzt = timezone.localtime()
+            auskunft = datenschutz.setzen(
+                datenschutz.druckdaten(
+                    kunde, datenschutz.auskunft_daten(kunde, [], jetzt), None, jetzt
+                )
+            )
             transaction.set_rollback(True)
         self.pruefen(b"AtkinsonHyperlegibleNext" in pdf, "PDF mit eigener Schrift")
         self.pruefen(len(beleg.seitenbilder(pdf)) == 1, "Seitenbild")
+        self.pruefen(auskunft.startswith(b"%PDF"), "Auskunft nach Art. 15 DSGVO")
         d = lesen.auswerten(lesen.einlesen(pdf)[1])
         self.pruefen(
             d["nummer"] == "T-1" and d["summen"]["zahlbetrag"] == Decimal("95.20"),

@@ -10,4 +10,9 @@ urlpatterns = [
     path("orte/", views.orte, name="orte"),
     path("<int:pk>/", views.bearbeiten, name="bearbeiten"),
     path("<int:pk>/archivieren/", views.archivieren, name="archivieren"),
+    path("<int:pk>/datenschutz/", views.datenschutz, name="datenschutz"),
+    path("<int:pk>/auskunft/", views.auskunft, name="auskunft"),
+    path("<int:pk>/sperren/", views.sperren, name="sperren"),
+    path("<int:pk>/entsperren/", views.entsperren, name="entsperren"),
+    path("<int:pk>/loeschen/", views.loeschen, name="loeschen"),
 ]

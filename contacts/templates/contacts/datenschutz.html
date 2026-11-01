@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Datenschutz: {{ kontakt }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'contacts:liste' %}{% if kontakt.gesperrt_am %}?gesperrt=1{% endif %}">Adressen</a></li>
+    <li><a href="{% if kontakt.gesperrt_am %}{% url 'historie:verlauf' kontakt.pk %}{% else %}{% url 'contacts:bearbeiten' kontakt.pk %}{% endif %}">{{ kontakt.kundennummer }}</a></li>
+    <li aria-current="page">Datenschutz</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ kontakt }}</h1>
+    <p class="muted">Auskunft, Löschen und Sperren nach der Datenschutz-Grundverordnung (DSGVO)</p>
+  </div>
+</div>
+
+{% if kontakt.gesperrt_am %}
+<div class="notice notice-warn">
+  <p><strong>Gesperrt seit {{ kontakt.gesperrt_am|date:"d.m.Y" }}.</strong> Die Adresse erscheint in keiner Liste und Suche, niemand kann sie ändern, und ansehen können sie nur Sie als Inhaber. {% if loeschbar %}Die Aufbewahrungsfrist ist abgelaufen: Sie können die Adresse jetzt endgültig löschen.{% else %}Die Belege müssen bis zum {{ frist|date:"d.m.Y" }} aufbewahrt werden.{% endif %}</p>
+</div>
+{% endif %}
+
+<section class="form-section" aria-labelledby="t-auskunft">
+  <h2 class="form-title" id="t-auskunft">Auskunft</h2>
+  <div class="stack">
+    <p>Verlangt jemand Auskunft über die Daten, die Sie zu ihm gespeichert haben (Art. 15 DSGVO), geben Sie ihm diese Datei, innerhalb eines Monats. Darin stehen ein Brief mit allen Angaben (PDF), dieselben Daten maschinenlesbar (JSON) und Kopien der Belege und Dateien.</p>
+    <p class="muted">Der Brief nennt Zwecke, Empfänger und Speicherdauer so, wie Kontorfreund sie kennt. Geben Sie Daten noch an andere weiter, etwa an einen Dienstleister, schreiben Sie das in Ihre Nachricht dazu.{% if auskunft %} Zuletzt erstellt am {{ auskunft.zeit|date:"d.m.Y" }}.{% endif %}</p>
+    <form method="post" action="{% url 'contacts:auskunft' kontakt.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">{% icon "download" %}Auskunft herunterladen</button>
+    </form>
+  </div>
+</section>
+
+{% if angaben %}
+<section class="form-section" aria-labelledby="t-angaben">
+  <h2 class="form-title" id="t-angaben">Gespeicherte Angaben</h2>
+  <dl class="angaben">
+    {% for name, wert in angaben %}<dt>{{ name }}</dt><dd>{{ wert|linebreaksbr }}</dd>{% endfor %}
+  </dl>
+</section>
+{% endif %}
+
+<section class="form-section" aria-labelledby="t-loeschen">
+  <h2 class="form-title" id="t-loeschen">Löschen</h2>
+  <div class="stack">
+    {% if belege %}
+    <p>{% if loeschbar %}Die Aufbewahrungsfrist aller Belege ist abgelaufen, die letzte am {{ frist|date:"d.m.Y" }}. Beim Löschen verschwinden sie mit.{% else %}Diese Belege müssen aufbewahrt werden, Rechnungen 8 Jahre und Angebote, Mahnungen und andere Geschäftsbriefe 6 Jahre, jeweils ab Ende des Jahres (§ 147 AO, § 14b UStG). Löschen geht deshalb erst ab dem {{ frist|date:"d.m.Y" }}.{% endif %}</p>
+    <div class="table-wrap">
+      <table class="table stapel">
+        <thead>
+          <tr>
+            <th scope="col">Beleg</th>
+            <th scope="col">Datum</th>
+            <th scope="col" class="num">Betrag</th>
+            <th scope="col">Aufbewahren bis</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in belege %}
+          <tr class="data-row">
+            <td><span class="cell-title">{{ b.art }} {{ b.nummer }}</span></td>
+            <td data-label="Datum">{{ b.datum|date:"d.m.Y" }}</td>
+            <td class="num" data-label="Betrag">{% if b.betrag is not None %}{{ b.betrag|euro }}{% else %}–{% endif %}</td>
+            <td data-label="Aufbewahren bis">{{ b.aufbewahren_bis|date:"d.m.Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>Zu dieser Adresse gibt es keine Belege, die aufbewahrt werden müssen.</p>
+    {% endif %}
+
+    {% if loeschbar %}
+    <p>Beim Löschen verschwindet die Adresse{% if umfang %} mit {{ umfang|join:", " }}{% endif %}. Im Änderungsprotokoll bleibt nur, wann wer etwas getan hat, ohne Namen und Werte. In älteren Datensicherungen stehen die Daten noch, bis Kontorfreund diese durch neuere ersetzt.</p>
+    <form class="stack" method="post" action="{% url 'contacts:loeschen' kontakt.pk %}">
+      {% csrf_token %}
+      <label class="choice"><input type="checkbox" name="bestaetigt" value="1" required><span>Ich möchte {{ kontakt }} endgültig löschen. Das lässt sich nicht rückgängig machen.</span></label>
+      <p><button class="btn" type="submit">{% icon "trash" %}Endgültig löschen</button></p>
+    </form>
+    {% elif kontakt.gesperrt_am %}
+    <p class="muted">Haben Sie versehentlich gesperrt, oder hat die Person ihren Wunsch zurückgenommen, heben Sie die Sperre auf. Die Adresse liegt danach im Archiv.</p>
+    <form method="post" action="{% url 'contacts:entsperren' kontakt.pk %}">
+      {% csrf_token %}
+      <button class="btn" type="submit">{% icon "lock" %}Sperre aufheben</button>
+    </form>
+    {% else %}
+    <p>Verlangt die Person die Löschung, sperren Sie die Adresse bis dahin (Art. 18 DSGVO): Sie erscheint dann in keiner Liste und Suche mehr, niemand kann sie ändern, und ansehen können sie nur Sie als Inhaber.{% if entwuerfe %} {{ entwuerfe|length }} Entw{{ entwuerfe|length|pluralize:"urf wird,ürfe werden" }} dabei gelöscht.{% endif %}{% if offen %} {{ offen }} offene Wiedervorlage{{ offen|pluralize:"n" }} {{ offen|pluralize:"gilt,gelten" }} dann als erledigt.{% endif %}</p>
+    <form method="post" action="{% url 'contacts:sperren' kontakt.pk %}">
+      {% csrf_token %}
+      <button class="btn" type="submit" data-confirm="{{ kontakt }} jetzt sperren?">{% icon "lock" %}Adresse sperren</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

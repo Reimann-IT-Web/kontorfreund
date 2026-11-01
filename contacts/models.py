@@ -85,6 +85,10 @@ class Kontakt(models.Model):
     )
     notiz = models.TextField("Notiz", blank=True)
     archiviert = models.BooleanField(default=False)
+    # Auf Verlangen der Person, solange Belege aufbewahrt werden müssen (contacts/datenschutz.py).
+    gesperrt_am = models.DateTimeField(
+        "Gesperrt nach Art. 18 DSGVO", null=True, blank=True
+    )
     # Gespeicherter Anzeigename, damit Listen ohne Umrechnen sortieren und suchen können.
     anzeigename = models.CharField(max_length=300, editable=False, db_index=True)
     erstellt = models.DateTimeField(auto_now_add=True)

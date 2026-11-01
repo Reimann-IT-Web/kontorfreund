@@ -92,7 +92,7 @@ def _wert(objekt, feld):
     return str(wert)
 
 
-def eintragen(aktion, objekt, aenderungen=()):
+def eintragen(aktion, objekt, aenderungen=(), beschreibung=None):
     anfrage = ANFRAGE.get()
     benutzer = getattr(anfrage, "user", None)
     angemeldet = bool(benutzer and benutzer.is_authenticated)
@@ -102,9 +102,18 @@ def eintragen(aktion, objekt, aenderungen=()):
         wer=str(benutzer) if angemeldet else "",
         art=_name(objekt._meta),
         objekt_id=str(objekt.pk),
-        beschreibung=str(objekt)[:300],
+        beschreibung=(str(objekt) if beschreibung is None else beschreibung)[:300],
         aenderungen=list(aenderungen),
     )
+
+
+def schwaerzen(objekte):
+    """Einträge zu diesen Objekten schwärzen (Art. 17 DSGVO), auch zu schon gelöschten."""
+    arten = {}
+    for objekt in objekte:
+        arten.setdefault(_name(objekt._meta), []).append(objekt.pk)
+    for art, pks in arten.items():
+        Eintrag.schwaerzen(art, pks)
 
 
 def anmeldung(aktion, wer, benutzer=None, grund=""):

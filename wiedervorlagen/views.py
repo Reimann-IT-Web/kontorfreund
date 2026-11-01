@@ -50,7 +50,7 @@ def liste(request):
     alle = request.GET.get("wer") == "alle"
     eintraege = Wiedervorlage.objects.select_related(
         "kontakt", "zustaendig", "angebot", "rechnung"
-    )
+    ).exclude(kontakt__gesperrt_am__isnull=False)
     if not alle:
         eintraege = eintraege.filter(
             Q(zustaendig=request.user) | Q(zustaendig__isnull=True)

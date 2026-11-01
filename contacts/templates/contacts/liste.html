@@ -6,10 +6,11 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>{% if archiv %}Archivierte Adressen{% else %}Adressen{% endif %}</h1>
+    <h1>{% if gesperrt %}Gesperrte Adressen{% elif archiv %}Archivierte Adressen{% else %}Adressen{% endif %}</h1>
     <p class="muted">
-      {% if archiv %}<a href="{% url 'contacts:liste' %}">Zurück zu den {{ anzahl }} aktiven Adressen</a>
-      {% else %}{{ anzahl }} Adresse{{ anzahl|pluralize:"n" }}{% if anzahl_archiv %} · <a href="?archiv=1">{{ anzahl_archiv }} im Archiv</a>{% endif %}{% endif %}
+      {% if gesperrt %}<a href="{% url 'contacts:liste' %}">Zurück zu den {{ anzahl }} aktiven Adressen</a> · gesperrt auf Verlangen der Person (Art. 18 DSGVO), nur Sie als Inhaber sehen sie
+      {% elif archiv %}<a href="{% url 'contacts:liste' %}">Zurück zu den {{ anzahl }} aktiven Adressen</a>
+      {% else %}{{ anzahl }} Adresse{{ anzahl|pluralize:"n" }}{% if anzahl_archiv %} · <a href="?archiv=1">{{ anzahl_archiv }} im Archiv</a>{% endif %}{% if anzahl_gesperrt %} · <a href="?gesperrt=1">{{ anzahl_gesperrt }} gesperrt</a>{% endif %}{% endif %}
     </p>
   </div>
   <div class="actions">
@@ -17,7 +18,7 @@
   </div>
 </div>
 
-{% if anzahl or anzahl_archiv %}
+{% if anzahl or anzahl_archiv %}{% if not gesperrt %}
 <form class="filterbar" method="get" role="search">
   <label class="field field-search">
     {% icon "search" %}
@@ -33,7 +34,7 @@
     {% endfor %}
   </div>
 </form>
-{% endif %}
+{% endif %}{% endif %}
 
 {% if kontakte %}
 <div class="table-wrap">
@@ -86,6 +87,9 @@
             </div>
             <div class="detail-actions">
               <a class="btn btn-sm" href="{% url 'historie:verlauf' k.pk %}">{% icon "list" %}Verlauf und Notizen</a>
+              {% if gesperrt %}
+              <a class="btn btn-sm btn-primary" href="{% url 'contacts:datenschutz' k.pk %}">{% icon "lock" %}Datenschutz</a>
+              {% else %}
               <a class="btn btn-sm btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Rechnung schreiben</a>
               <a class="btn btn-sm" href="{% url 'angebote:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Angebot schreiben</a>
               <a class="btn btn-sm" href="{% url 'contacts:bearbeiten' k.pk %}">{% icon "pencil" %}Bearbeiten</a>
@@ -93,6 +97,8 @@
                 {% csrf_token %}
                 <button class="btn btn-sm btn-block" type="submit">{% icon "folder" %}{% if k.archiviert %}Wiederherstellen{% else %}Archivieren{% endif %}</button>
               </form>
+              {% if user.ist_inhaber %}<a class="btn btn-sm" href="{% url 'contacts:datenschutz' k.pk %}">{% icon "lock" %}Datenschutz</a>{% endif %}
+              {% endif %}
             </div>
           </div>
         </td>
@@ -102,13 +108,19 @@
     </tbody>
   </table>
 </div>
-<p class="table-foot muted">{% if q or kategorie %}{{ kontakte|length }} Treffer · {% endif %}{% include "auswertungen/herunterladen.html" %}</p>
+{% if not gesperrt %}<p class="table-foot muted">{% if q or kategorie %}{{ kontakte|length }} Treffer · {% endif %}{% include "auswertungen/herunterladen.html" %}</p>{% endif %}
 
 {% elif q or kategorie %}
 <div class="empty">
   <h2>Keine Adresse gefunden</h2>
   <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer. {% endif %}Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.</p>
   <p class="actions"><a class="btn" href="{% url 'contacts:liste' %}">Filter zurücksetzen</a></p>
+</div>
+
+{% elif gesperrt %}
+<div class="empty">
+  <h2>Keine gesperrten Adressen</h2>
+  <p class="muted">Verlangt jemand die Löschung seiner Daten, während seine Belege noch aufbewahrt werden müssen, sperren Sie die Adresse unter „Datenschutz“.</p>
 </div>
 
 {% elif archiv %}
