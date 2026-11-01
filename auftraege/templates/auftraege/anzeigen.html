@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ auftrag }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'auftraege:liste' %}">Angebote &amp; Rechnungen</a></li>
+    <li aria-current="page">{{ auftrag }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ auftrag }} {% include "auftraege/stand.html" with a=auftrag %}</h1>
+    <p class="muted">{{ auftrag.kontakt }} · {{ auftrag.datum|date:"d.m.Y" }} · <span class="amount">{{ auftrag.brutto|euro }}</span>{% if auftrag.angebot %} · aus dem <a href="{% url 'angebote:bearbeiten' auftrag.angebot.pk %}">Angebot {{ auftrag.angebot.nummer }}</a>{% endif %}{% if auftrag.versendet_am %} · gesendet am {{ auftrag.versendet_am|date:"d.m.Y \u\m H:i" }} an {{ auftrag.versendet_an }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    <button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>
+    <a class="btn" href="{% url 'auftraege:pdf' auftrag.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
+    <a class="btn" href="{% url 'auftraege:pdf' auftrag.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+  </div>
+</div>
+
+<div class="beleg-ansicht">
+  <div class="beleg-bilder">
+    {% for bild in seiten %}<img class="beleg-blatt" src="{{ bild }}" width="1191" height="1684" alt="{{ auftrag }}, Seite {{ forloop.counter }} von {{ seiten|length }}">
+    {% empty %}<p class="muted">Die PDF-Datei fehlt im Archiv.</p>{% endfor %}
+  </div>
+
+  <aside class="beleg-seite">
+    <section class="panel" aria-labelledby="rechnung-titel">
+      <h2 class="panel-title" id="rechnung-titel">Rechnung</h2>
+      {% if auftrag.rechnung %}
+      <p><a class="btn btn-primary btn-block" href="{% url 'invoicing:bearbeiten' auftrag.rechnung.pk %}">{% icon "file" %}{% if auftrag.rechnung.nummer %}Zur Rechnung {{ auftrag.rechnung.nummer }}{% else %}Zum Rechnungsentwurf{% endif %}</a></p>
+      {% else %}
+      <p class="small muted">Ist der Auftrag ausgeführt, übernimmt Kontorfreund Empfänger, Betreff, Ausführung und alle Positionen in einen Rechnungsentwurf.</p>
+      <button class="btn btn-primary btn-block" type="submit" form="rechnung-form">{% icon "file" %}Rechnung erstellen</button>
+      {% endif %}
+    </section>
+
+    {% if not auftrag.rechnung %}
+    <section class="panel" aria-labelledby="versand-titel">
+      <h2 class="panel-title" id="versand-titel">{% if auftrag.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}</h2>
+      {% if firma.mail_bereit %}
+      <form class="stack" method="post" novalidate>
+        {% csrf_token %}
+        {% include "core/feld.html" with f=form.an %}
+        {% include "core/feld.html" with f=form.betreff %}
+        {% include "core/feld.html" with f=form.text %}
+        <label class="choice">{{ form.kopie }}<span>Kopie an mich <span class="muted">({{ firma.email }})</span></span></label>
+        <p class="small muted">Anhang: Auftragsbestaetigung-{{ auftrag.nummer }}.pdf</p>
+        <button class="btn btn-primary btn-block" type="submit">{% icon "send" %}Jetzt senden</button>
+      </form>
+      {% else %}
+      <p class="small">Laden Sie das PDF herunter und hängen Sie es in Ihrem E-Mail-Programm an.</p>
+      {% if user.ist_inhaber %}<p class="small muted">Kontorfreund kann es auch selbst senden, wenn Sie in den <a href="{% url 'core:einstellungen' %}#t-mail">Einstellungen</a> den E-Mail-Versand einrichten.</p>{% endif %}
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="panel" aria-labelledby="ablage-titel">
+      <h2 class="panel-title" id="ablage-titel">Ablage</h2>
+      <dl class="facts small">
+        <div><dt>Fertiggestellt</dt><dd>{{ auftrag.fertiggestellt_am|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt>Format</dt><dd>PDF/A-3</dd></div>
+      </dl>
+      <p class="small muted">Prüfsumme (SHA-256)<br><code class="hash">{{ auftrag.sha256 }}</code></p>
+    </section>
+  </aside>
+</div>
+
+<form id="kopieren-form" method="post" action="{% url 'auftraege:kopieren' auftrag.pk %}" hidden>{% csrf_token %}</form>
+{% if not auftrag.rechnung %}
+<form id="rechnung-form" method="post" action="{% url 'auftraege:rechnung_erstellen' auftrag.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+{% endblock %}

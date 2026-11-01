@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.7.0 – 01.11.2026
+
+- Auftragsbestätigungen: Sagt ein Kunde zu, machen Sie aus dem Angebot mit „Auftrag bestätigen“ eine Auftragsbestätigung mit denselben Positionen, oder Sie schreiben sie ohne Angebot neu (Angebote & Rechnungen → Auftragsbestätigungen). Auf Wunsch mit dem Zeitraum der Ausführung. Beim Fertigstellen bekommt sie eine Nummer aus einem eigenen Nummernkreis und wird als PDF abgelegt; danach lässt sie sich per E-Mail senden, kopieren und mit einem Klick in einen Rechnungsentwurf übernehmen, der Ausführung als Leistungszeitraum mitnimmt. Jeder Schritt lässt sich weiterhin überspringen.
+- Auftragsbestätigungen stehen im Verlauf der Adresse und im Änderungsprotokoll.
+
 ## 0.6.0 – 01.11.2026
 
 - Benachrichtigungen kommen jetzt kostenlos über Telegram statt per SMS. Unter Einstellungen → Benachrichtigungen legen Sie in drei Schritten einen eigenen Telegram-Bot an und verbinden ihn per QR-Code. Inhalt und Zeitpunkte wie bisher; Namen von Kunden und Lieferanten gehen nicht an Telegram, nur Titel der Wiedervorlagen, Rechnungsnummern und Beträge.

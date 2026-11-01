@@ -54,6 +54,11 @@ def navigation(request):
             "info": "Angebote & Rechnungen",
             "url": reverse("angebote:neu"),
         },
+        {
+            "titel": "Neue Auftragsbestätigung",
+            "info": "Angebote & Rechnungen",
+            "url": reverse("auftraege:neu"),
+        },
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
         {
             "titel": "Neue Wiedervorlage",

@@ -170,11 +170,12 @@ if (kontaktForm) {
   umschalten();
 }
 
-// ---------- Rechnung und Angebot: rechnen und Pflichtangaben prüfen ----------
+// ---------- Rechnung, Angebot und Auftragsbestätigung: rechnen und Pflichtangaben prüfen ----------
 
 const rechnung = document.querySelector("[data-invoice]");
 if (rechnung) {
   const angebot = rechnung.dataset.beleg === "angebot";
+  const auftrag = rechnung.dataset.beleg === "auftrag";
   const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
   const zahl = (text) => {
     const wert = Number(String(text).trim().replace(/\./g, "").replace(",", "."));
@@ -207,7 +208,11 @@ if (rechnung) {
     PRUEFPUNKT.datum = "Angebotsdatum";
     PRUEFPUNKT.entgelt = "Angebotsbetrag";
   }
-  const abschluss = angebot ? ["fertigstellen", "Fertigstellen"] : ["festschreiben", "Festschreiben"];
+  if (auftrag) {
+    PRUEFPUNKT.datum = "Datum";
+    PRUEFPUNKT.entgelt = "Auftragssumme";
+  }
+  const abschluss = angebot || auftrag ? ["fertigstellen", "Fertigstellen"] : ["festschreiben", "Festschreiben"];
 
   const pruefen = (ergebnis) => {
     const punkte = [...rechnung.querySelectorAll("[data-check]")].filter((li) => !li.hidden);
@@ -287,11 +292,12 @@ if (rechnung) {
     steuerhinweis.textContent = STEUERHINWEIS[fall];
     steuerhinweis.hidden = !STEUERHINWEIS[fall];
 
-    // Fälligkeit der Rechnung bzw. Gültigkeit des Angebots
+    // Fälligkeit der Rechnung bzw. Gültigkeit des Angebots; die Auftragsbestätigung hat keine Frist.
     const datum = feld("datum").valueAsDate;
-    if (datum) {
+    const frist = feld(angebot ? "bindefrist" : "zahlungsziel");
+    if (datum && frist) {
       const faellig = new Date(datum);
-      faellig.setDate(faellig.getDate() + Number(feld(angebot ? "bindefrist" : "zahlungsziel").value));
+      faellig.setDate(faellig.getDate() + Number(frist.value));
       const text = faellig.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
       rechnung.querySelectorAll("[data-due]").forEach((el) => {
         el.textContent = text;
@@ -313,11 +319,11 @@ if (rechnung) {
     }
 
     // Empfänger mit XRechnung: Käuferreferenz aus der Adresse und eigene Pflichtangaben.
-    // Angebote kennen weder XRechnung noch Leistungszeitraum.
+    // Angebote und Auftragsbestätigungen kennen keine XRechnung.
     const empfaenger = auswahl.selectedOptions[0];
-    const xrechnung = !angebot && empfaenger?.dataset.xrechnung === "1";
+    const xrechnung = !angebot && !auftrag && empfaenger?.dataset.xrechnung === "1";
     if (verzugshinweis) verzugshinweis.hidden = empfaenger?.dataset.verbraucher !== "1";
-    if (!angebot) {
+    if (!angebot && !auftrag) {
       rechnung.querySelector("[data-check=xrechnung]").hidden = !xrechnung;
       rechnung.querySelector("[data-format]").textContent = xrechnung ? "ZUGFeRD und XRechnung" : "ZUGFeRD";
       feld("referenz").placeholder = empfaenger?.dataset.referenz || "";
@@ -385,7 +391,7 @@ if (rechnung) {
         rechnen();
         ansage("Position entfernt.");
       } else {
-        ansage(angebot ? "Ein Angebot braucht mindestens eine Position." : "Eine Rechnung braucht mindestens eine Position.");
+        ansage(`${angebot ? "Ein Angebot" : auftrag ? "Eine Auftragsbestätigung" : "Eine Rechnung"} braucht mindestens eine Position.`);
       }
       return;
     }

@@ -37,9 +37,12 @@
         <p class="small">Angenommen am {{ angebot.antwort_am|date:"d.m.Y" }}.</p>
         {% if angebot.rechnung %}
         <p><a class="btn btn-primary btn-block" href="{% url 'invoicing:bearbeiten' angebot.rechnung.pk %}">{% icon "file" %}{% if angebot.rechnung.nummer %}Zur Rechnung {{ angebot.rechnung.nummer }}{% else %}Zum Rechnungsentwurf{% endif %}</a></p>
+        {% elif angebot.auftrag %}
+        <p><a class="btn btn-primary btn-block" href="{% url 'auftraege:bearbeiten' angebot.auftrag.pk %}">{% icon "file" %}{% if angebot.auftrag.nummer %}Zur Auftragsbestätigung {{ angebot.auftrag.nummer }}{% else %}Zum Entwurf der Auftragsbestätigung{% endif %}</a></p>
         {% else %}
-        <p class="small muted">Kontorfreund übernimmt Empfänger, Betreff und alle Positionen in einen Rechnungsentwurf. Den Leistungszeitraum tragen Sie dort ein.</p>
-        <button class="btn btn-primary btn-block" type="submit" form="rechnung-form">{% icon "file" %}Rechnung erstellen</button>
+        <p class="small muted">Kontorfreund übernimmt Empfänger, Betreff und alle Positionen in eine Auftragsbestätigung oder gleich in einen Rechnungsentwurf.</p>
+        <button class="btn btn-primary btn-block" type="submit" form="auftrag-form">{% icon "check" %}Auftrag bestätigen</button>
+        <button class="btn btn-block" type="submit" form="rechnung-form">{% icon "file" %}Rechnung erstellen</button>
         <button class="btn btn-ghost btn-block" type="submit" form="antwort-form" name="antwort" value="">Antwort zurücknehmen</button>
         {% endif %}
       {% elif angebot.antwort == "abgelehnt" %}
@@ -89,7 +92,8 @@
 
 <form id="kopieren-form" method="post" action="{% url 'angebote:kopieren' angebot.pk %}" hidden>{% csrf_token %}</form>
 <form id="antwort-form" method="post" action="{% url 'angebote:antwort' angebot.pk %}" hidden>{% csrf_token %}</form>
-{% if not angebot.rechnung %}
+{% if not angebot.rechnung and not angebot.auftrag %}
+<form id="auftrag-form" method="post" action="{% url 'auftraege:aus_angebot' angebot.pk %}" hidden>{% csrf_token %}</form>
 <form id="rechnung-form" method="post" action="{% url 'angebote:rechnung_erstellen' angebot.pk %}" hidden>{% csrf_token %}</form>
 {% endif %}
 {% endblock %}

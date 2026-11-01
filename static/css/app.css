@@ -1951,7 +1951,8 @@ select {
   display: none;
 }
 
-.editor-side .btn-block + .btn-block {
+.editor-side .btn-block + .btn-block,
+.beleg-seite .btn-block + .btn-block {
   margin-top: var(--s2);
 }
 
@@ -2755,6 +2756,10 @@ input[type="file"]::file-selector-button {
 
   .segmented a {
     text-align: center;
+  }
+
+  .segmented-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   /* Adressen als gestapelte Zeilen: Nummer, Name, offener Betrag, Aufklappen. */

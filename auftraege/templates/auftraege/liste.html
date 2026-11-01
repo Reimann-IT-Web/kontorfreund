@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Angebote &amp; Rechnungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Angebote &amp; Rechnungen</h1>
+    <p class="muted">Ihre Auftragsbestätigungen aus Kontorfreund.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
+    <a class="btn btn-primary" href="{% url 'auftraege:neu' %}">{% icon "file" %}Neue Auftragsbestätigung</a>
+  </div>
+</div>
+
+{% include "invoicing/belegarten.html" %}
+
+{% if auftraege %}
+<div class="table-wrap">
+  <table class="table archive stapel">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Nr.</th>
+        <th scope="col">Kunde</th>
+        <th scope="col">Status</th>
+        <th scope="col" class="num">Betrag</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in auftraege %}
+      <tr class="data-row">
+        <td class="docnr">{{ a.datum|date:"d.m.Y" }}</td>
+        <td class="docnr"><a href="{% url 'auftraege:bearbeiten' a.pk %}">{% if a.nummer %}{{ a.nummer }}{% else %}Entwurf{% endif %}</a></td>
+        <td>{% if a.kontakt %}{{ a.kontakt }}{% else %}<span class="muted">noch kein Empfänger</span>{% endif %}{% if a.betreff %}<br><span class="small muted">{{ a.betreff }}</span>{% endif %}</td>
+        <td>
+          {% include "auftraege/stand.html" %}
+          {% if a.rechnung %}<br><a class="small" href="{% url 'invoicing:bearbeiten' a.rechnung.pk %}">{% if a.rechnung.nummer %}Rechnung {{ a.rechnung.nummer }}{% else %}Rechnungsentwurf{% endif %}</a>{% endif %}
+        </td>
+        <td class="num"><span class="amount">{% if a.ist_entwurf %}<span class="muted">–</span>{% else %}{{ a.brutto|euro }}{% endif %}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <h2>Noch keine Auftragsbestätigung in Kontorfreund</h2>
+  <p class="muted">Ihre erste Auftragsbestätigung erhält die Nummer {{ naechste_nummer }}. Aus einem angenommenen Angebot entsteht sie mit einem Klick, daraus später die Rechnung.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'auftraege:neu' %}">{% icon "file" %}Neue Auftragsbestätigung</a></p>
+</div>
+{% endif %}
+{% endblock %}

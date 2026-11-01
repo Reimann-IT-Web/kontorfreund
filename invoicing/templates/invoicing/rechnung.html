@@ -18,6 +18,7 @@
     <p class="muted">Korrigiert die <a href="{% url 'invoicing:bearbeiten' o.pk %}">Rechnung {{ o.nummer }}</a> vom {{ o.datum|date:"d.m.Y" }} über <span class="amount">{{ o.brutto|euro }}</span>. Mindern lässt sie sich noch um höchstens <span class="amount">{{ o.korrigierter_betrag|euro }}</span>.</p>
     {% endwith %}{% endif %}
     {% if rechnung.angebot %}<p class="muted">Aus dem <a href="{% url 'angebote:bearbeiten' rechnung.angebot.pk %}">Angebot {{ rechnung.angebot.nummer }}</a> vom {{ rechnung.angebot.datum|date:"d.m.Y" }}.{% if not rechnung.leistung_von %} Tragen Sie noch den Leistungszeitraum ein.{% endif %}</p>{% endif %}
+    {% if rechnung.auftrag %}<p class="muted">Aus der <a href="{% url 'auftraege:bearbeiten' rechnung.auftrag.pk %}">Auftragsbestätigung {{ rechnung.auftrag.nummer }}</a> vom {{ rechnung.auftrag.datum|date:"d.m.Y" }}.{% if not rechnung.leistung_von %} Tragen Sie noch den Leistungszeitraum ein.{% endif %}</p>{% endif %}
     <p class="muted">Beim Festschreiben erhält die {{ rechnung.bezeichnung }} die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
   </div>
 </div>

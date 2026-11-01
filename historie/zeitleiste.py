@@ -1,8 +1,9 @@
 """Zeitleiste einer Adresse (Spezifikation K-2): alles, was zu ihr geschah, neueste zuerst.
 
-Von Hand erfasste Vorgänge kommen aus `Vorgang`; Angebote, Rechnungen, Zahlungen,
-Mahnungen, erledigte Wiedervorlagen, Altbelege und Eingangsrechnungen werden aus
-ihren eigenen Daten gelesen, damit nichts doppelt gespeichert ist.
+Von Hand erfasste Vorgänge kommen aus `Vorgang`; Angebote, Auftragsbestätigungen,
+Rechnungen, Zahlungen, Mahnungen, erledigte Wiedervorlagen, Altbelege und
+Eingangsrechnungen werden aus ihren eigenen Daten gelesen, damit nichts doppelt
+gespeichert ist.
 """
 
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from angebote.models import Angebot
+from auftraege.models import Auftragsbestaetigung
 from invoicing.models import Rechnung
 from zahlungen.models import Mahnung, Zahlung
 
@@ -107,6 +109,18 @@ def punkte(kontakt):
                 nachfassen=urlencode(
                     {"titel": f"Angebot {a.nummer} nachfassen", "angebot": a.pk}
                 ),
+            )
+        )
+    for a in kontakt.auftraege.filter(status=Auftragsbestaetigung.Status.FERTIG):
+        ergebnis.append(
+            Punkt(
+                a.datum,
+                None,
+                art="beleg",
+                titel=f"Auftragsbestätigung {a.nummer}",
+                text=a.betreff,
+                url=reverse("auftraege:bearbeiten", args=[a.pk]),
+                betrag=a.brutto,
             )
         )
     rechnungen = kontakt.rechnungen.filter(status=Rechnung.Status.FESTGESCHRIEBEN)

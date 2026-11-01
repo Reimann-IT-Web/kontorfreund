@@ -37,7 +37,9 @@ def liste(request):
         {
             "bereich": "rechnungen",
             "belegart": "angebote",
-            "angebote": Angebot.objects.select_related("kontakt", "rechnung"),
+            "angebote": Angebot.objects.select_related(
+                "kontakt", "rechnung", "auftrag"
+            ),
             "altangebote": Altbeleg.objects.filter(art=Altbeleg.Art.ANGEBOT).count(),
             "naechste_nummer": Angebot.naechste_nummer(date.today()),
         },
@@ -63,7 +65,7 @@ def neu(request):
 
 def bearbeiten(request, pk):
     angebot = get_object_or_404(
-        Angebot.objects.select_related("kontakt", "rechnung"), pk=pk
+        Angebot.objects.select_related("kontakt", "rechnung", "auftrag"), pk=pk
     )
     firma = Firmendaten.laden()
     if not angebot.ist_entwurf:
@@ -190,6 +192,13 @@ def antwort(request, pk):
             "Rechnungsentwurf, wenn das Angebot doch nicht angenommen wurde.",
         )
         return redirect("angebote:bearbeiten", angebot.pk)
+    if hasattr(angebot, "auftrag") and wert != Angebot.Antwort.ANGENOMMEN:
+        messages.error(
+            request,
+            "Zu diesem Angebot gibt es schon eine Auftragsbestätigung. Löschen Sie "
+            "erst deren Entwurf, wenn das Angebot doch nicht angenommen wurde.",
+        )
+        return redirect("angebote:bearbeiten", angebot.pk)
     angebot.antwort = wert
     angebot.antwort_am = date.today() if wert else None
     angebot.save(update_fields=["antwort", "antwort_am", "geaendert"])
@@ -205,12 +214,15 @@ def antwort(request, pk):
 @require_POST
 def rechnung_erstellen(request, pk):
     angebot = get_object_or_404(
-        Angebot.objects.select_related("rechnung"),
+        Angebot.objects.select_related("rechnung", "auftrag"),
         pk=pk,
         status=Angebot.Status.FERTIG,
     )
     if angebot.rechnung:
         return redirect("invoicing:bearbeiten", angebot.rechnung.pk)
+    if hasattr(angebot, "auftrag"):
+        # Die Rechnung entsteht dann aus der Auftragsbestätigung.
+        return redirect("auftraege:bearbeiten", angebot.auftrag.pk)
     if angebot.antwort == Angebot.Antwort.ABGELEHNT:
         messages.error(
             request,

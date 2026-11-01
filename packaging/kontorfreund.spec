@@ -16,6 +16,7 @@ APPS = [
     "contacts",
     "invoicing",
     "angebote",
+    "auftraege",
     "zahlungen",
     "artikel",
     "archive",
