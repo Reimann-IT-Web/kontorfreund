@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}DATEV einstellen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'auswertungen:datev' %}">DATEV-Export</a></li>
+    <li aria-current="page">DATEV einstellen</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>DATEV einstellen</h1>
+    <p class="muted">Damit Ihr Steuerberater die Datei ohne Nacharbeit einlesen kann. Die Angaben stehen in seinen Unterlagen; fragen Sie im Zweifel nach.</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-kanzlei">
+    <h2 class="form-title" id="t-kanzlei">Steuerberater</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.beraternummer %}
+      {% include "core/feld.html" with f=form.mandantennummer %}
+      {% include "core/feld.html" with f=form.kontenrahmen %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-debitoren">
+    <h2 class="form-title" id="t-debitoren">Kundenkonten</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.debitoren %}
+      {% include "core/feld.html" with f=form.sammelkonto %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-erloese">
+    <h2 class="form-title" id="t-erloese">Erlöskonten</h2>
+    <p class="muted form-hint">Auf diese Konten bucht Kontorfreund den Umsatz, je nach Umsatzsteuer der Rechnung. Ändern Sie sie nur, wenn Ihr Steuerberater andere Konten nennt.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.erloes_kleinunternehmer optional=True %}
+      {% include "core/feld.html" with f=form.erloes_regel optional=True %}
+      {% include "core/feld.html" with f=form.erloes_13b optional=True %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+  </div>
+</form>
+{% endblock %}

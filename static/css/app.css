@@ -1920,6 +1920,11 @@ select {
   margin-top: var(--s7);
 }
 
+.callout + .table-wrap,
+.callout + .empty {
+  margin-top: var(--s4);
+}
+
 /* Zeilenköpfe in Tabellen lesen sich wie Zellen, nur kräftiger. */
 .table th[scope="row"] {
   background: none;

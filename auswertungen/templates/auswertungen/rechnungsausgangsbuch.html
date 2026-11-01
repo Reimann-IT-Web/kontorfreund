@@ -16,21 +16,7 @@
   {% endif %}
 </div>
 
-<form class="filterbar" method="get">
-  <label class="field field-inline">
-    <span class="visually-hidden">Jahr</span>
-    <select name="jahr" data-auto-submit>
-      {% for j in jahre %}<option value="{{ j }}"{% if j == jahr %} selected{% endif %}>{{ j }}</option>{% endfor %}
-    </select>
-  </label>
-  <label class="field field-inline">
-    <span class="visually-hidden">Zeitraum</span>
-    <select name="zeitraum" data-auto-submit>
-      {% for wert, name in zeitraeume %}<option value="{{ wert }}"{% if wert == wahl %} selected{% endif %}>{{ name }}</option>{% endfor %}
-    </select>
-  </label>
-  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
-</form>
+{% include "auswertungen/auswahl.html" %}
 
 {% if eintraege %}
 <div class="table-wrap">

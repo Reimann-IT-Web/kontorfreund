@@ -1,1 +1,3 @@
 * text=auto eol=lf
+# Inno Setup zeigt die Datei in einem Windows-Textfeld, das CR/LF braucht.
+packaging/windows/info.txt text eol=crlf

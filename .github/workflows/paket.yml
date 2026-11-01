@@ -43,7 +43,10 @@ jobs:
       - name: Programmordner bauen
         env:
           APP_DATA_DIR: ${{ runner.temp }}/bau
-        run: uv run pyinstaller packaging/kontorfreund.spec --noconfirm
+        run: |
+          uv run pyinstaller packaging/kontorfreund.spec --noconfirm
+          # Die AGPL verlangt den Lizenztext bei jeder Weitergabe.
+          cp LICENSE dist/Kontorfreund/LICENSE.txt
       - name: Selbsttest
         env:
           APP_DATA_DIR: ${{ runner.temp }}/selbsttest

@@ -6,7 +6,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
-**Status:** frühe Entwicklung, Version 0.2.0. Im Einsatz sind Adressen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
+**Status:** frühe Entwicklung, Version 0.3.0. Im Einsatz sind Adressen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
 
 ## Installation
 
@@ -53,6 +53,8 @@ dist/Kontorfreund/Kontorfreund selbsttest
 Ein Tag `v<Version>` baut über `.github/workflows/paket.yml` die Pakete für alle drei Systeme und legt das Release an.
 
 ## Lizenz
+
+Copyright © 2026 Reimann IT & Web.
 
 [AGPL-3.0-only](LICENSE). Eine kommerzielle Lizenz ohne AGPL-Pflichten ist geplant.
 

@@ -18,9 +18,13 @@ def test_version_wie_in_pyproject():
     assert pyproject["project"]["version"] == settings.VERSION
 
 
-def test_version_auf_der_hilfeseite(client):
-    seite = client.get(reverse("core:platzhalter", args=["hilfe"]))
-    assert f"Kontorfreund {settings.VERSION}" in seite.content.decode()
+def test_version_und_urheber_auf_der_hilfeseite(client):
+    seite = client.get(reverse("core:platzhalter", args=["hilfe"])).content.decode()
+    assert (
+        f"Kontorfreund {settings.VERSION} · entwickelt von Reimann IT &amp; Web"
+        in seite
+    )
+    assert "AGPL-3.0" in seite
 
 
 @pytest.mark.parametrize(

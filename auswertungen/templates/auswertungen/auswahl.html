@@ -1,0 +1,19 @@
+<form class="filterbar" method="get">
+  <nav class="segmented" aria-label="Auswertung">
+    <a href="{% url 'auswertungen:rechnungsausgangsbuch' %}?jahr={{ jahr }}&amp;zeitraum={{ wahl }}"{% if auswertung == "buch" %} aria-current="page"{% endif %}>Ausgangsbuch</a>
+    <a href="{% url 'auswertungen:datev' %}?jahr={{ jahr }}&amp;zeitraum={{ wahl }}"{% if auswertung == "datev" %} aria-current="page"{% endif %}>DATEV-Export</a>
+  </nav>
+  <label class="field field-inline">
+    <span class="visually-hidden">Jahr</span>
+    <select name="jahr" data-auto-submit>
+      {% for j in jahre %}<option value="{{ j }}"{% if j == jahr %} selected{% endif %}>{{ j }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field field-inline">
+    <span class="visually-hidden">Zeitraum</span>
+    <select name="zeitraum" data-auto-submit>
+      {% for wert, name in zeitraeume %}<option value="{{ wert }}"{% if wert == wahl %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+</form>

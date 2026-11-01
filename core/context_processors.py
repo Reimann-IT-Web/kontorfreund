@@ -48,6 +48,11 @@ def navigation(request):
             "url": reverse("auswertungen:rechnungsausgangsbuch"),
         },
         {
+            "titel": "DATEV-Export",
+            "info": "Auswertungen",
+            "url": reverse("auswertungen:datev"),
+        },
+        {
             "titel": "E-Rechnung hochladen",
             "info": "Eingangsrechnungen",
             "url": reverse("eingang:liste"),

@@ -1,0 +1,9 @@
+﻿Kontorfreund – Rechnungsprogramm für Kleinunternehmer
+
+Entwickelt von Reimann IT & Web.
+
+Kontorfreund ist freie Software (Open Source) unter der GNU Affero General Public License, Version 3 (AGPL-3.0). Sie dürfen das Programm kostenlos nutzen, weitergeben und verändern. Wer eine veränderte Fassung weitergibt oder anderen über ein Netzwerk zur Verfügung stellt, muss deren Quellcode ebenfalls unter der AGPL-3.0 offenlegen.
+
+Das Programm wird ohne jede Gewährleistung bereitgestellt. Den vollständigen Lizenztext finden Sie nach der Installation in der Datei LICENSE.txt im Programmordner.
+
+Quellcode: https://github.com/hajo808/kontorfreund

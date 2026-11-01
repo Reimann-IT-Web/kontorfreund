@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}DATEV-Export{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>DATEV-Export</h1>
+    <p class="muted">Buchungsstapel für Ihren Steuerberater: alle Rechnungen, Stornos und Korrekturen {{ text }}.</p>
+  </div>
+  <div class="actions">
+    {% if user.ist_inhaber %}<a class="btn" href="{% url 'auswertungen:datev_einstellungen' %}">{% icon "settings" %}DATEV einstellen</a>{% endif %}
+    {% if buchungen and einstellung.bereit %}
+    <a class="btn" href="?jahr={{ jahr }}&amp;zeitraum={{ wahl }}&amp;format=zip">{% icon "download" %}Mit Rechnungen (ZIP)</a>
+    <a class="btn btn-primary" href="?jahr={{ jahr }}&amp;zeitraum={{ wahl }}&amp;format=csv">{% icon "download" %}DATEV-Datei</a>
+    {% endif %}
+  </div>
+</div>
+
+{% include "auswertungen/auswahl.html" %}
+
+{% if not einstellung.bereit %}
+<p class="callout">{% icon "alert" %}<span>Für die DATEV-Datei fehlen noch Berater- und Mandantennummer. Beide nennt Ihnen Ihr Steuerberater; {% if user.ist_inhaber %}<a href="{% url 'auswertungen:datev_einstellungen' %}">jetzt eintragen</a>{% else %}der Inhaber trägt sie ein{% endif %}. Die Vorschau zeigt schon, was gebucht wird.</span></p>
+{% endif %}
+
+{% if buchungen %}
+<div class="table-wrap">
+  <table class="table stapel">
+    <thead>
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col">Beleg</th>
+        <th scope="col">Buchungstext</th>
+        <th scope="col" class="num">Konto</th>
+        <th scope="col" class="num">Gegenkonto</th>
+        <th scope="col">Soll/Haben</th>
+        <th scope="col" class="num">Umsatz</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in buchungen %}
+      <tr class="data-row">
+        <td class="docnr">{{ b.datum|date:"d.m.Y" }}</td>
+        <td class="docnr"><a class="link" href="{% url 'invoicing:bearbeiten' b.rechnung.pk %}">{{ b.beleg }}</a>{% if b.art != "Rechnung" %}<span class="cell-sub">{{ b.art }}</span>{% endif %}</td>
+        <td class="voll">{{ b.text }}</td>
+        <td class="num" data-label="Konto">{{ b.konto }}</td>
+        <td class="num" data-label="Gegenkonto">{{ b.gegenkonto }}</td>
+        <td data-label="Soll/Haben">{% if b.soll_haben == "S" %}Soll{% else %}Haben{% endif %}</td>
+        <td class="num" data-label="Umsatz"><span class="amount">{{ b.betrag|euro }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">{{ buchungen|length }} Buchung{{ buchungen|length|pluralize:"en" }} · {{ einstellung.get_kontenrahmen_display }} · {{ einstellung.get_debitoren_display }}{% if altbelege %} · {{ altbelege }} Beleg{{ altbelege|pluralize:"e" }} aus Ihrem bisherigen Programm {{ altbelege|pluralize:"fehlt,fehlen" }}, weil Kontorfreund dort den Steuerfall nicht kennt.{% endif %}</p>
+<p class="small muted">Die Erlöskonten sind die üblichen Standardkonten. Lassen Sie sie von Ihrem Steuerberater bestätigen, bevor er die Datei zum ersten Mal einliest.</p>
+
+{% else %}
+<div class="empty">
+  <h2>Keine Rechnungen {{ text }}</h2>
+  <p class="muted">Hier stehen alle festgeschriebenen Rechnungen, Stornos und Korrekturen des gewählten Zeitraums als Buchungen für DATEV. Wählen Sie oben ein anderes Jahr oder einen anderen Zeitraum.</p>
+</div>
+{% endif %}
+{% endblock %}
