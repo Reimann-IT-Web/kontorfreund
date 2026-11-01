@@ -34,6 +34,8 @@ ERFASST = [
     "archive.Altbeleg",
     "eingang.Eingangsrechnung",
     "auswertungen.Datev",
+    "wiedervorlagen.Wiedervorlage",
+    "historie.Vorgang",
 ]
 # Stehen nie im Klartext im Protokoll.
 VERDECKT = {"password", "mail_passwort"}

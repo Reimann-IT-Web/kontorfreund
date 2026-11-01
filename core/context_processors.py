@@ -1,8 +1,11 @@
+from datetime import date
+
 from django.conf import settings
 from django.urls import reverse
 
 from artikel.models import Artikel
 from contacts.models import Kontakt
+from wiedervorlagen.models import Wiedervorlage
 
 from .models import Firmendaten
 from .navigation import NAVIGATION
@@ -24,10 +27,19 @@ def navigation(request):
         return {"firma": Firmendaten.laden()}
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
-    eintraege = [
-        dict(e, zahl=str(anzahl)) if e["key"] == "adressen" and anzahl else e
-        for e in NAVIGATION
-    ]
+    faellig = (
+        Wiedervorlage.offen_fuer(request.user).filter(faellig__lte=date.today()).count()
+    )
+    zahlen = {
+        "adressen": {"zahl": str(anzahl)} if anzahl else {},
+        "wiedervorlagen": {
+            "zahl": str(faellig),
+            "warnung": f"{faellig} Wiedervorlage{'n' if faellig > 1 else ''} fällig",
+        }
+        if faellig
+        else {},
+    }
+    eintraege = [dict(e, **zahlen.get(e["key"], {})) for e in NAVIGATION]
     liste = reverse("contacts:liste")
     suchindex = [
         {
@@ -41,6 +53,11 @@ def navigation(request):
             "url": reverse("angebote:neu"),
         },
         {"titel": "Neue Adresse", "info": "Adressen", "url": reverse("contacts:neu")},
+        {
+            "titel": "Neue Wiedervorlage",
+            "info": "Wiedervorlagen",
+            "url": reverse("wiedervorlagen:neu"),
+        },
         {"titel": "Neuer Artikel", "info": "Artikel", "url": reverse("artikel:neu")},
         {
             "titel": "Rechnungsausgangsbuch",

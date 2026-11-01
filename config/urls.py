@@ -8,7 +8,10 @@ urlpatterns = [
         "favicon.ico",
         RedirectView.as_view(url=static("img/favicon.svg"), permanent=True),
     ),
+    # Verlauf je Adresse unter /adressen/<nr>/verlauf/, sonst die Adressen selbst.
+    path("adressen/", include("historie.urls")),
     path("adressen/", include("contacts.urls")),
+    path("wiedervorlagen/", include("wiedervorlagen.urls")),
     path("rechnungen/", include("invoicing.urls")),
     path("angebote/", include("angebote.urls")),
     path("offene-posten/", include("zahlungen.urls")),

@@ -20,6 +20,7 @@
     <button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>
     <a class="btn" href="{% url 'angebote:pdf' angebot.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'angebote:pdf' angebot.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
+    <a class="btn" href="{% url 'wiedervorlagen:neu' %}?angebot={{ angebot.pk }}&amp;in=7&amp;titel={{ "Angebot "|add:angebot.nummer|add:" nachfassen"|urlencode }}&amp;weiter={{ request.get_full_path|urlencode }}">{% icon "clock" %}Wiedervorlage</a>
   </div>
 </div>
 

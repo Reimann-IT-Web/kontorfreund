@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{% if w.pk %}{{ w.titel }}{% else %}Neue Wiedervorlage{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'wiedervorlagen:liste' %}">Wiedervorlagen</a></li>
+    <li aria-current="page">{% if w.pk %}{{ w.titel }}{% else %}Neu{% endif %}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{% if w.pk %}{{ w.titel }}{% else %}Neue Wiedervorlage{% endif %}</h1>
+    <p class="muted">{% if w.erledigt %}Erledigt am {{ w.erledigt_am|date:"d.m.Y, H:i" }}{% if w.erledigt_von %} von {{ w.erledigt_von }}{% endif %}.{% elif w.beleg %}Zu {{ w.beleg }}.{% else %}Kontorfreund zeigt sie am Fälligkeitstag auf der Übersicht.{% endif %}</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="weiter" value="{{ weiter }}">
+  <div class="form-grid">
+    {% include "core/feld.html" with f=form.titel breit=True %}
+    {% include "core/feld.html" with f=form.faellig %}
+    {% include "core/feld.html" with f=form.uhrzeit optional=True %}
+    {% include "core/feld.html" with f=form.kontakt optional=True %}
+    {% include "core/feld.html" with f=form.zustaendig %}
+    {% include "core/feld.html" with f=form.notiz optional=True breit=True %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    {% if weiter %}<a class="btn" href="{{ weiter }}">Abbrechen</a>{% else %}<a class="btn" href="{% url 'wiedervorlagen:liste' %}">Abbrechen</a>{% endif %}
+  </div>
+</form>
+
+{% if w.pk %}
+<section class="form-section" aria-labelledby="t-erledigen">
+  {% if w.erledigt %}
+  <h2 class="form-title" id="t-erledigen">Erledigt</h2>
+  {% if w.ergebnis %}<p>{{ w.ergebnis|linebreaksbr }}</p>{% endif %}
+  <form method="post" action="{% url 'wiedervorlagen:aendern' w.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="weiter" value="{{ request.get_full_path }}">
+    <button class="btn" type="submit" name="aktion" value="oeffnen">{% icon "restore" %}Wieder öffnen</button>
+  </form>
+  {% else %}
+  <h2 class="form-title" id="t-erledigen">Erledigen</h2>
+  <form method="post" action="{% url 'wiedervorlagen:aendern' w.pk %}" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="weiter" value="{{ weiter|default:request.get_full_path }}">
+    {% include "core/feld.html" with f=erledigen_form.ergebnis optional=True %}
+    <p class="actions"><button class="btn" type="submit" name="aktion" value="erledigen">{% icon "check" %}Erledigt</button></p>
+  </form>
+  {% endif %}
+</section>
+
+<form method="post" action="{% url 'wiedervorlagen:loeschen' w.pk %}">
+  {% csrf_token %}
+  <button class="btn btn-ghost" type="submit" data-confirm="Wiedervorlage „{{ w.titel }}“ löschen?">{% icon "x" %}Löschen</button>
+</form>
+{% endif %}
+{% endblock %}

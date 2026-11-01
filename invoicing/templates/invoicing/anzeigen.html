@@ -32,6 +32,7 @@
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
     {% if rechnung.xml_datei %}<a class="btn" href="{% url 'invoicing:xml' rechnung.pk %}">{% icon "download" %}XRechnung (XML)</a>{% endif %}
+    {% if rechnung.ist_posten %}<a class="btn" href="{% url 'wiedervorlagen:neu' %}?rechnung={{ rechnung.pk }}&amp;in={{ rechnung.zahlungsziel }}&amp;titel={{ "Rechnung "|add:rechnung.nummer|add:": Zahlung prüfen"|urlencode }}&amp;weiter={{ request.get_full_path|urlencode }}">{% icon "clock" %}Wiedervorlage</a>{% endif %}
   </div>
 </div>
 

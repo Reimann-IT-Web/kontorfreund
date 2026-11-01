@@ -1,0 +1,27 @@
+{% load kf %}<li class="row row-aufgabe{% if w.erledigt %} is-done{% endif %}">
+  {% if w.erledigt %}<span class="status status-ok">{% icon "check" %}{{ w.erledigt_am|date:"d.m.Y" }}</span>
+  {% elif w.ueberfaellig %}<span class="status status-danger">{% icon "alert" %}seit {{ w.faellig|date:"d.m.Y" }}</span>
+  {% elif w.heute %}<span class="status status-today">{% icon "clock" %}heute{% if w.uhrzeit %} {{ w.uhrzeit|time:"H:i" }}{% endif %}</span>
+  {% else %}<span class="status status-open">{% icon "calendar" %}{{ w.faellig|date:"D, d.m." }}{% if w.uhrzeit %} {{ w.uhrzeit|time:"H:i" }}{% endif %}</span>{% endif %}
+  <div class="row-main">
+    <p class="row-title"><a href="{% url 'wiedervorlagen:bearbeiten' w.pk %}?weiter={{ weiter|urlencode }}">{{ w.titel }}</a></p>
+    {% if w.kontakt or w.beleg or w.zustaendig and w.zustaendig != user or w.ergebnis %}<p class="row-meta">{% if w.kontakt %}<a href="{% url 'historie:verlauf' w.kontakt_id %}">{{ w.kontakt }}</a>{% endif %}{% if w.beleg %}{% if w.kontakt %} · {% endif %}{{ w.beleg }}{% endif %}{% if w.zustaendig and w.zustaendig != user %} · für {{ w.zustaendig }}{% endif %}{% if w.ergebnis %} · {{ w.ergebnis|truncatechars:80 }}{% endif %}</p>{% endif %}
+  </div>
+  <form class="row-actions" method="post" action="{% url 'wiedervorlagen:aendern' w.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="weiter" value="{{ weiter }}">
+    {% if w.erledigt %}
+    <button class="btn btn-sm" type="submit" name="aktion" value="oeffnen">{% icon "restore" %}Wieder öffnen</button>
+    {% else %}
+    <label class="visually-hidden" for="verschieben-{{ w.pk }}">„{{ w.titel }}“ verschieben</label>
+    <select id="verschieben-{{ w.pk }}" name="verschieben" data-auto-submit>
+      <option value="">Verschieben …</option>
+      <option value="morgen">auf morgen</option>
+      <option value="woche">um eine Woche</option>
+      <option value="monat">um einen Monat</option>
+    </select>
+    <noscript><button class="btn btn-sm" type="submit">Verschieben</button></noscript>
+    <button class="btn btn-sm" type="submit" name="aktion" value="erledigen">{% icon "check" %}Erledigt</button>
+    {% endif %}
+  </form>
+</li>

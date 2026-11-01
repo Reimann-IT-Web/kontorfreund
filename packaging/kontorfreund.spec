@@ -21,6 +21,8 @@ APPS = [
     "archive",
     "eingang",
     "auswertungen",
+    "wiedervorlagen",
+    "historie",
     "backups",
     "konten",
     "protokoll",

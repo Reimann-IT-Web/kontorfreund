@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -9,6 +9,7 @@ from angebote.models import Angebot
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
+from wiedervorlagen.models import DEMNAECHST, Wiedervorlage
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
 
@@ -29,6 +30,10 @@ def start(request):
     mahnstufe = dict(mahnen.vorschlaege(ueberfaellig, Mahnstufe.alle()))
     for r in ueberfaellig:
         r.mahnstufe = mahnstufe.get(r)
+    heute = date.today()
+    aufgaben = Wiedervorlage.offen_fuer(request.user).select_related(
+        "kontakt", "zustaendig", "angebot", "rechnung"
+    )
     return render(
         request,
         "core/start.html",
@@ -50,6 +55,10 @@ def start(request):
                     status=Angebot.Status.FERTIG, antwort=""
                 ).select_related("kontakt"),
                 key=lambda a: a.gueltig_bis,
+            ),
+            "wiedervorlagen": aufgaben.filter(faellig__lte=heute),
+            "demnaechst": aufgaben.filter(
+                faellig__gt=heute, faellig__lte=heute + timedelta(days=DEMNAECHST)
             ),
             "umsatz": umsatz,
             "grenze": umsaetze.VORJAHR,

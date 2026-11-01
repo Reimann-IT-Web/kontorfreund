@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Wiedervorlagen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Wiedervorlagen</h1>
+    <p class="muted">Woran Sie denken wollen: Angebote nachfassen, Rückrufe, Termine. Erledigte stehen danach im Verlauf der Adresse.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'wiedervorlagen:neu' %}">{% icon "plus" %}Neue Wiedervorlage</a>
+  </div>
+</div>
+
+<div class="filterbar">
+  <nav class="segmented" aria-label="Anzeigen">
+    <a href="?{% if alle %}wer=alle{% endif %}"{% if not erledigt %} aria-current="page"{% endif %}>Offen</a>
+    <a href="?zeigen=erledigt{% if alle %}&amp;wer=alle{% endif %}"{% if erledigt %} aria-current="page"{% endif %}>Erledigt</a>
+  </nav>
+  {% if mehrere %}
+  <nav class="segmented" aria-label="Zuständig">
+    <a href="?{% if erledigt %}zeigen=erledigt{% endif %}"{% if not alle %} aria-current="page"{% endif %}>Meine</a>
+    <a href="?wer=alle{% if erledigt %}&amp;zeigen=erledigt{% endif %}"{% if alle %} aria-current="page"{% endif %}>Alle</a>
+  </nav>
+  {% endif %}
+</div>
+
+{% for titel, eintraege in gruppen %}
+<section class="group" aria-labelledby="gruppe-{{ forloop.counter }}">
+  <h2 class="group-head" id="gruppe-{{ forloop.counter }}">{{ titel }} <span class="count">{{ eintraege|length }}</span></h2>
+  <ul class="rows">
+    {% for w in eintraege %}{% include "wiedervorlagen/zeile.html" %}{% endfor %}
+  </ul>
+</section>
+{% empty %}
+<div class="empty">
+  {% if erledigt %}
+  <h2>Noch nichts erledigt</h2>
+  <p class="muted">Erledigte Wiedervorlagen stehen hier, die neuesten oben.</p>
+  {% else %}
+  <h2>Keine offenen Wiedervorlagen</h2>
+  <p class="muted">Legen Sie eine an, wenn Sie an etwas denken wollen. Am schnellsten geht es aus dem Verlauf einer Adresse oder von einem Angebot aus.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'wiedervorlagen:neu' %}">{% icon "plus" %}Neue Wiedervorlage</a></p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

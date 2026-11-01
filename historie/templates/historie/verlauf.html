@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ kontakt }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'contacts:liste' %}">Adressen</a></li>
+    <li aria-current="page">{{ kontakt }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ kontakt }}</h1>
+    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'contacts:bearbeiten' kontakt.pk %}">{% icon "pencil" %}Bearbeiten</a>
+    <a class="btn" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Wiedervorlage</a>
+    <a class="btn btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ kontakt.pk }}">{% icon "file" %}Rechnung schreiben</a>
+  </div>
+</div>
+
+<div class="split">
+  <div>
+    <section class="form-section" aria-labelledby="t-erfassen">
+      <h2 class="form-title" id="t-erfassen">Eintragen</h2>
+      <form class="form" method="post" novalidate>
+        {% csrf_token %}
+        {% for fehler in form.non_field_errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+        <fieldset class="field erfassen-art">
+          <legend class="visually-hidden">Art</legend>
+          <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <div class="form-grid">
+          {% include "core/feld.html" with f=form.betreff %}
+          {% include "core/feld.html" with f=form.zeitpunkt %}
+          {% include "core/feld.html" with f=form.text breit=True optional=True %}
+        </div>
+        <button class="btn btn-primary" type="submit">{% icon "check" %}Eintragen</button>
+      </form>
+    </section>
+
+    {% if offen %}
+    <section class="group" aria-labelledby="t-offen">
+      <h2 class="group-head" id="t-offen">Offene Wiedervorlagen <span class="count">{{ offen|length }}</span></h2>
+      <ul class="rows">
+        {% for w in offen %}{% include "wiedervorlagen/zeile.html" %}{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="group" aria-labelledby="t-verlauf">
+      <div class="verlauf-kopf">
+        <h2 class="group-head" id="t-verlauf">Verlauf <span class="count">{{ punkte|length }}</span></h2>
+        {% if anzahl %}
+        <form method="get">
+          <label class="field field-inline">
+            <span class="visually-hidden">Nur diese Art zeigen</span>
+            <select name="art" data-auto-submit>
+              {% for wert, name in arten %}<option value="{{ wert }}"{% if wert == art %} selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+          </label>
+          <noscript><button class="btn btn-sm" type="submit">Anzeigen</button></noscript>
+        </form>
+        {% endif %}
+      </div>
+      {% if punkte %}
+      <ul class="rows verlauf">
+        {% for p in punkte %}
+        <li class="row row-verlauf">
+          <span class="status status-void">{% icon p.icon %}{{ p.tag|date:"d.m.Y" }}{% if p.uhrzeit %} {{ p.uhrzeit|time:"H:i" }}{% endif %}</span>
+          <div class="row-main">
+            <p class="row-title">{% if p.url %}<a href="{{ p.url }}"{% if p.neues_fenster %} target="_blank" rel="noopener"{% endif %}>{{ p.titel }}</a>{% elif p.vorgang %}<a href="{% url 'historie:bearbeiten' p.vorgang.pk %}">{{ p.titel }}</a>{% else %}{{ p.titel }}{% endif %}</p>
+            {% if p.text %}<p class="verlauf-text">{{ p.text|linebreaksbr }}</p>{% endif %}
+            {% if p.benutzer %}<p class="row-meta">{{ p.benutzer }}</p>{% endif %}
+          </div>
+          <span class="amount">{% if p.betrag is not None %}{{ p.betrag|euro }}{% endif %}</span>
+          {% if p.nachfassen %}<a class="btn btn-sm btn-ghost" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;{{ p.nachfassen }}&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Nachfassen</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% elif anzahl %}
+      <p class="muted">Keine Einträge dieser Art. <a href="?">Alles zeigen</a></p>
+      {% else %}
+      <div class="empty empty-inline">
+        <h3>Noch nichts passiert</h3>
+        <p class="muted">Tragen Sie oben Anrufe, E-Mails, Termine und Notizen ein. Angebote, Rechnungen und Zahlungen erscheinen hier von selbst.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="side" aria-label="Adresse">
+    <section class="side-section" aria-labelledby="t-kontakt">
+      <h2 id="t-kontakt" class="panel-title">Kontakt</h2>
+      {% if kontakt.telefon %}<p><a class="link" href="tel:{{ kontakt.telefon|cut:' ' }}">{% icon "phone" %}{{ kontakt.telefon }}</a></p>{% endif %}
+      {% if kontakt.email %}<p><a class="link" href="mailto:{{ kontakt.email }}">{% icon "mail" %}{{ kontakt.email }}</a></p>{% endif %}
+      {% if kontakt.website %}<p class="small muted">{{ kontakt.website }}</p>{% endif %}
+      {% if not kontakt.telefon and not kontakt.email and not kontakt.website %}<p class="small muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
+    </section>
+    <section class="side-section" aria-labelledby="t-anschrift">
+      <h2 id="t-anschrift" class="panel-title">Anschrift</h2>
+      <address class="plain">{% for zeile in kontakt.anschrift_zeilen %}{{ zeile }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</address>
+    </section>
+    {% if kontakt.notiz %}
+    <section class="side-section" aria-labelledby="t-notiz">
+      <h2 id="t-notiz" class="panel-title">Notiz</h2>
+      <p class="small">{{ kontakt.notiz|linebreaksbr }}</p>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

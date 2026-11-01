@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.4.0 – 01.11.2026
+
+- Wiedervorlagen: Erinnerungen mit Fälligkeit und auf Wunsch Uhrzeit, zu einer Adresse, einem Angebot oder einer Rechnung, mit zuständigem Mitarbeiter. Die Übersicht zeigt fällige und die der nächsten sieben Tage, die Seitenleiste zählt die fälligen. Direkt aus jeder Liste auf morgen, um eine Woche oder einen Monat verschieben oder erledigen; erledigt mit einer Notiz zum Ergebnis.
+- Verlauf je Adresse („Verlauf und Notizen“ in der Adressliste): Anrufe, E-Mails, Termine und Notizen in Sekunden eintragen; dazu stehen Angebote, Rechnungen, Zahlungen, Mahnungen, erledigte Wiedervorlagen, Eingangsrechnungen und die Belege aus dem bisherigen Programm von selbst in der Zeitleiste, filterbar nach Art. Aus jedem Eintrag lässt sich mit „Nachfassen“ eine Wiedervorlage anlegen.
+- Auf den Seiten von Angeboten und Rechnungen gibt es einen Knopf „Wiedervorlage“.
+
 ## 0.3.1 – 01.11.2026
 
 Ergebnisse einer Sicherheitsprüfung des gesamten Codes:

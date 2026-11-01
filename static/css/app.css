@@ -929,6 +929,82 @@ kbd {
   display: inline;
 }
 
+/* Wiedervorlagen: verschieben und erledigen direkt in der Zeile */
+.row-aufgabe {
+  grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+.row-actions select {
+  width: auto;
+  min-height: 2.25rem;
+  padding-block: 0.3rem;
+  font-size: var(--fs-sm);
+}
+
+/* Verlauf einer Adresse */
+.verlauf-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.verlauf-kopf .group-head {
+  margin-bottom: 0;
+}
+
+.row-verlauf {
+  align-items: start;
+}
+
+.rows {
+  container-type: inline-size;
+}
+
+/* In schmalen Spalten (Übersicht, Verlauf) stehen die Knöpfe unter dem Text,
+   damit der Titel Platz hat; auf dem Handy gilt das Raster weiter unten. */
+@media (min-width: 40.0625rem) {
+  .row-verlauf {
+    grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+  }
+
+  .row-verlauf .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  @container (max-width: 48rem) {
+    .row-aufgabe {
+      grid-template-columns: 9.5rem minmax(0, 1fr);
+      row-gap: var(--s2);
+    }
+
+    .row-aufgabe .row-actions {
+      grid-column: 2;
+      justify-content: flex-start;
+    }
+  }
+}
+
+.verlauf-text {
+  margin-top: var(--s1);
+  overflow-wrap: anywhere;
+}
+
+.erfassen-art {
+  margin-bottom: var(--s4);
+}
+
 .side {
   display: flex;
   flex-direction: column;
@@ -1050,6 +1126,8 @@ kbd {
 input[type="text"],
 input[type="search"],
 input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
 input[type="email"],
 input[type="tel"],
 input[type="url"],
@@ -2648,6 +2726,11 @@ input[type="file"]::file-selector-button {
   .row .btn {
     grid-area: action;
     justify-self: start;
+  }
+
+  .row-actions {
+    grid-area: action;
+    justify-content: flex-start;
   }
 
   .col-ort,

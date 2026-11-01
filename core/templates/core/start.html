@@ -51,6 +51,15 @@
       </ol>
     {% else %}
       <h2 id="heute">Heute zu tun</h2>
+      {% with weiter=request.get_full_path %}
+      {% if wiedervorlagen %}
+      <div class="group">
+        <h3 class="group-head">Wiedervorlagen <span class="count">{{ wiedervorlagen|length }}</span></h3>
+        <ul class="rows">
+          {% for w in wiedervorlagen %}{% include "wiedervorlagen/zeile.html" %}{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
       {% if ueberfaellig %}
       <div class="group">
         <h3 class="group-head">Überfällige Rechnungen <span class="count">{{ ueberfaellig|length }}</span></h3>
@@ -87,12 +96,22 @@
           {% endfor %}
         </ul>
       </div>
-      {% elif not ueberfaellig %}
+      {% endif %}
+      {% if not wiedervorlagen and not ueberfaellig and not offene_angebote %}
       <div class="empty empty-inline">
         <h3>Heute ist nichts fällig</h3>
         <p class="muted">Fällige Rechnungen, Wiedervorlagen und offene Angebote erscheinen hier, sobald es sie gibt.</p>
       </div>
       {% endif %}
+      {% if demnaechst %}
+      <div class="group">
+        <h3 class="group-head">Demnächst <span class="count">{{ demnaechst|length }}</span></h3>
+        <ul class="rows">
+          {% for w in demnaechst %}{% include "wiedervorlagen/zeile.html" %}{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% endwith %}
     {% endif %}
   </section>
 

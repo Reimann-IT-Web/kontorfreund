@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ vorgang.get_art_display }} bearbeiten{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'contacts:liste' %}">Adressen</a></li>
+    <li><a href="{% url 'historie:verlauf' vorgang.kontakt_id %}">{{ vorgang.kontakt }}</a></li>
+    <li aria-current="page">{{ vorgang.get_art_display }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ vorgang.get_art_display }} bearbeiten</h1>
+    <p class="muted">Eingetragen{% if vorgang.benutzer %} von {{ vorgang.benutzer }}{% endif %} am {{ vorgang.erstellt|date:"d.m.Y, H:i" }}.</p>
+  </div>
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  {% for fehler in form.non_field_errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+  <fieldset class="field erfassen-art">
+    <legend class="visually-hidden">Art</legend>
+    <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+  </fieldset>
+  <div class="form-grid">
+    {% include "core/feld.html" with f=form.betreff %}
+    {% include "core/feld.html" with f=form.zeitpunkt %}
+    {% include "core/feld.html" with f=form.text breit=True optional=True %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    <a class="btn" href="{% url 'historie:verlauf' vorgang.kontakt_id %}">Abbrechen</a>
+  </div>
+</form>
+
+<form method="post" action="{% url 'historie:loeschen' vorgang.pk %}">
+  {% csrf_token %}
+  <button class="btn btn-ghost" type="submit" data-confirm="Diesen Eintrag löschen?">{% icon "x" %}Löschen</button>
+</form>
+{% endblock %}

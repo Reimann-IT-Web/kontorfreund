@@ -26,7 +26,7 @@ NAVIGATION = [
         "key": "wiedervorlagen",
         "label": "Wiedervorlagen",
         "icon": "clock",
-        "slug": "wiedervorlagen",
+        "url": "wiedervorlagen:liste",
     },
     {
         "key": "ablage",
@@ -46,11 +46,6 @@ NAVIGATION = [
 
 # Bereiche, die noch nicht gebaut sind: (Titel, was kommt, Phase).
 PLATZHALTER = {
-    "wiedervorlagen": (
-        "Wiedervorlagen",
-        "Erinnerungen mit Fälligkeit, schnell verschieben und erledigen.",
-        "Phase 1",
-    ),
     "hilfe": (
         "Hilfe",
         "Kurze Anleitungen zu jedem Bereich und Antworten auf häufige Fragen.",

@@ -85,6 +85,7 @@
               {% if k.anzahl_eingang %}<h3 class="detail-title detail-gap">Eingangsrechnungen</h3><p><a class="link" href="{% url 'eingang:liste' %}?kontakt={{ k.pk }}">{% icon "inbox" %}{{ k.anzahl_eingang }} Rechnung{{ k.anzahl_eingang|pluralize:"en" }} von dieser Adresse</a></p>{% endif %}
             </div>
             <div class="detail-actions">
+              <a class="btn btn-sm" href="{% url 'historie:verlauf' k.pk %}">{% icon "list" %}Verlauf und Notizen</a>
               <a class="btn btn-sm btn-primary" href="{% url 'invoicing:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Rechnung schreiben</a>
               <a class="btn btn-sm" href="{% url 'angebote:neu' %}?empfaenger={{ k.pk }}">{% icon "file" %}Angebot schreiben</a>
               <a class="btn btn-sm" href="{% url 'contacts:bearbeiten' k.pk %}">{% icon "pencil" %}Bearbeiten</a>
