@@ -81,9 +81,7 @@ def _zustand(datei, sha256):
 
 def pruefen():
     """Alle abgelegten Dateien prüfen; Abweichungen, die neu sind, ins Protokoll."""
-    # Protokoll und Ergebnis zusammen, sonst stünde eine Abweichung beim nächsten Mal
-    # noch einmal im Protokoll.
-    with _sperre, transaction.atomic():
+    with _sperre:
         vorher = Pruefung.letzte()
         bekannt = (
             {(b["datei"], b["zustand"]): b["seit"] for b in vorher.befunde}
@@ -91,9 +89,11 @@ def pruefen():
             else {}
         )
         heute = timezone.localdate().isoformat()
-        anzahl, befunde = 0, []
-        for beleg, bezeichnung, url, datei, sha256 in _dateien():
-            anzahl += 1
+        # Die Prüfsummen dauern; dabei hält keine Transaktion die Datenbank gesperrt,
+        # sonst scheitern gleichzeitige Schreibzugriffe mit „database is locked“.
+        dateien = list(_dateien())
+        befunde, neu = [], []
+        for beleg, bezeichnung, url, datei, sha256 in dateien:
             if not (zustand := _zustand(datei, sha256)):
                 continue
             seit = bekannt.get((datei, zustand))
@@ -108,8 +108,13 @@ def pruefen():
                 }
             )
             if seit is None:
+                neu.append((beleg, datei, zustand))
+        # Protokoll und Ergebnis zusammen, sonst stünde eine Abweichung beim nächsten
+        # Mal noch einmal im Protokoll.
+        with transaction.atomic():
+            for beleg, datei, zustand in neu:
                 eintragen(Eintrag.Aktion.ABLAGE, beleg, [[datei, "", VORFALL[zustand]]])
-        return Pruefung.objects.create(anzahl=anzahl, befunde=befunde)
+            return Pruefung.objects.create(anzahl=len(dateien), befunde=befunde)
 
 
 def zurueckholen():

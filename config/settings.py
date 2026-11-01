@@ -24,7 +24,7 @@ NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.12.0"
+VERSION = "0.12.1"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -113,6 +113,10 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": DATA_DIR / "db.sqlite3",
+        # Neben den Anfragen schreiben Sicherung, Prüfung der Ablage und Erinnerungen
+        # aus eigenen Threads. Transaktionen sperren gleich zu Beginn und warten dann
+        # bis zu 20 Sekunden, statt mitten drin an „database is locked“ zu scheitern.
+        "OPTIONS": {"transaction_mode": "IMMEDIATE", "timeout": 20},
     }
 }
 

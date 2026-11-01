@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from django.conf import settings
 from django.core.management import call_command
+from django.db import connection
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -104,6 +105,28 @@ def test_alles_unveraendert(client, belege):
     assert "keine Abweichung in 2 Dateien" in ablage.content.decode()
     assert not warnung(ablage)
     assert not warnung(client.get(reverse("core:start")))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_prueft_ohne_die_datenbank_zu_sperren(client, belege, monkeypatch):
+    """Am 01.11.2026 scheiterte die Prüfung im echten Programm zweimal an „database is
+    locked“: Sie rechnete die Prüfsummen in einer offenen Transaktion, während eine
+    Anfrage schrieb. Gesperrt wird nur noch für das Speichern des Ergebnisses."""
+    zustand = pruefung._zustand
+    in_transaktion = []
+
+    def zaehlen(datei, sha256):
+        in_transaktion.append(connection.in_atomic_block)
+        return zustand(datei, sha256)
+
+    monkeypatch.setattr(pruefung, "_zustand", zaehlen)
+    pfad(belege[1]).write_bytes(b"anders")
+    ergebnis = pruefung.pruefen()
+
+    assert in_transaktion == [False, False]
+    assert [b["zustand"] for b in ergebnis.befunde] == [pruefung.VERAENDERT]
+    assert Eintrag.objects.filter(aktion=Eintrag.Aktion.ABLAGE).count() == 1
+    assert settings.DATABASES["default"]["OPTIONS"]["transaction_mode"] == "IMMEDIATE"
 
 
 def test_abweichung_gemeldet_protokolliert_und_wieder_in_ordnung(client, belege):

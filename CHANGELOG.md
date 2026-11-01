@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.12.1 – 01.11.2026
+
+- Behoben: Die tägliche Prüfung der Ablage konnte mit „database is locked“ scheitern, wenn Sie gerade arbeiteten. Sie hielt die Datenbank gesperrt, während sie die Prüfsummen aller Belege rechnete; schrieb in dieser Zeit eine Seite etwas, ließ sich das Ergebnis der Prüfung nicht speichern. Jetzt sperrt sie nur noch für das Speichern. Außerdem warten gleichzeitige Schreibzugriffe bis zu 20 Sekunden aufeinander, statt abzubrechen. Ihre Daten waren davon nicht betroffen; es fehlte nur das Ergebnis der betroffenen Prüfung.
+
 ## 0.12.0 – 01.11.2026
 
 - Dateien an Adressen und Einträgen: Auf der Seite einer Adresse (Verlauf und Notizen) gibt es den Bereich „Dateien“. Verträge, Fotos, PDFs oder andere Dateien wählen Sie dort aus oder ziehen sie einfach hinein, auch mehrere auf einmal. An einen Anruf, eine E-Mail, eine Notiz oder einen Termin hängen Sie Dateien gleich beim Eintragen oder später auf der Seite des Eintrags. PDF und Bilder öffnen sich im Browser, alle anderen Dateien werden heruntergeladen; eine HTML-Datei wird nie im Browser ausgeführt. Höchstens 50 MB je Datei.
