@@ -1,4 +1,5 @@
-"""Benachrichtigungen per SMS (App benachrichtigungen) – mit erfundenen Daten, ohne echte SMS."""
+"""Benachrichtigungen über Telegram (App benachrichtigungen) – mit erfundenen Daten,
+ohne echte Nachrichten."""
 
 import io
 import json
@@ -13,7 +14,7 @@ from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
 
-from benachrichtigungen import autostart, nachrichten, sms
+from benachrichtigungen import autostart, nachrichten, telegram
 from benachrichtigungen import views as benachrichtigungen_views
 from benachrichtigungen.models import Einstellung, Gemeldet
 from contacts.models import Kontakt
@@ -28,6 +29,7 @@ from wiedervorlagen.models import Wiedervorlage
 pytestmark = pytest.mark.django_db
 
 HEUTE = date.today()
+SCHLUESSEL = "123456789:AAHmusterSchluesselFuerTests_0123456789"
 
 
 def um(stunde, minute=0):
@@ -58,8 +60,9 @@ def firma():
 def einstellung(inhaber, firma):
     e = Einstellung.laden()
     e.aktiv = True
-    e.handy = "+491711234567"
-    e.api_schluessel = "geheimer-schluessel"
+    e.bot_schluessel = SCHLUESSEL
+    e.bot_name = "muster_buero_bot"
+    e.chat = "4711"
     e.empfaenger = inhaber
     e.save()
     return e
@@ -67,10 +70,10 @@ def einstellung(inhaber, firma):
 
 @pytest.fixture
 def gesendet(monkeypatch):
-    """Statt seven.io: Texte mitschreiben."""
+    """Statt Telegram: Texte mitschreiben."""
     texte = []
     monkeypatch.setattr(
-        sms, "senden", lambda schluessel, nummer, text: texte.append(text)
+        telegram, "senden", lambda schluessel, chat, text: texte.append(text)
     )
     return texte
 
@@ -136,11 +139,13 @@ def test_tagesuebersicht_einmal_am_tag(client, einstellung, kunde, gesendet):
     nachrichten.erinnern(um(8))
     assert gesendet == [
         f"Muster IT, {HEUTE:%d.%m.}:\n"
-        "Heute: 14:30 Angebot nachfassen (Bäckerei Korn)\n"
+        "Heute: 14:30 Angebot nachfassen\n"
         "Überfällig: 1 Wiedervorlage\n"
-        f"Nicht bezahlt: {rechnung.nummer} Bäckerei Korn 160,00 €\n"
-        f"Zu zahlen: Strom AG 49,90 € bis {bald:%d.%m.}"
+        f"Nicht bezahlt: Rechnung {rechnung.nummer} 160,00 €\n"
+        f"Zu zahlen: Nr. E-1 49,90 € bis {bald:%d.%m.}"
     ]
+    # Keine Namen von Kunden oder Lieferanten an Telegram.
+    assert "Korn" not in gesendet[0] and "Strom" not in gesendet[0]
     einstellung.refresh_from_db()
     assert einstellung.gesendet_am and not einstellung.fehler
 
@@ -150,12 +155,9 @@ def test_tagesuebersicht_einmal_am_tag(client, einstellung, kunde, gesendet):
 
 def test_rechnungen_nur_einmal_gemeldet(client, einstellung, kunde, gesendet):
     ueberfaellige_rechnung(client, kunde)
-    Gemeldet.objects.create(
-        anlass="tag", schluessel=(HEUTE - timedelta(days=1)).isoformat()
-    )
     nachrichten.erinnern(um(8))
     assert "Nicht bezahlt" in gesendet[0]
-    # Am nächsten Tag steht die Rechnung nicht noch einmal drin, also keine SMS.
+    # Am nächsten Tag steht die Rechnung nicht noch einmal drin, also keine Nachricht.
     Gemeldet.objects.filter(anlass="tag").delete()
     nachrichten.erinnern(um(9))
     assert len(gesendet) == 1
@@ -168,7 +170,7 @@ def test_viele_eintraege_werden_gekuerzt(einstellung, gesendet):
     assert "Aufgabe 0; Aufgabe 1; Aufgabe 2 und 2 weitere" in gesendet[0]
 
 
-def test_ruhiger_tag_ohne_sms(einstellung, gesendet):
+def test_ruhiger_tag_ohne_nachricht(einstellung, gesendet):
     nachrichten.erinnern(um(8))
     assert gesendet == []
     assert Gemeldet.objects.filter(anlass="tag", schluessel=HEUTE.isoformat()).exists()
@@ -184,12 +186,12 @@ def test_termin_vorher(einstellung, kunde, gesendet):
     assert gesendet == []
     nachrichten.erinnern(um(14, 5))
     nachrichten.erinnern(um(14, 10))
-    assert gesendet == ["Muster IT: 14:30 Angebot nachfassen (Bäckerei Korn)"]
+    assert gesendet == ["Muster IT: 14:30 Angebot nachfassen"]
     # Verschoben: wieder eine Erinnerung zur neuen Zeit.
     w.uhrzeit = time(15, 0)
     w.save()
     nachrichten.erinnern(um(14, 40))
-    assert gesendet[-1] == "Muster IT: 15:00 Angebot nachfassen (Bäckerei Korn)"
+    assert gesendet[-1] == "Muster IT: 15:00 Angebot nachfassen"
     nachrichten.erinnern(um(15, 10))
     assert len(gesendet) == 2
 
@@ -203,8 +205,9 @@ def test_ohne_vorlauf_keine_terminerinnerung(einstellung, gesendet):
     assert gesendet == []
 
 
-def test_ausgeschaltet(einstellung, gesendet):
-    einstellung.aktiv = False
+@pytest.mark.parametrize("feld", ["aktiv", "chat"])
+def test_ausgeschaltet_oder_nicht_verbunden(einstellung, gesendet, feld):
+    setattr(einstellung, feld, Einstellung._meta.get_field(feld).get_default())
     einstellung.save()
     Wiedervorlage.objects.create(titel="Rückruf", faellig=HEUTE)
     nachrichten.erinnern(um(8))
@@ -214,51 +217,67 @@ def test_ausgeschaltet(einstellung, gesendet):
 def test_fehler_wird_wiederholt(einstellung, monkeypatch, gesendet):
     Wiedervorlage.objects.create(titel="Rückruf", faellig=HEUTE)
 
-    def guthaben_leer(schluessel, nummer, text):
-        raise sms.Fehler(sms.MELDUNGEN["500"])
+    def gestoppt(schluessel, chat, text):
+        raise telegram.Fehler(telegram._meldung(403, "Forbidden"))
 
     with monkeypatch.context() as m:
-        m.setattr(sms, "senden", guthaben_leer)
+        m.setattr(telegram, "senden", gestoppt)
         nachrichten.erinnern(um(8))
     einstellung.refresh_from_db()
-    assert "Guthaben" in einstellung.fehler and not Gemeldet.objects.exists()
+    assert "gestoppt" in einstellung.fehler and not Gemeldet.objects.exists()
     nachrichten.erinnern(um(8, 5))
     einstellung.refresh_from_db()
     assert len(gesendet) == 1 and not einstellung.fehler
-    # Der Stand der SMS steht nicht im Änderungsprotokoll.
-    assert not Eintrag.objects.filter(beschreibung__icontains="Guthaben").exists()
+    # Der Stand der Nachrichten steht nicht im Änderungsprotokoll.
+    assert not Eintrag.objects.filter(aenderungen__icontains="gestoppt").exists()
 
 
-class Antwort(io.BytesIO):
-    pass
+# ---------- Bot-API ----------
 
 
-@pytest.mark.parametrize(
-    ("antwort", "meldung"),
-    [
-        ({"success": "100"}, None),
-        ({"success": "900"}, "API-Schlüssel"),
-        ({"success": "500"}, "Guthaben"),
-        ({"success": "777"}, "Code 777"),
-    ],
-)
-def test_sms_an_seven(monkeypatch, antwort, meldung):
-    anfragen = []
+@pytest.fixture
+def api(monkeypatch):
+    """Antworten der Bot-API je Methode; schreibt die Anfragen mit."""
+    antworten, anfragen = {}, []
 
     def urlopen(anfrage, timeout):
         anfragen.append(anfrage)
-        return Antwort(json.dumps(antwort).encode())
+        antwort = antworten[anfrage.full_url.rsplit("/", 1)[1]]
+        if isinstance(antwort, Exception):
+            raise antwort
+        return io.BytesIO(json.dumps(antwort).encode())
 
-    monkeypatch.setattr(sms.urllib.request, "urlopen", urlopen)
-    if meldung:
-        with pytest.raises(sms.Fehler, match=meldung):
-            sms.senden("schluessel", "+491711234567", "Hallo")
-    else:
-        sms.senden("schluessel", "+491711234567", "Hallo")
-    anfrage = anfragen[0]
-    assert anfrage.full_url == "https://gateway.seven.io/api/sms"
-    assert anfrage.get_header("X-api-key") == "schluessel"
-    assert anfrage.data == b"to=%2B491711234567&text=Hallo"
+    monkeypatch.setattr(telegram.urllib.request, "urlopen", urlopen)
+    return antworten, anfragen
+
+
+def test_senden_an_telegram(api):
+    antworten, anfragen = api
+    antworten["sendMessage"] = {"ok": True, "result": {}}
+    telegram.senden(SCHLUESSEL, "4711", "Hallo")
+    assert (
+        anfragen[0].full_url == f"https://api.telegram.org/bot{SCHLUESSEL}/sendMessage"
+    )
+    assert anfragen[0].data == b"chat_id=4711&text=Hallo"
+
+
+def test_chat_nur_mit_dem_code(api):
+    antworten, _ = api
+    antworten["getUpdates"] = {
+        "ok": True,
+        "result": [
+            {
+                "message": {
+                    "text": "/start abc123",
+                    "chat": {"id": 11, "type": "private"},
+                }
+            },
+            {"message": {"text": "/start", "chat": {"id": 22, "type": "private"}}},
+            {"message": {"text": "/start abc123", "chat": {"id": 33, "type": "group"}}},
+        ],
+    }
+    assert telegram.chat_finden(SCHLUESSEL, "abc123") == "11"
+    assert telegram.chat_finden(SCHLUESSEL, "anders") is None
 
 
 @pytest.mark.parametrize(
@@ -266,81 +285,100 @@ def test_sms_an_seven(monkeypatch, antwort, meldung):
     [
         (
             urllib.error.HTTPError(
-                "https://gateway.seven.io/api/sms", 401, "", {}, None
+                "https://api.telegram.org/", 401, "", {}, io.BytesIO(b"{}")
             ),
-            "API-Schlüssel",
+            "kennt diesen Bot-Schlüssel nicht",
+        ),
+        (
+            urllib.error.HTTPError(
+                "https://api.telegram.org/",
+                400,
+                "",
+                {},
+                io.BytesIO(b'{"description": "Bad Request: chat not found"}'),
+            ),
+            "neu verbinden",
         ),
         (urllib.error.URLError("offline"), "Keine Verbindung"),
     ],
 )
-def test_sms_ohne_verbindung(monkeypatch, fehler, meldung):
-    def urlopen(anfrage, timeout):
-        raise fehler
-
-    monkeypatch.setattr(sms.urllib.request, "urlopen", urlopen)
-    with pytest.raises(sms.Fehler, match=meldung):
-        sms.senden("schluessel", "+491711234567", "Hallo")
+def test_fehler_von_telegram(api, fehler, meldung):
+    antworten, _ = api
+    antworten["sendMessage"] = fehler
+    with pytest.raises(telegram.Fehler, match=meldung):
+        telegram.senden(SCHLUESSEL, "4711", "Hallo")
 
 
-def test_einstellungen_speichern(client, inhaber):
+# ---------- Seite ----------
+
+
+def test_einrichten_und_verbinden(client, inhaber, monkeypatch):
+    monkeypatch.setattr(telegram, "bot", lambda schluessel: "muster_buero_bot")
     url = reverse("benachrichtigungen:einstellungen")
-    daten = {
-        "aktiv": "on",
-        "handy": "0171 / 123 45 67",
-        "api_schluessel": "geheimer-schluessel",
-        "uhrzeit": "07:30",
-        "vorlauf": "30",
-    }
+    seite = client.get(url).content.decode()
+    assert "@BotFather" in seite and "Erscheint, sobald der Schlüssel" in seite
+
+    daten = {"bot_schluessel": SCHLUESSEL, "uhrzeit": "07:30", "vorlauf": "30"}
     assert client.post(url, daten).url == url
     e = Einstellung.laden()
-    assert (e.handy, e.api_schluessel, e.empfaenger) == (
-        "+491711234567",
-        "geheimer-schluessel",
-        inhaber,
+    assert (e.bot_schluessel, e.bot_name, e.chat) == (
+        SCHLUESSEL,
+        "muster_buero_bot",
+        "",
     )
     seite = client.get(url).content.decode()
-    assert "geheimer-schluessel" not in seite and "Leer lassen" in seite
-    # Leer gelassen bleibt der Schlüssel.
-    client.post(url, {**daten, "api_schluessel": ""})
-    assert Einstellung.laden().api_schluessel == "geheimer-schluessel"
-    assert not Eintrag.objects.filter(aenderungen__icontains="geheimer").exists()
+    assert SCHLUESSEL not in seite and "Leer lassen" in seite
+    assert f"https://t.me/muster_buero_bot?start={e.code}" in seite
 
+    # Noch nicht auf „Starten“ getippt.
+    monkeypatch.setattr(telegram, "chat_finden", lambda schluessel, code: None)
+    antwort = client.post(reverse("benachrichtigungen:verbinden"), follow=True)
+    assert "Noch nicht gefunden" in antwort.content.decode()
 
-def test_eingeschaltet_braucht_nummer_und_schluessel(client):
-    seite = client.post(
-        reverse("benachrichtigungen:einstellungen"),
-        {"aktiv": "on", "handy": "", "uhrzeit": "07:30", "vorlauf": "30"},
-    ).content.decode()
-    assert seite.count("Bitte ausfüllen, damit SMS ankommen.") == 2
-    assert not Einstellung.laden().aktiv
-
-
-def test_falsche_handynummer(client):
-    seite = client.post(
-        reverse("benachrichtigungen:einstellungen"),
-        {"handy": "12", "uhrzeit": "07:30", "vorlauf": "30"},
-    ).content.decode()
-    assert "Bitte eine Handynummer eingeben" in seite
-
-
-def test_testnachricht(client, monkeypatch):
-    texte = []
+    gesendet = []
     monkeypatch.setattr(
-        sms, "senden", lambda schluessel, nummer, text: texte.append((nummer, text))
+        telegram,
+        "chat_finden",
+        lambda schluessel, code: "4711" if code == e.code else None,
     )
-    antwort = client.post(
-        reverse("benachrichtigungen:einstellungen"),
-        {
-            "handy": "+49 171 1234567",
-            "api_schluessel": "geheimer-schluessel",
-            "uhrzeit": "07:30",
-            "vorlauf": "30",
-            "test": "1",
-        },
-        follow=True,
+    monkeypatch.setattr(
+        telegram, "senden", lambda schluessel, chat, text: gesendet.append((chat, text))
     )
-    assert texte == [("+491711234567", benachrichtigungen_views.TEST)]
-    assert "Testnachricht gesendet" in antwort.content.decode()
+    antwort = client.post(reverse("benachrichtigungen:verbinden"), follow=True)
+    e.refresh_from_db()
+    assert (e.chat, e.aktiv, e.empfaenger) == ("4711", True, inhaber)
+    assert gesendet == [("4711", benachrichtigungen_views.VERBUNDEN)]
+    assert "Verbunden mit @muster_buero_bot" in antwort.content.decode()
+    assert not Eintrag.objects.filter(aenderungen__icontains="AAHmuster").exists()
+
+
+def test_falscher_schluessel(client, monkeypatch):
+    url = reverse("benachrichtigungen:einstellungen")
+    seite = client.post(
+        url, {"bot_schluessel": "hallo", "uhrzeit": "07:30", "vorlauf": "30"}
+    ).content.decode()
+    assert "Das ist kein Bot-Schlüssel" in seite
+
+    def unbekannt(schluessel):
+        raise telegram.Fehler(telegram._meldung(401, "Unauthorized"))
+
+    monkeypatch.setattr(telegram, "bot", unbekannt)
+    seite = client.post(
+        url, {"bot_schluessel": SCHLUESSEL, "uhrzeit": "07:30", "vorlauf": "30"}
+    ).content.decode()
+    assert "kennt diesen Bot-Schlüssel nicht" in seite
+    assert not Einstellung.laden().bot_schluessel
+
+
+def test_testen_und_trennen(client, einstellung, gesendet):
+    client.post(reverse("benachrichtigungen:testen"))
+    assert gesendet == [benachrichtigungen_views.TEST]
+    code = einstellung.code
+    client.post(reverse("benachrichtigungen:trennen"))
+    einstellung.refresh_from_db()
+    assert not einstellung.chat and not einstellung.aktiv and einstellung.code != code
+    # Der Bot bleibt; nur neu verbinden.
+    assert einstellung.bot_schluessel == SCHLUESSEL
 
 
 def test_nur_fuer_inhaber(anonym):
@@ -348,6 +386,7 @@ def test_nur_fuer_inhaber(anonym):
         Benutzer.objects.create_user("anna@muster.test", name="Anna Beispiel")
     )
     assert anonym.get(reverse("benachrichtigungen:einstellungen")).status_code == 403
+    assert anonym.post(reverse("benachrichtigungen:verbinden")).status_code == 403
 
 
 def test_beim_anmelden_starten(client, monkeypatch):

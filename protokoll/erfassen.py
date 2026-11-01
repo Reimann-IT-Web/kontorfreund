@@ -39,7 +39,7 @@ ERFASST = [
     "benachrichtigungen.Einstellung",
 ]
 # Stehen nie im Klartext im Protokoll.
-VERDECKT = {"password", "mail_passwort", "api_schluessel"}
+VERDECKT = {"password", "mail_passwort", "bot_schluessel"}
 # Ändert sich bei jeder Anmeldung, gehört nicht zu den Geschäftsdaten.
 OHNE = {"last_login"}
 

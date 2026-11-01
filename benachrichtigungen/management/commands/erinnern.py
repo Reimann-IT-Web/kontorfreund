@@ -11,7 +11,7 @@ from benachrichtigungen.nachrichten import erinnern
 
 
 class Command(BaseCommand):
-    help = "Sendet fällige Benachrichtigungen per SMS."
+    help = "Sendet fällige Benachrichtigungen über Telegram."
 
     def handle(self, **optionen):
         # Eine Firma, die nach einem Update noch nicht offen war, ist noch nicht auf dem

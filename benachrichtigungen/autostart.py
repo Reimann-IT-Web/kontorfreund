@@ -1,5 +1,5 @@
 """Kontorfreund beim Anmelden an Windows im Hintergrund starten (kontorfreund.py
---hintergrund), damit SMS und tägliche Sicherung auch ohne Doppelklick kommen.
+--hintergrund), damit Nachrichten und tägliche Sicherung auch ohne Doppelklick kommen.
 
 Der Eintrag steht unter HKCU\\...\\Run; das Deinstallieren entfernt ihn
 (packaging/windows/kontorfreund.iss).

@@ -1,12 +1,14 @@
-"""Was per SMS kommt und wann.
+"""Was über Telegram kommt und wann.
 
 - Tagesübersicht, einmal am Tag ab der eingestellten Uhrzeit: heute fällige
   Wiedervorlagen, wie viele überfällig sind, Rechnungen, die neu überfällig sind, und
-  Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an, kommt keine SMS.
+  Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an, kommt nichts.
 - Termine: Wiedervorlagen mit Uhrzeit, die eingestellte Zeit vorher.
 
-Gemeldet merkt sich jede Meldung; schlägt das Senden fehl, kommt sie in der nächsten
-Runde wieder. Läuft Kontorfreund zur Uhrzeit nicht, kommt die Übersicht beim Start.
+Ohne Namen von Kunden und Lieferanten, denn mit Telegram gibt es keinen Vertrag zur
+Auftragsverarbeitung. Gemeldet merkt sich jede Meldung; schlägt das Senden fehl,
+kommt sie in der nächsten Runde wieder. Läuft Kontorfreund zur Uhrzeit nicht, kommt
+die Übersicht beim Start.
 """
 
 from dataclasses import dataclass
@@ -20,12 +22,12 @@ from eingang.models import Eingangsrechnung
 from wiedervorlagen.models import Wiedervorlage
 from zahlungen import mahnen
 
-from . import sms
+from . import telegram
 from .models import Einstellung, Gemeldet
 
 # Eingangsrechnungen so viele Tage vor der Fälligkeit melden.
 VORHER = 3
-# Höchstens so viele Einträge je Zeile, damit die SMS kurz bleibt.
+# Höchstens so viele Einträge je Zeile, damit die Nachricht kurz bleibt.
 HOECHSTENS = 3
 
 
@@ -39,11 +41,6 @@ def _gemeldet(anlass, schluessel):
     return Gemeldet.objects.filter(anlass=anlass, schluessel=schluessel).exists()
 
 
-def _betrag(wert):
-    # Ohne geschütztes Leerzeichen; das gäbe es nur im Unicode-Satz mit 70 Zeichen je SMS.
-    return euro(wert).replace(" ", " ")
-
-
 def _aufzaehlen(eintraege):
     rest = len(eintraege) - HOECHSTENS
     return "; ".join(eintraege[:HOECHSTENS]) + (
@@ -52,8 +49,7 @@ def _aufzaehlen(eintraege):
 
 
 def _aufgabe(w):
-    zeit = f"{w.uhrzeit:%H:%M} " if w.uhrzeit else ""
-    return f"{zeit}{w.titel}" + (f" ({w.kontakt})" if w.kontakt else "")
+    return f"{w.uhrzeit:%H:%M} {w.titel}" if w.uhrzeit else w.titel
 
 
 def _offen(einstellung):
@@ -70,7 +66,7 @@ def tagesuebersicht(einstellung, jetzt):
     heute = jetzt.date()
     if jetzt.time() < einstellung.uhrzeit or _gemeldet("tag", heute.isoformat()):
         return None
-    offen = _offen(einstellung).select_related("kontakt")
+    offen = _offen(einstellung)
     aufgaben = [_aufgabe(w) for w in offen.filter(faellig=heute)]
     ueberfaellig = offen.filter(faellig__lt=heute).count()
     rechnungen = [
@@ -95,16 +91,14 @@ def tagesuebersicht(einstellung, jetzt):
     if rechnungen:
         zeilen.append(
             "Nicht bezahlt: "
-            + _aufzaehlen(
-                [f"{r.nummer} {r.kontakt} {_betrag(r.offen)}" for r in rechnungen]
-            )
+            + _aufzaehlen([f"Rechnung {r.nummer} {euro(r.offen)}" for r in rechnungen])
         )
     if eingang:
         zeilen.append(
             "Zu zahlen: "
             + _aufzaehlen(
                 [
-                    f"{e.lieferant} {_betrag(e.zahlbetrag)} bis {e.faellig:%d.%m.}"
+                    f"Nr. {e.nummer} {euro(e.zahlbetrag)} bis {e.faellig:%d.%m.}"
                     for e in eingang
                 ]
             )
@@ -148,10 +142,10 @@ def erinnern(jetzt=None):
             continue
         if nachricht.text:
             try:
-                sms.senden(
-                    einstellung.api_schluessel, einstellung.handy, nachricht.text
+                telegram.senden(
+                    einstellung.bot_schluessel, einstellung.chat, nachricht.text
                 )
-            except sms.Fehler as fehler:
+            except telegram.Fehler as fehler:
                 # Nur den Stand, ohne Eintrag im Änderungsprotokoll.
                 Einstellung.objects.filter(pk=1).update(
                     fehler=str(fehler), fehler_am=timezone.now()

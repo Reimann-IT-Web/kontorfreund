@@ -14,33 +14,60 @@
 <div class="page-head">
   <div>
     <h1>Benachrichtigungen</h1>
-    <p class="muted">Kontorfreund schickt Ihnen eine SMS, wenn etwas ansteht: morgens eine Übersicht mit den Wiedervorlagen des Tages, Rechnungen, die nicht bezahlt sind, und Eingangsrechnungen, die Sie bald zahlen müssen. Vor Terminen kommt auf Wunsch eine Erinnerung.</p>
+    <p class="muted">Kontorfreund schickt Ihnen über Telegram eine Nachricht, wenn etwas ansteht: morgens eine Übersicht mit den Wiedervorlagen des Tages, Rechnungen, die nicht bezahlt sind, und Eingangsrechnungen, die Sie bald zahlen müssen. Vor Terminen kommt auf Wunsch eine Erinnerung. Telegram ist kostenlos.</p>
   </div>
 </div>
 
-{% if einstellung.fehler %}
-<p class="callout" role="alert">{% icon "alert" %}<span><strong>Die letzte SMS kam nicht an</strong> ({{ einstellung.fehler_am|date:"d.m.Y H:i" }}). {{ einstellung.fehler }} Kontorfreund versucht es alle fünf Minuten erneut.</span></p>
-{% elif einstellung.gesendet_am %}
-<p class="small muted">Letzte SMS: {{ einstellung.gesendet_am|date:"d.m.Y H:i" }}</p>
+{% if einstellung.fehler and einstellung.verbunden %}
+<p class="callout" role="alert">{% icon "alert" %}<span><strong>Die letzte Nachricht kam nicht an</strong> ({{ einstellung.fehler_am|date:"d.m.Y H:i" }}). {{ einstellung.fehler }} Kontorfreund versucht es alle fünf Minuten erneut.</span></p>
 {% endif %}
 
 <form class="form" method="post" novalidate>
   {% csrf_token %}
-  <section class="form-section" aria-labelledby="t-sms">
-    <h2 class="form-title" id="t-sms">SMS</h2>
-    <p class="muted form-hint">Die SMS verschickt seven.io aus Kiel, für rund 9 Cent je SMS einschließlich Umsatzsteuer, ohne Grundgebühr. So geht es los: bei seven.io registrieren, Guthaben aufladen und im Bereich „Developer“ einen API-Schlüssel anlegen. Die SMS enthalten Titel von Wiedervorlagen, Namen von Kunden und Lieferanten und Beträge; den Vertrag zur Auftragsverarbeitung schließen Sie in Ihrem Kundenkonto bei seven.io ab.</p>
+  {% if einstellung.verbunden %}
+  <section class="form-section" aria-labelledby="t-telegram">
+    <h2 class="form-title" id="t-telegram">Telegram</h2>
+    <p><span class="status status-ok">{% icon "check" %}Verbunden mit @{{ einstellung.bot_name }}</span>{% if einstellung.gesendet_am %} <span class="small muted">· letzte Nachricht {{ einstellung.gesendet_am|date:"d.m.Y H:i" }}</span>{% endif %}</p>
     <div class="form-grid">
       <label class="choice field-wide">
         {{ form.aktiv }}
         <span><strong>{{ form.aktiv.label }}</strong><br><span class="muted">{{ form.aktiv.help_text }}</span></span>
       </label>
-      {% include "core/feld.html" with f=form.handy %}
-      {% include "core/feld.html" with f=form.api_schluessel %}
+    </div>
+    <p class="actions">
+      <button class="btn btn-sm" type="submit" formaction="{% url 'benachrichtigungen:testen' %}" formnovalidate>{% icon "send" %}Testnachricht senden</button>
+      <button class="btn btn-sm btn-ghost" type="submit" formaction="{% url 'benachrichtigungen:trennen' %}" formnovalidate data-confirm="Telegram trennen? Danach kommen keine Nachrichten mehr.">{% icon "x" %}Trennen</button>
+    </p>
+  </section>
+  {% else %}
+  <section class="form-section" aria-labelledby="t-bot">
+    <h2 class="form-title" id="t-bot">1. Eigenen Bot anlegen</h2>
+    <p class="small">Öffnen Sie Telegram, suchen Sie <strong>@BotFather</strong> (mit blauem Haken) und schicken Sie ihm <code>/newbot</code>. Er fragt nach einem Namen, etwa „Kontorfreund {{ firma.name|default:'Büro' }}“, und nach einem Benutzernamen, der auf „bot“ endet, etwa „kontorfreund_buero_bot“.</p>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-schluessel">
+    <h2 class="form-title" id="t-schluessel">2. Schlüssel einfügen</h2>
+    <p class="small form-hint">BotFather antwortet mit einem Schlüssel (Token). Kopieren Sie ihn hierher und speichern Sie.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.bot_schluessel %}
     </div>
   </section>
 
+  <section class="form-section" aria-labelledby="t-verbinden">
+    <h2 class="form-title" id="t-verbinden">3. Verbinden</h2>
+    {% if einstellung.bot_name %}
+    <p class="small">Scannen Sie den Code mit der Kamera Ihres Handys oder öffnen Sie <a href="{{ einstellung.link }}" target="_blank" rel="noopener">@{{ einstellung.bot_name }}</a>. Tippen Sie in Telegram auf „Starten“ und danach hier auf „Verbindung prüfen“.</p>
+    <p><img class="qr" src="{{ qr }}" width="220" height="220" alt="QR-Code, der Ihren Bot in Telegram öffnet"></p>
+    <p><button class="btn" type="submit" formaction="{% url 'benachrichtigungen:verbinden' %}" formnovalidate>{% icon "check" %}Verbindung prüfen</button></p>
+    {% else %}
+    <p class="small muted">Erscheint, sobald der Schlüssel gespeichert ist.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="form-section" aria-labelledby="t-wann">
     <h2 class="form-title" id="t-wann">Wann</h2>
+    <p class="muted form-hint">Namen von Kunden und Lieferanten schickt Kontorfreund nicht an Telegram, nur die Titel Ihrer Wiedervorlagen, Rechnungsnummern und Beträge.</p>
     <div class="form-grid">
       {% include "core/feld.html" with f=form.uhrzeit %}
       {% include "core/feld.html" with f=form.vorlauf %}
@@ -49,13 +76,12 @@
 
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
-    <button class="btn" type="submit" name="test" value="1">{% icon "send" %}Speichern und Testnachricht senden</button>
   </div>
 </form>
 
 <section class="form form-section abschnitt-danach" aria-labelledby="t-hintergrund">
   <h2 class="form-title" id="t-hintergrund">Kontorfreund im Hintergrund</h2>
-  <p class="muted form-hint">SMS kommen nur, solange Kontorfreund läuft, also das Fenster von Kontorfreund offen ist, auch minimiert. Läuft es zur Uhrzeit der Übersicht nicht, kommt sie beim nächsten Start am selben Tag.</p>
+  <p class="muted form-hint">Nachrichten kommen nur, solange Kontorfreund läuft, also das Fenster von Kontorfreund offen ist, auch minimiert. Läuft es zur Uhrzeit der Übersicht nicht, kommt sie beim nächsten Start am selben Tag.</p>
   {% if autostart_moeglich %}
   <form method="post" action="{% url 'benachrichtigungen:autostart' %}">
     {% csrf_token %}

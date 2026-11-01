@@ -102,7 +102,7 @@ def navigation(request):
             },
             {
                 "titel": "Benachrichtigungen",
-                "info": "SMS, wenn etwas ansteht",
+                "info": "Telegram-Nachricht, wenn etwas ansteht",
                 "url": reverse("benachrichtigungen:einstellungen"),
             },
             {

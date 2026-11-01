@@ -1,61 +1,56 @@
-import re
-
 from django import forms
 
+from . import telegram
 from .models import Einstellung
 
 
 class EinstellungForm(forms.ModelForm):
     class Meta:
         model = Einstellung
-        fields = ["aktiv", "handy", "api_schluessel", "uhrzeit", "vorlauf"]
+        fields = ["aktiv", "bot_schluessel", "uhrzeit", "vorlauf"]
         widgets = {
-            "handy": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
-            "api_schluessel": forms.PasswordInput(
+            "bot_schluessel": forms.PasswordInput(
                 render_value=False, attrs={"autocomplete": "off"}
             ),
             "uhrzeit": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
         }
         help_texts = {
             "aktiv": "Jeden Tag eine Übersicht, wenn etwas ansteht, und eine Erinnerung vor Terminen.",
-            "handy": "Ihre eigene Nummer, z. B. 0171 1234567.",
-            "api_schluessel": "Aus Ihrem Kundenkonto bei seven.io, Bereich „Developer“.",
+            "bot_schluessel": "Schickt Ihnen BotFather nach /newbot, z. B. 123456789:AAH…",
             "uhrzeit": "Kommt nur, wenn heute etwas ansteht.",
             "vorlauf": "Für Wiedervorlagen mit Uhrzeit, zusätzlich zur Übersicht.",
         }
 
-    def __init__(self, *args, test=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.test = test
-        if self.instance.api_schluessel:
+        self.neuer_bot = None
+        if self.instance.bot_schluessel:
             self.fields[
-                "api_schluessel"
+                "bot_schluessel"
             ].help_text = "Gespeichert. Leer lassen, um ihn zu behalten."
 
-    def clean_handy(self):
-        nummer = re.sub(r"[\s/().-]", "", self.cleaned_data["handy"])
-        if not nummer:
-            return ""
-        if nummer.startswith("00"):
-            nummer = "+" + nummer[2:]
-        elif nummer.startswith("0"):
-            nummer = "+49" + nummer[1:]
-        if not re.fullmatch(r"\+[1-9]\d{7,14}", nummer):
-            raise forms.ValidationError(
-                "Bitte eine Handynummer eingeben, z. B. 0171 1234567."
-            )
-        return nummer
-
-    def clean_api_schluessel(self):
+    def clean_bot_schluessel(self):
         # Ein leeres Feld behält den gespeicherten Schlüssel; er geht nie zurück an den Browser.
-        return (
-            self.cleaned_data["api_schluessel"].strip() or self.instance.api_schluessel
-        )
+        schluessel = self.cleaned_data["bot_schluessel"].strip()
+        if not schluessel or schluessel == self.instance.bot_schluessel:
+            return self.instance.bot_schluessel
+        if not telegram.SCHLUESSEL.fullmatch(schluessel):
+            raise forms.ValidationError(
+                "Das ist kein Bot-Schlüssel. Er sieht aus wie 123456789:AAH… und "
+                "steht in der Nachricht von BotFather."
+            )
+        try:
+            self.neuer_bot = telegram.bot(schluessel)
+        except telegram.Fehler as fehler:
+            raise forms.ValidationError(str(fehler)) from None
+        return schluessel
 
-    def clean(self):
-        daten = super().clean()
-        if daten.get("aktiv") or self.test:
-            for feld in ("handy", "api_schluessel"):
-                if not daten.get(feld) and feld not in self.errors:
-                    self.add_error(feld, "Bitte ausfüllen, damit SMS ankommen.")
-        return daten
+    def save(self, commit=True):
+        einstellung = super().save(commit=False)
+        if self.neuer_bot:
+            # Neuer Bot: neu verbinden, bis dahin keine Nachrichten.
+            einstellung.bot_name = self.neuer_bot
+            einstellung.trennen()
+        if commit:
+            einstellung.save()
+        return einstellung

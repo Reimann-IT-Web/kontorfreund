@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.6.0 – 01.11.2026
+
+- Benachrichtigungen kommen jetzt kostenlos über Telegram statt per SMS. Unter Einstellungen → Benachrichtigungen legen Sie in drei Schritten einen eigenen Telegram-Bot an und verbinden ihn per QR-Code. Inhalt und Zeitpunkte wie bisher; Namen von Kunden und Lieferanten gehen nicht an Telegram, nur Titel der Wiedervorlagen, Rechnungsnummern und Beträge.
+- Die SMS über seven.io sind entfernt: Kontorfreund unterstützt keine Dienste, die Geld kosten.
+
 ## 0.5.0 – 01.11.2026
 
 - Mehrere Firmen: Unter Einstellungen → Firmen legen Sie eine weitere Firma an und wechseln zwischen ihnen, auch schon auf der Anmeldeseite. Jede Firma hat eigene Adressen, Rechnungen, Nummernkreise, Benutzer und Datensicherung in einem eigenen Ordner; die erste bleibt, wo sie ist. Beim Wechseln startet Kontorfreund in wenigen Sekunden neu, angemeldet bleibt man in jeder Firma. Sicherungen weiterer Firmen tragen die Firma im Dateinamen, damit sich an einem gemeinsamen Speicherort nichts verwechselt.

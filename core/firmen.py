@@ -141,7 +141,7 @@ def umgebung(haupt, kennung):
 
 
 def benachrichtigt(ordner):
-    """Ob die Firma Benachrichtigungen per SMS eingeschaltet hat (App benachrichtigungen)."""
+    """Ob die Firma Benachrichtigungen eingeschaltet hat (App benachrichtigungen)."""
     return bool(
         _abfrage(
             ordner, "SELECT aktiv FROM benachrichtigungen_einstellung WHERE id = 1"
