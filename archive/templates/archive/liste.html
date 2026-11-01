@@ -11,6 +11,7 @@
   </div>
   <form class="actions" method="post" action="{% url 'archive:pruefen' %}">
     {% csrf_token %}
+    {% if user.ist_inhaber %}<a class="btn" href="{% url 'archive:fristen' %}">{% icon "clock" %}Aufbewahrungsfristen</a>{% endif %}
     <button class="btn" type="submit">{% icon "check" %}Jetzt prüfen</button>
   </form>
 </div>
@@ -18,7 +19,7 @@
 {% if befunde %}
 <div class="notice notice-warn" role="alert">
   {% with n=befunde|length %}
-  <p><strong>{{ n }} abgelegte Datei{{ n|pluralize:"en" }} {{ n|pluralize:"fehlt,fehlen" }} oder {{ n|pluralize:"ist,sind" }} verändert.</strong> Kontorfreund ändert und löscht abgelegte Belege nie; das ist außerhalb des Programms geschehen, etwa von Hand im Datenordner, durch ein anderes Programm oder einen Fehler der Festplatte. Belege müssen 8 Jahre unverändert erhalten bleiben.</p>
+  <p><strong>{{ n }} abgelegte Datei{{ n|pluralize:"en" }} {{ n|pluralize:"fehlt,fehlen" }} oder {{ n|pluralize:"ist,sind" }} verändert.</strong> Kontorfreund ändert abgelegte Belege nie und löscht sie nur, wenn Sie es nach Ablauf der Aufbewahrungsfrist bestätigen; das ist außerhalb des Programms geschehen, etwa von Hand im Datenordner, durch ein anderes Programm oder einen Fehler der Festplatte. Belege müssen 8 Jahre unverändert erhalten bleiben.</p>
   {% endwith %}
   <ul>
     {% for b in befunde %}

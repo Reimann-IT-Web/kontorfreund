@@ -19,6 +19,10 @@
 </div>
 {% endif %}
 
+{% if fristen %}
+<p class="callout">{% icon "clock" %}<span>{% with b=fristen.0 a=fristen.1 %}{% if b %}Für {{ b }} Beleg{{ b|pluralize:"e" }} ist die Aufbewahrungsfrist abgelaufen{% if a %}, und {{ a }} gesperrte Adresse{{ a|pluralize:"n" }} {{ a|pluralize:"darf,dürfen" }} jetzt gelöscht werden{% endif %}.{% else %}{{ a }} gesperrte Adresse{{ a|pluralize:"n" }} {{ a|pluralize:"darf,dürfen" }} jetzt gelöscht werden.{% endif %}{% endwith %} Einmal im Jahr entscheiden Sie, ob das weg kann. <a href="{% url 'archive:fristen' %}">Ansehen und entscheiden</a></span></p>
+{% endif %}
+
 <nav class="quickstart" aria-label="Schnellstart">
   <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>

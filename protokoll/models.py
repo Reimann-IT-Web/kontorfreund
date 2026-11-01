@@ -25,7 +25,8 @@ class Eintrag(models.Model):
 
     Unveränderbar: save() legt nur an, delete() und update() gibt es weder am Eintrag
     noch an Abfragen. Einzige Ausnahme ist `schwaerzen`, wenn eine Person die Löschung
-    ihrer Daten verlangt (contacts/datenschutz.py).
+    ihrer Daten verlangt (contacts/datenschutz.py) oder abgelaufene Belege gelöscht
+    werden (archive/fristen.py).
     """
 
     class Aktion(models.TextChoices):
@@ -38,6 +39,7 @@ class Eintrag(models.Model):
         ZURUECK = "zurueck", "Aus der Sicherung zurückgeholt"
         AUSKUNFT = "auskunft", "Auskunft erteilt (Art. 15 DSGVO)"
         LOESCHUNG = "loeschung", "Gelöscht auf Verlangen (Art. 17 DSGVO)"
+        FRISTEN = "fristen", "Aufbewahrungsfristen geprüft"
 
     zeit = models.DateTimeField(default=timezone.now)
     # Kein Fremdschlüssel: Das Protokoll bleibt, auch wenn es den Benutzer nicht mehr gibt.
@@ -70,10 +72,10 @@ class Eintrag(models.Model):
         raise Unveraenderbar
 
     @classmethod
-    def schwaerzen(cls, art, objekt_ids):
+    def schwaerzen(cls, art, objekt_ids, grund=GESCHWAERZT):
         """Bezeichnung und Werte gelöschter Objekte entfernen; Zeitpunkt, Benutzer und
         Aktion bleiben, damit das Protokoll lückenlos bleibt."""
         eintraege = cls.objects.filter(
             art=art, objekt_id__in=[str(pk) for pk in objekt_ids]
         )
-        models.QuerySet.update(eintraege, beschreibung=GESCHWAERZT, aenderungen=[])
+        models.QuerySet.update(eintraege, beschreibung=grund, aenderungen=[])

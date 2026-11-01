@@ -3,15 +3,17 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
+from contacts import datenschutz
 from konten.rechte import nur_inhaber
 
-from . import pruefung
+from . import fristen, pruefung
 from .models import Altbeleg, Pruefung
 
 ARTEN_PLURAL = {
@@ -100,6 +102,63 @@ def zurueckholen(request):
 
 
 # Der eingebaute PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.
+def _jahre(jahre):
+    """„2014“, „2014 und 2015“ oder „2014, 2015 und 2017“."""
+    j = [str(x) for x in sorted(jahre)]
+    return j[0] if len(j) == 1 else f"{', '.join(j[:-1])} und {j[-1]}"
+
+
+@nur_inhaber
+def aufbewahrung(request):
+    """Aufbewahrungsfristen: abgelaufene Belege löschen oder behalten (archive/fristen.py)."""
+    if request.method == "POST":
+        if request.POST.get("aktion") == "behalten":
+            fristen.vermerken("abgelaufene Belege behalten")
+            messages.success(
+                request,
+                "Die Belege bleiben. Im nächsten Jahr fragt Kontorfreund wieder.",
+            )
+            return redirect("archive:fristen")
+        jahre = {int(j) for j in request.POST.getlist("jahr") if j.isdigit()}
+        gewaehlt = request.POST.getlist("adresse")
+        adressen = [k for k in fristen.gesperrt_abgelaufen() if str(k.pk) in gewaehlt]
+        with transaction.atomic():
+            weg = fristen.loeschen(jahre)
+            for kontakt in adressen:
+                datenschutz.loeschen(kontakt)
+            teile = []
+            if weg:
+                teile.append(
+                    f"{len(weg)} Beleg{'e' if len(weg) > 1 else ''} aus "
+                    f"{_jahre({b.datum.year for b in weg})}"
+                )
+            if adressen:
+                teile.append(
+                    f"{len(adressen)} gesperrte Adresse{'n' if len(adressen) > 1 else ''}"
+                )
+            if not teile:
+                messages.error(
+                    request, "Bitte wählen Sie aus, was gelöscht werden soll."
+                )
+                return redirect("archive:fristen")
+            text = f"{' und '.join(teile)} gelöscht"
+            fristen.vermerken(text)
+        messages.success(request, f"{text}.")
+        return redirect("archive:fristen")
+    alle = fristen.abgelaufen()
+    return render(
+        request,
+        "archive/fristen.html",
+        {
+            "bereich": "ablage",
+            "gruppen": fristen.gruppen(alle),
+            "adressen": fristen.gesperrt_abgelaufen(),
+            "entscheidung": fristen.entscheidung(),
+            "naechste": None if alle else fristen.naechste(),
+        },
+    )
+
+
 @csp_override({})
 def datei(request, pk):
     beleg = get_object_or_404(Altbeleg, pk=pk)

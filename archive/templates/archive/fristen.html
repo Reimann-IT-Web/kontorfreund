@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Aufbewahrungsfristen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'archive:liste' %}">Ablage</a></li>
+    <li aria-current="page">Aufbewahrungsfristen</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Aufbewahrungsfristen</h1>
+    <p class="muted">Rechnungen und andere Buchungsbelege 8 Jahre, Angebote, Mahnungen und andere Geschäftsbriefe 6 Jahre, jeweils ab Ende des Jahres (§ 147 AO, § 14b UStG)</p>
+  </div>
+</div>
+
+{% if entscheidung %}
+<p class="callout">{% icon "check" %}<span>Am {{ entscheidung.zeit|date:"d.m.Y" }} entschieden: {{ entscheidung.beschreibung }}. Im nächsten Jahr schlägt Kontorfreund wieder vor, was abgelaufen ist.</span></p>
+{% endif %}
+
+{% if gruppen or adressen %}
+<form class="stack" method="post">
+  {% csrf_token %}
+  <p>Diese Belege müssen Sie nicht mehr aufbewahren. Die Datenschutz-Grundverordnung verlangt, Daten über Personen nicht länger als nötig zu speichern. Deshalb schlägt Kontorfreund einmal im Jahr vor, sie zu löschen. Sie entscheiden.</p>
+  <div class="notice notice-warn">
+    <p><strong>Behalten Sie, was Sie noch brauchen.</strong> Die Frist endet nicht, solange ein Beleg für eine Steuer wichtig ist, die das Finanzamt noch festsetzen oder ändern kann (§ 147 Abs. 3 AO), etwa bei einer laufenden Betriebsprüfung, einem Einspruch oder einer noch nicht abgegebenen Steuererklärung. Auch für einen Rechtsstreit oder eine Gewährleistung können Sie Belege noch brauchen.</p>
+  </div>
+
+  {% for g in gruppen %}
+  <div>
+    <label class="choice"><input type="checkbox" name="jahr" value="{{ g.jahr }}" checked><span><strong>{{ g.jahr }}</strong> · {{ g.arten }}</span></label>
+    <details class="disclosure">
+      <summary>{{ g.belege|length }} Beleg{{ g.belege|length|pluralize:"e" }} ansehen</summary>
+      <ul class="frist-belege">
+        {% for b in g.belege %}<li><span>{{ b.art }} {{ b.nummer }}</span> <span class="muted">{{ b.datum|date:"d.m.Y" }}{% if b.name %} · {{ b.name }}{% endif %} · aufzubewahren bis {{ b.aufbewahren_bis|date:"d.m.Y" }}</span></li>{% endfor %}
+      </ul>
+    </details>
+  </div>
+  {% endfor %}
+
+  {% if adressen %}
+  <h2 class="form-title">Gesperrte Adressen</h2>
+  <p>Diese Personen haben die Löschung ihrer Daten verlangt. Ihre Belege müssen nicht mehr aufbewahrt werden, deshalb lassen sie sich jetzt mit allem, was dazugehört, löschen.</p>
+  {% for k in adressen %}
+  <label class="choice"><input type="checkbox" name="adresse" value="{{ k.pk }}" checked><span><strong>{{ k.kundennummer }}</strong> · {{ k }} · gesperrt seit {{ k.gesperrt_am|date:"d.m.Y" }}</span></label>
+  {% endfor %}
+  {% endif %}
+
+  <p class="muted">Gelöscht werden die Belege mit ihren Dateien, Zahlungen und Einträgen im Änderungsprotokoll; dort bleibt nur, wann wer etwas getan hat. Das lässt sich nicht rückgängig machen. In älteren Datensicherungen stehen sie noch, bis Kontorfreund diese durch neuere ersetzt.</p>
+  <p class="actions">
+    <button class="btn" type="submit" data-confirm="Das Ausgewählte endgültig löschen?">{% icon "trash" %}Ausgewählte löschen</button>
+    <button class="btn btn-ghost" type="submit" name="aktion" value="behalten" formnovalidate>Alle behalten</button>
+  </p>
+</form>
+{% else %}
+<div class="empty">
+  <h2>Nichts abgelaufen</h2>
+  <p class="muted">Zurzeit muss alles noch aufbewahrt werden.{% if naechste %} Die nächste Frist endet am {{ naechste.0|date:"d.m.Y" }} für {{ naechste.1 }} Beleg{{ naechste.1|pluralize:"e" }}.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

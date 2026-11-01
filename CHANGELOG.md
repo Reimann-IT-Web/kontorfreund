@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.15.0 – 01.11.2026
+
+- Aufbewahrungsfristen: Einmal im Jahr zeigt die Übersicht dem Inhaber, für wie viele Belege die Aufbewahrungsfrist abgelaufen ist (Rechnungen 8 Jahre, Angebote, Mahnungen und andere Geschäftsbriefe 6 Jahre, jeweils ab Ende des Jahres). Die neue Seite „Aufbewahrungsfristen“ unter Ablage listet sie nach Jahren; Sie wählen aus, was gelöscht wird, oder behalten alles. Gelöscht werden die Belege mit ihren Dateien und Zahlungen; im Änderungsprotokoll bleibt nur, wann wer etwas getan hat. Belege, auf die noch ein aufzubewahrender Beleg verweist, etwa eine spätere Mahnung oder Stornorechnung, bleiben. Gesperrte Adressen, deren Frist abgelaufen ist, lassen sich dort ebenfalls endgültig löschen. Ihre Entscheidung steht im Protokoll und gilt bis zum Jahresende.
+
 ## 0.14.0 – 01.11.2026
 
 - Datenschutz: Jede Adresse hat für den Inhaber den neuen Knopf „Datenschutz“. Verlangt jemand Auskunft über seine Daten (Art. 15 DSGVO), lädt „Auskunft herunterladen“ eine ZIP-Datei herunter: ein Brief mit allen gespeicherten Angaben, Belegen, Zahlungen, Einträgen im Verlauf, Dateien, Wiedervorlagen und früheren Angaben samt den Informationen, die die DSGVO verlangt, dazu dieselben Daten maschinenlesbar (auskunft.json) und Kopien der Belege und Dateien.

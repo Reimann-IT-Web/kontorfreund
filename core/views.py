@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from angebote.models import Angebot
+from archive import fristen
 from backups import sicherung
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
@@ -73,6 +74,7 @@ def start(request):
             "grenze_prozent": round(umsatz / umsaetze.VORJAHR * 100),
             "grenz_hinweise": umsaetze.hinweise(jahr) if firma.kleinunternehmer else [],
             "naechstes_jahr": jahr + 1,
+            "fristen": fristen.hinweis() if request.user.ist_inhaber else None,
         },
     )
 

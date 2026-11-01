@@ -2082,7 +2082,9 @@ select {
 }
 
 .callout + .table-wrap,
-.callout + .empty {
+.callout + .empty,
+.callout + .quickstart,
+.callout + .stack {
   margin-top: var(--s4);
 }
 
@@ -2599,6 +2601,13 @@ input[type="file"]::file-selector-button {
 
 .disclosure[open] > summary {
   margin-bottom: var(--s2);
+}
+
+.frist-belege {
+  margin: 0;
+  padding-left: var(--s5);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
 }
 
 .op-summen {

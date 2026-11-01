@@ -16,7 +16,6 @@ offene Wiedervorlagen erledigt.
 import json
 import tempfile
 import zipfile
-from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -28,6 +27,10 @@ from django.http import Http404
 from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 
+from angebote.models import Angebot
+from archive import fristen
+from archive.fristen import ENTWURF, belege, frist, loeschbar
+from auftraege.models import Auftragsbestaetigung
 from auswertungen.models import Datev
 from core.models import Firmendaten
 from core.templatetags.kf import euro
@@ -48,33 +51,9 @@ from .forms import KontaktForm
 from .models import Kontakt
 
 VORLAGE = Path(__file__).parent / "typst" / "auskunft.typ"
-
-# Jahre ab Ende des Kalenderjahres: Rechnungen und andere Buchungsbelege 8 (§ 147 Abs. 3
-# AO, § 14b UStG), Handels- und Geschäftsbriefe wie Angebote und Mahnungen 6.
-BUCHUNGSBELEG, GESCHAEFTSBRIEF = 8, 6
-# Rechnungen, Angebote und Auftragsbestätigungen nennen ihn gleich.
-ENTWURF = Rechnung.Status.ENTWURF
 ERLEDIGT = "Adresse gesperrt (Art. 18 DSGVO)"
-
-
-@dataclass
-class Beleg:
-    art: str
-    nummer: str
-    datum: date
-    betrag: Decimal | None
-    jahre: int
-    # Pfade im Datenordner
-    dateien: list
-    positionen: list = field(default_factory=list)
-
-    @property
-    def aufbewahren_bis(self):
-        return date(self.datum.year + self.jahre, 12, 31)
-
-
-def _pfade(*pfade):
-    return [p for p in pfade if p]
+# Belegarten mit Positionen
+MIT_POSITIONEN = (Rechnung, Angebot, Auftragsbestaetigung)
 
 
 def _positionen(beleg):
@@ -88,77 +67,6 @@ def _positionen(beleg):
         }
         for p in beleg.positionen.all()
     ]
-
-
-def belege(kontakt):
-    """Was zur Adresse aufbewahrt werden muss, nach Datum; Entwürfe gehören nicht dazu."""
-    alle = [
-        Beleg(
-            r.bezeichnung,
-            r.nummer,
-            r.datum,
-            r.brutto,
-            BUCHUNGSBELEG,
-            _pfade(r.datei, r.xml_datei),
-            _positionen(r),
-        )
-        for r in kontakt.rechnungen.exclude(status=ENTWURF)
-    ]
-    alle += [
-        Beleg(
-            m.bezeichnung,
-            m.rechnung.nummer,
-            m.datum,
-            m.gesamt,
-            GESCHAEFTSBRIEF,
-            _pfade(m.datei),
-        )
-        for m in Mahnung.objects.filter(rechnung__kontakt=kontakt).select_related(
-            "rechnung"
-        )
-    ]
-    for art, abfrage in (
-        ("Angebot", kontakt.angebote),
-        ("Auftragsbestätigung", kontakt.auftraege),
-    ):
-        alle += [
-            Beleg(
-                art,
-                a.nummer,
-                a.datum,
-                a.brutto,
-                GESCHAEFTSBRIEF,
-                _pfade(a.datei),
-                _positionen(a),
-            )
-            for a in abfrage.exclude(status=ENTWURF)
-        ]
-    alle += [
-        Beleg(
-            a.get_art_display(),
-            a.nummer,
-            a.datum,
-            a.betrag,
-            BUCHUNGSBELEG if a.art in a.UMSATZWIRKSAM else GESCHAEFTSBRIEF,
-            _pfade(a.datei),
-        )
-        for a in kontakt.altbelege.all()
-    ]
-    alle += [
-        Beleg("Eingangsrechnung", e.nummer, e.datum, e.brutto, BUCHUNGSBELEG, [e.datei])
-        for e in kontakt.eingangsrechnungen.all()
-    ]
-    return sorted(alle, key=lambda b: (b.datum, b.nummer))
-
-
-def frist(alle):
-    """Bis wann Belege aufbewahrt werden müssen; None ohne Belege."""
-    return max((b.aufbewahren_bis for b in alle), default=None)
-
-
-def loeschbar(alle):
-    ende = frist(alle)
-    return ende is None or ende < date.today()
 
 
 def entwuerfe(kontakt):
@@ -230,7 +138,11 @@ def auskunft_daten(kontakt, alle, jetzt):
                 "Betrag": b.betrag,
                 "Aufbewahren bis": b.aufbewahren_bis,
                 "Dateien": b.dateien,
-                **({"Positionen": b.positionen} if b.positionen else {}),
+                **(
+                    {"Positionen": _positionen(b.objekt)}
+                    if isinstance(b.objekt, MIT_POSITIONEN)
+                    else {}
+                ),
             }
             for b in alle
         ],
@@ -601,14 +513,6 @@ def umfang(kontakt, alle):
     return [_anzahl(n, e, m) for n, e, m in teile if n]
 
 
-def _entfernen(pfade, ordner):
-    for pfad in pfade:
-        (Path(settings.DATA_DIR) / pfad).unlink(missing_ok=True)
-    ordner = Path(settings.DATA_DIR) / ordner
-    if ordner.is_dir() and not any(ordner.iterdir()):
-        ordner.rmdir()
-
-
 @transaction.atomic
 def loeschen(kontakt):
     """Endgültig löschen; nur, wenn keine Aufbewahrungsfrist mehr läuft."""
@@ -616,34 +520,28 @@ def loeschen(kontakt):
     if not loeschbar(alle):
         raise ValueError("Für diese Adresse müssen noch Belege aufbewahrt werden.")
     weg = umfang(kontakt, alle)
-    pfade = [p for b in alle for p in b.dateien]
-    pfade += [d.datei for d in kontakt.dateien.all()]
-    ordner = f"archiv/dateien/{kontakt.kundennummer}"
-    # Stornos und Korrekturen vor der Rechnung, auf die sie verweisen; Zahlungen,
-    # Mahnungen und Auftragsbestätigungen vor dem, was sie schützt.
-    reihenfolge = [
-        *kontakt.auftraege.all(),
-        *kontakt.angebote.all(),
-        *Mahnung.objects.filter(rechnung__kontakt=kontakt),
-        *Zahlung.objects.filter(rechnung__kontakt=kontakt),
-        *kontakt.rechnungen.order_by("-pk"),
-        *kontakt.altbelege.all(),
-        *kontakt.eingangsrechnungen.all(),
-    ]
+    pfade = [d.datei for d in kontakt.dateien.all()]
     mit = [
         *kontakt.vorgaenge.all(),
         *kontakt.dateien.all(),
         *kontakt.wiedervorlagen.all(),
     ]
-    # Über Abfragen, denn delete() der Belege verweigert das Löschen grundsätzlich. Die
-    # Objekte behalten so auch ihre Nummer für das Schwärzen.
-    for objekt in reihenfolge:
-        type(objekt).objects.filter(pk=objekt.pk).delete()
+    geloescht = fristen.entfernen(
+        [
+            *kontakt.auftraege.all(),
+            *kontakt.angebote.all(),
+            *Mahnung.objects.filter(rechnung__kontakt=kontakt),
+            *kontakt.rechnungen.all(),
+            *kontakt.altbelege.all(),
+            *kontakt.eingangsrechnungen.all(),
+        ]
+    )
+    # Über eine Abfrage: So behält `kontakt` seine Nummer fürs Schwärzen.
     Kontakt.objects.filter(pk=kontakt.pk).delete()
-    schwaerzen([kontakt, *reihenfolge, *mit])
+    schwaerzen([kontakt, *geloescht, *mit])
     eintragen(
         Eintrag.Aktion.LOESCHUNG,
         kontakt,
         beschreibung=kontakt.kundennummer + (f" mit {', '.join(weg)}" if weg else ""),
     )
-    transaction.on_commit(lambda: _entfernen(pfade, ordner))
+    transaction.on_commit(lambda: fristen.wegraeumen(pfade))

@@ -15,7 +15,7 @@ from django.utils.text import capfirst
 
 from core.templatetags.kf import euro, zahl
 
-from .models import Eintrag
+from .models import GESCHWAERZT, Eintrag
 
 # Die laufende Anfrage, gesetzt von middleware.anfrage_merken: daraus der Benutzer.
 ANFRAGE = ContextVar("anfrage", default=None)
@@ -92,7 +92,8 @@ def _wert(objekt, feld):
     return str(wert)
 
 
-def eintragen(aktion, objekt, aenderungen=(), beschreibung=None):
+def eintragen(aktion, objekt=None, aenderungen=(), beschreibung=None):
+    """Ohne Objekt nur mit Beschreibung, etwa für eine Entscheidung des Inhabers."""
     anfrage = ANFRAGE.get()
     benutzer = getattr(anfrage, "user", None)
     angemeldet = bool(benutzer and benutzer.is_authenticated)
@@ -100,20 +101,20 @@ def eintragen(aktion, objekt, aenderungen=(), beschreibung=None):
         aktion=aktion,
         benutzer_id=benutzer.pk if angemeldet else None,
         wer=str(benutzer) if angemeldet else "",
-        art=_name(objekt._meta),
-        objekt_id=str(objekt.pk),
+        art=_name(objekt._meta) if objekt else "",
+        objekt_id=str(objekt.pk) if objekt else "",
         beschreibung=(str(objekt) if beschreibung is None else beschreibung)[:300],
         aenderungen=list(aenderungen),
     )
 
 
-def schwaerzen(objekte):
-    """Einträge zu diesen Objekten schwärzen (Art. 17 DSGVO), auch zu schon gelöschten."""
+def schwaerzen(objekte, grund=GESCHWAERZT):
+    """Einträge zu diesen Objekten schwärzen, auch zu schon gelöschten."""
     arten = {}
     for objekt in objekte:
         arten.setdefault(_name(objekt._meta), []).append(objekt.pk)
     for art, pks in arten.items():
-        Eintrag.schwaerzen(art, pks)
+        Eintrag.schwaerzen(art, pks, grund)
 
 
 def anmeldung(aktion, wer, benutzer=None, grund=""):
