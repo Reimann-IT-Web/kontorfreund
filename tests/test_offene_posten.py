@@ -3,10 +3,12 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from io import BytesIO
+from urllib.parse import unquote
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from openpyxl import load_workbook
 from pypdf import PdfReader
 
 from contacts.models import Kontakt
@@ -473,3 +475,55 @@ def test_mitarbeiter_darf_mahnwesen_nicht_einstellen(anonym, db):
     anonym.force_login(mitarbeiter)
     assert anonym.get(reverse("zahlungen:einstellungen")).status_code == 403
     assert anonym.get(reverse("zahlungen:liste")).status_code == 200
+
+
+def test_export_der_liste(client, firma, firmenkunde, privatkunde):
+    """Spezifikation M-5: die angezeigte Liste als XLSX, ODS und CSV."""
+    heute = date.today()
+    teilbezahlt = rechnung_schreiben(client, firmenkunde, datum=heute.isoformat())
+    zahlen(client, teilbezahlt, "400,00", datum=heute.isoformat())
+    gemahnt = rechnung_schreiben(client, privatkunde)
+    client.post(
+        reverse("zahlungen:mahnen", args=[gemahnt.pk]),
+        {
+            "datum": "2026-10-01",
+            "frist": "2026-10-11",
+            "text": "Bitte zahlen Sie.",
+            "gebuehr": "0,00",
+            "aktion": "erstellen",
+        },
+    )
+
+    seite = client.get(reverse("zahlungen:liste"), {"zeigen": "ueberfaellig"}).text
+    assert '<a href="?zeigen=ueberfaellig&amp;format=xlsx">Excel</a>' in seite
+
+    antwort = client.get(reverse("zahlungen:liste"), {"format": "xlsx"})
+    assert f"Offene Posten {heute:%d.%m.%Y}.xlsx" in antwort["Content-Disposition"]
+    zeilen = list(load_workbook(BytesIO(antwort.content)).active.values)
+    kopf = zeilen[0]
+    assert len(zeilen) == 3
+    # Nach Fälligkeit: die gemahnte vom August zuerst
+    erste, zweite = (dict(zip(kopf, z, strict=True)) for z in zeilen[1:])
+    assert erste["Rechnung"] == gemahnt.nummer
+    assert erste["Fällig am"].date() == date(2026, 8, 17)
+    assert erste["Stand"] == "überfällig"
+    assert (erste["Zuletzt gemahnt"], erste["Gemahnt am"].date()) == (
+        "Zahlungserinnerung",
+        date(2026, 10, 1),
+    )
+    assert zweite["Kunde"] == "Muster Bäckerei GmbH"
+    assert (zweite["Betrag"], zweite["Bezahlt"], zweite["Offen"]) == (1000, 400, 600)
+    assert zweite["Stand"] == "teilbezahlt"
+    assert zweite["Zuletzt gemahnt"] is None
+
+    nur_privat = client.get(
+        reverse("zahlungen:liste"),
+        {"zeigen": "ueberfaellig", "kunde": privatkunde.pk, "format": "csv"},
+    )
+    assert "Überfällige Posten" in unquote(nur_privat["Content-Disposition"])
+    zeilen = nur_privat.content.decode("utf-8-sig").splitlines()
+    assert len(zeilen) == 2
+    assert (
+        ";Erika Beispiel;1000,00;0,00;1000,00;überfällig;Zahlungserinnerung;01.10.2026"
+        in zeilen[1]
+    )

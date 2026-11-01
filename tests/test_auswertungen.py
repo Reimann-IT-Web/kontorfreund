@@ -11,7 +11,7 @@ from django.urls import reverse
 from openpyxl import load_workbook
 
 from archive.models import Altbeleg
-from auswertungen import buch
+from auswertungen import buch, tabelle
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing.models import Rechnung
@@ -248,6 +248,18 @@ def test_text_wird_keine_formel(client, firma):
     assert (blatt["F2"].value, blatt["F2"].data_type) == (name, "s")
     zeile = _laden(client, "csv").decode("utf-8-sig").splitlines()[1]
     assert ';"\'=HYPERLINK(""https://example.com"",""Klick"")";' in zeile
+
+
+def test_telefonnummer_bleibt_im_csv_wie_sie_ist():
+    """Nur Ziffern und Rechenzeichen rufen nichts auf und brauchen kein Hochkomma."""
+    werte = ["+49 6131 12345", "-", "+49 HYPERLINK", "-2+3+cmd|' /C calc'!A0"]
+    inhalt = tabelle.csv([("Telefon", "text")], [[w] for w in werte])
+    assert inhalt.decode("utf-8-sig").splitlines()[1:] == [
+        "+49 6131 12345",
+        "-",
+        "'+49 HYPERLINK",
+        "'-2+3+cmd|' /C calc'!A0",
+    ]
 
 
 def test_in_der_seitenleiste(client):

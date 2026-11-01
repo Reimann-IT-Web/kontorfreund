@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.11.0 – 01.11.2026
+
+- Adressen und offene Posten herunterladen: Unter beiden Listen steht „Herunterladen als Excel, LibreOffice oder CSV“. Heruntergeladen wird genau die Liste, die Sie gerade sehen, also mit Suche, Kategorie, Archiv, Ansicht (offen, überfällig, bezahlt, alle) und Kunde. Die Adressen enthalten alle Felder bis zur Notiz, die offenen Posten Fälligkeit, Betrag, Bezahltes, Offenes, Stand und die letzte Mahnung.
+- In CSV-Dateien bleiben Telefonnummern wie „+49 6131 12345“ unverändert. Bisher setzte Kontorfreund jedem Text, der mit Plus oder Minus beginnt, ein Hochkomma voran, damit Excel ihn nicht als Formel ausführt. Das gilt jetzt nur noch für Text, der mehr als Ziffern und Rechenzeichen enthält.
+
 ## 0.10.0 – 01.11.2026
 
 - Artikel beim Tippen auswählen: In Rechnungen, Angeboten und Auftragsbestätigungen bietet das Feld Bezeichnung jeder Position Ihre Artikel mit Preis und Einheit an, sobald Sie zu tippen beginnen. Wählen Sie einen aus, übernimmt die Position Beschreibung, Einheit und Preis. Ein Preis, den Sie danach von Hand ändern, bleibt stehen. Das Menü „Artikel einfügen“ gibt es weiterhin.

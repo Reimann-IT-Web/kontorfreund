@@ -1,4 +1,5 @@
 import re
+from datetime import date
 
 from django.contrib import messages
 from django.db.models import Count, Q
@@ -6,6 +7,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+
+from auswertungen import tabelle
 
 from . import plz
 from .forms import KontaktForm
@@ -16,6 +19,44 @@ KATEGORIEN_PLURAL = {
     Kontakt.Kategorie.INTERESSENT: "Interessenten",
     Kontakt.Kategorie.LIEFERANT: "Lieferanten",
 }
+
+# Export der Liste (Spezifikation M-5): Spalte und Feld oder Eigenschaft von Kontakt.
+EXPORT = [
+    ("Kundennummer", "kundennummer"),
+    ("Art", "get_art_display"),
+    ("Kategorie", "get_kategorie_display"),
+    ("Name", "anzeigename"),
+    ("Namenszusatz", "zusatz"),
+    ("Anrede", "anrede"),
+    ("Titel", "titel"),
+    ("Vorname", "vorname"),
+    ("Nachname", "nachname"),
+    ("Straße und Hausnummer", "strasse"),
+    ("PLZ", "plz"),
+    ("Ort", "ort"),
+    ("Land", "land"),
+    ("E-Mail", "email"),
+    ("Telefon", "telefon"),
+    ("Website", "website"),
+    ("USt-IdNr.", "ust_id"),
+    ("Käuferreferenz oder Leitweg-ID", "kaeuferreferenz"),
+    ("XRechnung", "xrechnung"),
+    ("Notiz", "notiz"),
+]
+
+
+def _export(kontakte):
+    zeilen = []
+    for k in kontakte:
+        zeile = []
+        for _, feld in EXPORT:
+            wert = getattr(k, feld)
+            wert = wert() if callable(wert) else wert
+            if isinstance(wert, bool):
+                wert = "ja" if wert else ""
+            zeile.append(wert or None)
+        zeilen.append(zeile)
+    return [(titel, "text") for titel, _ in EXPORT], zeilen
 
 
 def _nummer(text):
@@ -45,6 +86,14 @@ def liste(request):
         if (nummer := _nummer(q)) is not None:
             bedingung |= Q(nummer=nummer)
         kontakte = kontakte.filter(bedingung)
+    endung = request.GET.get("format", "")
+    if endung in tabelle.TYPEN:
+        titel = KATEGORIEN_PLURAL.get(kategorie, "Adressen")
+        if archiv:
+            titel = f"Archiv {titel}"
+        return tabelle.antwort(
+            endung, *_export(kontakte), f"{titel} {date.today():%d.%m.%Y}"
+        )
     return render(
         request,
         "contacts/liste.html",
@@ -58,6 +107,7 @@ def liste(request):
             "anzahl": Kontakt.objects.filter(archiviert=False).count(),
             "anzahl_archiv": Kontakt.objects.filter(archiviert=True).count(),
             "offen": request.GET.get("offen", ""),
+            "exporte": tabelle.links(request),
         },
     )
 

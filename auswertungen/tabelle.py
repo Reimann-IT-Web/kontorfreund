@@ -8,10 +8,13 @@ denen sich weiterrechnen lässt.
 """
 
 import csv as csvmodul
+import re
 import zipfile
 from io import BytesIO, StringIO
 from xml.sax.saxutils import escape, quoteattr
 
+from django.http import HttpResponse
+from django.utils.http import content_disposition_header
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
@@ -22,10 +25,13 @@ TYPEN = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "ods": "application/vnd.oasis.opendocument.spreadsheet",
 }
+NAMEN = [("xlsx", "Excel"), ("ods", "LibreOffice"), ("csv", "CSV")]
 
 
 # Damit beginnt in Excel eine Formel; Namen aus fremden E-Rechnungen dürfen keine werden.
 FORMEL = ("=", "+", "-", "@", "\t", "\r")
+# Nur Ziffern und Rechenzeichen, etwa „+49 6131 12345“: rechnet höchstens, ruft nichts auf.
+HARMLOS = re.compile(r"[+-][\d ()/.,+-]*")
 
 
 def _text(wert, art):
@@ -46,9 +52,8 @@ def csv(spalten, zeilen):
         werte = []
         for wert, (_, art) in zip(zeile, spalten, strict=True):
             text = _text(wert, art)
-            werte.append(
-                f"'{text}" if art == "text" and text.startswith(FORMEL) else text
-            )
+            gefaehrlich = text.startswith(FORMEL) and not HARMLOS.fullmatch(text)
+            werte.append(f"'{text}" if art == "text" and gefaehrlich else text)
         schreiber.writerow(werte)
     return ausgabe.getvalue().encode("utf-8-sig")
 
@@ -151,3 +156,28 @@ def ods(spalten, zeilen, name):
         archiv.writestr("META-INF/manifest.xml", ODS_MANIFEST)
         archiv.writestr("content.xml", "".join(teile))
     return ausgabe.getvalue()
+
+
+def antwort(endung, spalten, zeilen, titel):
+    """Die Tabelle als Download „titel.endung“; endung ist ein Schlüssel von TYPEN."""
+    if endung == "csv":
+        inhalt = csv(spalten, zeilen)
+    else:
+        inhalt = {"xlsx": xlsx, "ods": ods}[endung](spalten, zeilen, titel)
+    return HttpResponse(
+        inhalt,
+        content_type=TYPEN[endung],
+        headers={
+            "Content-Disposition": content_disposition_header(True, f"{titel}.{endung}")
+        },
+    )
+
+
+def links(request):
+    """(Abfrage, Name) je Format, um die angezeigte Liste herunterzuladen."""
+    ergebnis = []
+    for endung, name in NAMEN:
+        abfrage = request.GET.copy()
+        abfrage["format"] = endung
+        ergebnis.append((abfrage.urlencode(), name))
+    return ergebnis

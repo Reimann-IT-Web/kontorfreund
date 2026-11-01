@@ -13,6 +13,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
+from auswertungen import buch, tabelle
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from core.templatetags.kf import euro, zahl
@@ -34,6 +35,49 @@ ANSICHTEN = [
     ("bezahlt", "Bezahlt"),
     ("alle", "Alle"),
 ]
+EXPORT_TITEL = {
+    "offen": "Offene Posten",
+    "ueberfaellig": "Überfällige Posten",
+    "bezahlt": "Bezahlte Rechnungen",
+    "alle": "Alle Rechnungen",
+}
+# Export der Liste (Spezifikation M-5)
+EXPORT = [
+    ("Rechnung", "text"),
+    ("Datum", "datum"),
+    ("Fällig am", "datum"),
+    ("Kundennummer", "text"),
+    ("Kunde", "text"),
+    ("Betrag", "betrag"),
+    ("Bezahlt", "betrag"),
+    ("Offen", "betrag"),
+    ("Stand", "text"),
+    ("Zuletzt gemahnt", "text"),
+    ("Gemahnt am", "datum"),
+]
+
+
+def _export(rechnungen):
+    zeilen = []
+    for r in rechnungen:
+        mahnungen = list(r.mahnungen.all())
+        letzte = max(mahnungen, key=lambda m: m.stufe) if mahnungen else None
+        zeilen.append(
+            [
+                r.nummer,
+                r.datum,
+                r.faellig,
+                r.kontakt.kundennummer,
+                str(r.kontakt),
+                r.korrigierter_betrag,
+                r.bezahlt,
+                r.offen,
+                buch.STAND[r.zahlstand],
+                letzte.bezeichnung if letzte else None,
+                letzte.datum if letzte else None,
+            ]
+        )
+    return zeilen
 
 
 def liste(request):
@@ -54,6 +98,10 @@ def liste(request):
     }[zeigen]
     if zeigen in ("offen", "ueberfaellig"):
         rechnungen.sort(key=lambda r: r.faellig)
+    endung = request.GET.get("format", "")
+    if endung in tabelle.TYPEN:
+        titel = f"{EXPORT_TITEL[zeigen]} {date.today():%d.%m.%Y}"
+        return tabelle.antwort(endung, EXPORT, _export(rechnungen), titel)
     ueberfaellig = [r for r in offen if r.ueberfaellig]
     return render(
         request,
@@ -74,6 +122,7 @@ def liste(request):
             "vorschlaege": mahnen.vorschlaege(offen, Mahnstufe.alle()),
             "basiszins_veraltet": Basiszins.veraltet(),
             "zahlung_form": ZahlungForm(prefix="zahlung"),
+            "exporte": tabelle.links(request),
         },
     )
 

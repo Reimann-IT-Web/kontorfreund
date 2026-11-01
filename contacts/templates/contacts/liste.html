@@ -102,7 +102,7 @@
     </tbody>
   </table>
 </div>
-{% if q or kategorie %}<p class="table-foot muted">{{ kontakte|length }} Treffer</p>{% endif %}
+<p class="table-foot muted">{% if q or kategorie %}{{ kontakte|length }} Treffer · {% endif %}{% include "auswertungen/herunterladen.html" %}</p>
 
 {% elif q or kategorie %}
 <div class="empty">

@@ -1,5 +1,9 @@
+import zipfile
+from io import BytesIO
+
 import pytest
 from django.urls import reverse
+from openpyxl import load_workbook
 
 from contacts.models import Kontakt
 
@@ -106,3 +110,55 @@ def test_archivieren_und_wiederherstellen(client):
 
     client.post(reverse("contacts:archivieren", args=[kontakt.pk]))
     assert list(client.get("/adressen/").context["kontakte"]) == [kontakt]
+
+
+def test_export_der_liste(client):
+    """Spezifikation M-5: die angezeigte Liste als XLSX, ODS und CSV."""
+    Kontakt.objects.create(
+        firmenname="Bäckerei Krume",
+        vorname="Lea",
+        nachname="Sommer",
+        plz="01067",
+        ort="Dresden",
+        telefon="+49 351 123456",
+        xrechnung=False,
+    )
+    Kontakt.objects.create(
+        art="person", kategorie="lieferant", vorname="Erika", nachname="Beispiel"
+    )
+    Kontakt.objects.create(firmenname="Alt GmbH", archiviert=True)
+
+    seite = client.get(reverse("contacts:liste")).text
+    assert 'href="?format=xlsx">Excel</a>, ' in seite
+    assert (
+        '<a href="?format=ods">LibreOffice</a> oder <a href="?format=csv">CSV</a>'
+        in seite
+    )
+
+    antwort = client.get(reverse("contacts:liste"), {"format": "xlsx"})
+    assert "Adressen" in antwort["Content-Disposition"]
+    blatt = load_workbook(BytesIO(antwort.content)).active
+    zeilen = list(blatt.values)
+    assert zeilen[0][:4] == ("Kundennummer", "Art", "Kategorie", "Name")
+    assert [z[3] for z in zeilen[1:]] == ["Bäckerei Krume", "Erika Beispiel"]
+    krume = dict(zip(zeilen[0], zeilen[1], strict=True))
+    assert krume["Kundennummer"] == "K-0001"
+    assert krume["Kategorie"] == "Kunde"
+    assert (krume["Vorname"], krume["Nachname"]) == ("Lea", "Sommer")
+    # Als Text, sonst fiele die führende Null weg
+    assert krume["PLZ"] == "01067"
+    assert krume["Telefon"] == "+49 351 123456"
+    assert krume["XRechnung"] is None
+
+    lieferanten = client.get(
+        reverse("contacts:liste"), {"kategorie": "lieferant", "format": "csv"}
+    )
+    assert "Lieferanten" in lieferanten["Content-Disposition"]
+    zeilen = lieferanten.content.decode("utf-8-sig").splitlines()
+    assert len(zeilen) == 2
+    assert zeilen[1].startswith("K-0002;Person;Lieferant;Erika Beispiel;")
+
+    archiv = client.get(reverse("contacts:liste"), {"archiv": "1", "format": "ods"})
+    assert "Archiv Adressen" in archiv["Content-Disposition"]
+    with zipfile.ZipFile(BytesIO(archiv.content)) as ods:
+        assert "Alt GmbH" in ods.read("content.xml").decode()

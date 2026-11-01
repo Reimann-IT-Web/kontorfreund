@@ -53,14 +53,9 @@ def rechnungsausgangsbuch(request):
 
     endung = request.GET.get("format", "")
     if endung in tabelle.TYPEN:
-        titel = f"Rechnungsausgangsbuch {name}"
-        werte = buch.tabelle(zeilen)
-        inhalt = (
-            tabelle.csv(buch.SPALTEN, werte)
-            if endung == "csv"
-            else getattr(tabelle, endung)(buch.SPALTEN, werte, titel)
+        return tabelle.antwort(
+            endung, buch.SPALTEN, buch.tabelle(zeilen), f"Rechnungsausgangsbuch {name}"
         )
-        return _download(inhalt, tabelle.TYPEN[endung], f"{titel}.{endung}")
 
     return render(
         request,
