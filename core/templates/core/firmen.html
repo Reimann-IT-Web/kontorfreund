@@ -1,0 +1,59 @@
+{% extends rahmen %}
+{% load kf %}
+
+{% block title %}Firmen{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<div class="page-head">
+  <div>
+    <h1>Firmen</h1>
+    <p class="muted">Jede Firma hat eigene Adressen, Rechnungen, Nummernkreise, Benutzer und Datensicherung. Offen ist immer eine; beim Wechseln startet Kontorfreund kurz neu.</p>
+  </div>
+</div>
+{% else %}
+<h1>Firma öffnen</h1>
+<p class="muted">Jede Firma hat eigene Konten. Danach melden Sie sich in der gewählten Firma an.</p>
+{% endif %}
+
+<ul class="rows">
+  {% for f in firmen %}
+  <li class="row row-aufgabe">
+    {% if f.kennung == offen %}<span class="status status-ok">{% icon "check" %}Geöffnet</span>
+    {% elif f.leer %}<span class="status status-open">{% icon "circle" %}Noch leer</span>
+    {% else %}<span class="status status-open">{% icon "building" %}Firma {{ f.nummer }}</span>{% endif %}
+    <div class="row-main">
+      <p class="row-title">{{ f.anzeigename }}</p>
+      {% if user.ist_inhaber %}<p class="row-meta">Daten: {{ f.ordner }}</p>{% endif %}
+    </div>
+    {% if f.kennung != offen %}
+    <div class="row-actions">
+      {% if user.ist_inhaber and f.leer %}
+      <form method="post" action="{% url 'core:firma_entfernen' %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-ghost" type="submit" name="firma" value="{{ f.kennung }}" data-confirm="Die leere {{ f.anzeigename }} entfernen?">{% icon "x" %}Entfernen</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'core:firma_oeffnen' %}">
+        {% csrf_token %}
+        <button class="btn btn-sm" type="submit" name="firma" value="{{ f.kennung }}">{% icon "chevron-right" %}Öffnen</button>
+      </form>
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+
+{% if user.ist_inhaber %}
+<section class="form form-section abschnitt-danach" aria-labelledby="t-neu">
+  <h2 class="form-title" id="t-neu">Weitere Firma anlegen</h2>
+  <p class="muted form-hint">Kontorfreund legt einen leeren, eigenen Datenbestand an und öffnet ihn. Dort legen Sie zuerst ein Konto an (gern mit derselben E-Mail-Adresse und demselben Kennwort wie hier), tragen die Firmendaten ein und richten die Datensicherung ein.</p>
+  <form method="post" action="{% url 'core:firma_anlegen' %}">
+    {% csrf_token %}
+    <button class="btn" type="submit" data-confirm="Eine weitere, leere Firma anlegen und öffnen?">{% icon "plus" %}Weitere Firma anlegen</button>
+  </form>
+</section>
+{% elif not user.is_authenticated %}
+<p class="small"><a href="{% url 'konten:anmelden' %}">Zurück zur Anmeldung</a></p>
+{% endif %}
+{% endblock %}

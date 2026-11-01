@@ -23,6 +23,7 @@ APPS = [
     "auswertungen",
     "wiedervorlagen",
     "historie",
+    "benachrichtigungen",
     "backups",
     "konten",
     "protokoll",

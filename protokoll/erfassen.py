@@ -36,9 +36,10 @@ ERFASST = [
     "auswertungen.Datev",
     "wiedervorlagen.Wiedervorlage",
     "historie.Vorgang",
+    "benachrichtigungen.Einstellung",
 ]
 # Stehen nie im Klartext im Protokoll.
-VERDECKT = {"password", "mail_passwort"}
+VERDECKT = {"password", "mail_passwort", "api_schluessel"}
 # Ändert sich bei jeder Anmeldung, gehört nicht zu den Geschäftsdaten.
 OHNE = {"last_login"}
 

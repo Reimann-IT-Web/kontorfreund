@@ -5,7 +5,7 @@
 
 {% block content %}
 <h1>Anmelden</h1>
-<p class="muted">Mit Ihrer E-Mail-Adresse und Ihrem Kennwort.</p>
+<p class="muted">{% if mehrere_firmen and firma.name %}Bei {{ firma.name }}, mit Ihrer E-Mail-Adresse und Ihrem Kennwort.{% else %}Mit Ihrer E-Mail-Adresse und Ihrem Kennwort.{% endif %}</p>
 <form class="stack" method="post" novalidate>
   {% csrf_token %}
   {% include "konten/formfehler.html" %}
@@ -15,4 +15,5 @@
   <button class="btn btn-primary btn-block" type="submit">Anmelden</button>
 </form>
 <p class="small muted">Kennwort vergessen? Der Inhaber setzt es unter Einstellungen → Benutzer neu.</p>
+{% if mehrere_firmen %}<p class="small"><a href="{% url 'core:firmen' %}">Andere Firma öffnen</a></p>{% endif %}
 {% endblock %}

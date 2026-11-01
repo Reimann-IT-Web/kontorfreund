@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.5.0 – 01.11.2026
+
+- Mehrere Firmen: Unter Einstellungen → Firmen legen Sie eine weitere Firma an und wechseln zwischen ihnen, auch schon auf der Anmeldeseite. Jede Firma hat eigene Adressen, Rechnungen, Nummernkreise, Benutzer und Datensicherung in einem eigenen Ordner; die erste bleibt, wo sie ist. Beim Wechseln startet Kontorfreund in wenigen Sekunden neu, angemeldet bleibt man in jeder Firma. Sicherungen weiterer Firmen tragen die Firma im Dateinamen, damit sich an einem gemeinsamen Speicherort nichts verwechselt.
+- Benachrichtigungen per SMS (Einstellungen → Benachrichtigungen, über seven.io): morgens eine Übersicht mit den Wiedervorlagen des Tages, nicht bezahlten Rechnungen und bald fälligen Eingangsrechnungen, vor Terminen eine Erinnerung. Mit Testnachricht. Steht nichts an, kommt keine SMS.
+- Auf Wunsch startet Kontorfreund beim Anmelden an Windows im Hintergrund, damit SMS und die tägliche Sicherung auch ohne Doppelklick kommen.
+
 ## 0.4.0 – 01.11.2026
 
 - Wiedervorlagen: Erinnerungen mit Fälligkeit und auf Wunsch Uhrzeit, zu einer Adresse, einem Angebot oder einer Rechnung, mit zuständigem Mitarbeiter. Die Übersicht zeigt fällige und die der nächsten sieben Tage, die Seitenleiste zählt die fälligen. Direkt aus jeder Liste auf morgen, um eine Woche oder einen Monat verschieben oder erledigen; erledigt mit einer Notiz zum Ergebnis.

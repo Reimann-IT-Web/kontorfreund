@@ -45,6 +45,9 @@
         </li>
         <li><a class="nav-link" href="{% url 'protokoll:liste' %}"{% if bereich == "protokoll" %} aria-current="page"{% endif %}>{% icon "list" %}<span class="nav-label">Protokoll</span></a></li>
         {% endif %}
+        {% if mehrere_firmen %}
+        <li><a class="nav-link" href="{% url 'core:firmen' %}"{% if bereich == "firmen" %} aria-current="page"{% endif %}>{% icon "building" %}<span class="nav-label">Firma wechseln</span></a></li>
+        {% endif %}
         <li><a class="nav-link" href="{% url 'core:platzhalter' 'hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
       </ul>
       {% if user.ist_inhaber and not firma.name and not firma.inhaber %}

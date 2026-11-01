@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Benachrichtigungen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li aria-current="page">Benachrichtigungen</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Benachrichtigungen</h1>
+    <p class="muted">Kontorfreund schickt Ihnen eine SMS, wenn etwas ansteht: morgens eine Übersicht mit den Wiedervorlagen des Tages, Rechnungen, die nicht bezahlt sind, und Eingangsrechnungen, die Sie bald zahlen müssen. Vor Terminen kommt auf Wunsch eine Erinnerung.</p>
+  </div>
+</div>
+
+{% if einstellung.fehler %}
+<p class="callout" role="alert">{% icon "alert" %}<span><strong>Die letzte SMS kam nicht an</strong> ({{ einstellung.fehler_am|date:"d.m.Y H:i" }}). {{ einstellung.fehler }} Kontorfreund versucht es alle fünf Minuten erneut.</span></p>
+{% elif einstellung.gesendet_am %}
+<p class="small muted">Letzte SMS: {{ einstellung.gesendet_am|date:"d.m.Y H:i" }}</p>
+{% endif %}
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-sms">
+    <h2 class="form-title" id="t-sms">SMS</h2>
+    <p class="muted form-hint">Die SMS verschickt seven.io aus Kiel, für rund 9 Cent je SMS einschließlich Umsatzsteuer, ohne Grundgebühr. So geht es los: bei seven.io registrieren, Guthaben aufladen und im Bereich „Developer“ einen API-Schlüssel anlegen. Die SMS enthalten Titel von Wiedervorlagen, Namen von Kunden und Lieferanten und Beträge; den Vertrag zur Auftragsverarbeitung schließen Sie in Ihrem Kundenkonto bei seven.io ab.</p>
+    <div class="form-grid">
+      <label class="choice field-wide">
+        {{ form.aktiv }}
+        <span><strong>{{ form.aktiv.label }}</strong><br><span class="muted">{{ form.aktiv.help_text }}</span></span>
+      </label>
+      {% include "core/feld.html" with f=form.handy %}
+      {% include "core/feld.html" with f=form.api_schluessel %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-wann">
+    <h2 class="form-title" id="t-wann">Wann</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.uhrzeit %}
+      {% include "core/feld.html" with f=form.vorlauf %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    <button class="btn" type="submit" name="test" value="1">{% icon "send" %}Speichern und Testnachricht senden</button>
+  </div>
+</form>
+
+<section class="form form-section abschnitt-danach" aria-labelledby="t-hintergrund">
+  <h2 class="form-title" id="t-hintergrund">Kontorfreund im Hintergrund</h2>
+  <p class="muted form-hint">SMS kommen nur, solange Kontorfreund läuft, also das Fenster von Kontorfreund offen ist, auch minimiert. Läuft es zur Uhrzeit der Übersicht nicht, kommt sie beim nächsten Start am selben Tag.</p>
+  {% if autostart_moeglich %}
+  <form method="post" action="{% url 'benachrichtigungen:autostart' %}">
+    {% csrf_token %}
+    {% if autostart %}
+    <p><span class="status status-ok">{% icon "check" %}Startet beim Anmelden an Windows</span></p>
+    <button class="btn" type="submit" name="ein" value="0">{% icon "x" %}Nicht mehr von selbst starten</button>
+    {% else %}
+    <button class="btn" type="submit" name="ein" value="1">{% icon "clock" %}Beim Anmelden an Windows im Hintergrund starten</button>
+    {% endif %}
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

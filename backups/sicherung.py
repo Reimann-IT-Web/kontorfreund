@@ -52,7 +52,6 @@ TAG = 16
 KDF = {"name": "scrypt", "n": 1 << 17, "r": 8, "p": 1}
 AUFBEWAHREN = 14
 WARNEN_NACH = timedelta(days=7)
-NAME = re.compile(r"kontorfreund-(\d{4}-\d{2}-\d{2}-\d{6})(?:-(\d+))?\.sicherung")
 ANLAESSE = {
     "taeglich": "Täglich",
     "manuell": "Von Hand",
@@ -218,6 +217,12 @@ def _taeglich():
         connection.close()
 
 
+def beenden(code):
+    """Programm beenden, aber nicht mitten in einer Sicherung (Firmenwechsel)."""
+    with _sperre:
+        os._exit(code)
+
+
 def vor_update(sender, plan=None, using="default", **kwargs):
     """Vor Migrationen den bisherigen Stand sichern (Spezifikation 05, D-2 und D-3)."""
     # Nur eine Datenbankdatei, nie die Testdatenbank im Arbeitsspeicher.
@@ -264,8 +269,21 @@ def sicherungsordner():
     return Path(settings.DATA_DIR) / "sicherung"
 
 
+def _praefix():
+    # Weitere Firmen (core/firmen.py) sichern unter eigenem Namen; so zeigt jede nur
+    # ihre eigenen Sicherungen, auch an einem gemeinsamen zweiten Ort.
+    return f"kontorfreund-firma{settings.FIRMA}" if settings.FIRMA else "kontorfreund"
+
+
+def _name(dateiname):
+    return re.fullmatch(
+        rf"{_praefix()}-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})(?:-(\d+))?\.sicherung",
+        dateiname,
+    )
+
+
 def _dateiname(zeit):
-    return f"kontorfreund-{zeit:%Y-%m-%d-%H%M%S}"
+    return f"{_praefix()}-{zeit:%Y-%m-%d-%H%M%S}"
 
 
 def _freier_name(ordner, zeit):
@@ -374,14 +392,14 @@ def _schreiben(anlass, k):
 def _sicherungen(ordner):
     """Sicherungsdateien eines Ordners, älteste zuerst; ein fehlender Ordner hat keine."""
     try:
-        dateien = [p for p in ordner.iterdir() if NAME.fullmatch(p.name)]
+        dateien = [p for p in ordner.iterdir() if _name(p.name)]
     except OSError:
         return []
     return sorted(dateien, key=_reihenfolge)
 
 
 def _reihenfolge(pfad):
-    treffer = NAME.fullmatch(pfad.name)
+    treffer = _name(pfad.name)
     return treffer[1], int(treffer[2] or 1)
 
 
@@ -440,7 +458,7 @@ def _orte():
 
 def finden(ort, name):
     ordner = _orte().get(ort)
-    if ordner and NAME.fullmatch(name) and (ordner / name).is_file():
+    if ordner and _name(name) and (ordner / name).is_file():
         return ordner / name
     return None
 

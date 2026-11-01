@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1>Willkommen bei {{ marke }}</h1>
-<p class="muted">Legen Sie Ihr Konto an. Damit melden Sie sich künftig an; weitere Konten für Mitarbeiter legen Sie danach unter Einstellungen an.</p>
+<p class="muted">Legen Sie Ihr Konto an. Damit melden Sie sich künftig an; weitere Konten für Mitarbeiter legen Sie danach unter Einstellungen an.{% if mehrere_firmen %} Diese Firma hat eigene Konten; dieselbe E-Mail-Adresse und dasselbe Kennwort wie in Ihrer anderen Firma gehen auch.{% endif %}</p>
 <form class="stack" method="post" novalidate>
   {% csrf_token %}
   {% include "core/feld.html" with f=form.name %}

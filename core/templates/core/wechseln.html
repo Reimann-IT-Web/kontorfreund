@@ -1,0 +1,12 @@
+{% extends "konten/schlicht.html" %}
+
+{% block title %}Firma wird geöffnet{% endblock %}
+
+{% block content %}
+<div data-firma-warten="{% url 'core:firma_offen' %}" data-firma="{{ firma.nummer }}" data-weiter="{% url 'core:start' %}">
+  <h1>{% if neu %}Neue Firma wird geöffnet{% else %}{{ firma.anzeigename }} wird geöffnet{% endif %}</h1>
+  <p class="muted" role="status">Einen Moment, Kontorfreund startet neu. Die Seite lädt von selbst weiter.</p>
+  <p class="small muted" data-zu-lange hidden>Das dauert ungewöhnlich lange. Schließen Sie bitte das Fenster von Kontorfreund und starten Sie es neu.</p>
+  <noscript><p><a class="btn btn-primary" href="{% url 'core:start' %}">Weiter</a></p></noscript>
+</div>
+{% endblock %}

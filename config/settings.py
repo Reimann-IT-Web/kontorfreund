@@ -14,12 +14,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("APP_DATA_DIR", BASE_DIR / "data"))
 # Nur für den eigenen Benutzer lesbar (macOS, Linux); Windows schützt den Benutzerordner selbst.
 DATA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+# Mehrere Firmen (core/firmen.py): der Ordner mit allen Firmen und welche hier offen ist.
+HAUPTORDNER = Path(os.environ.get("APP_HAUPTORDNER", DATA_DIR))
+FIRMA = os.environ.get("APP_FIRMA", "")
+# Nur unter dem Startprogramm, das den Server zum Firmenwechsel neu startet.
+NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 
 # Marke und Edition getrennt, damit weitere Editionen dieselbe Codebasis nutzen können.
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -59,6 +64,7 @@ INSTALLED_APPS = [
     "auswertungen",
     "wiedervorlagen",
     "historie",
+    "benachrichtigungen",
     "backups",
     "konten",
     "protokoll",
@@ -116,6 +122,9 @@ LOGIN_URL = "konten:anmelden"
 # Automatisch abgemeldet nach so vielen Stunden ohne Anfrage.
 SESSION_COOKIE_AGE = int(os.environ.get("APP_ABMELDEN_NACH_STUNDEN", "8")) * 3600
 SESSION_SAVE_EVERY_REQUEST = True
+# Jede Firma hat eigene Anmeldungen, Cookies gelten aber für alle Firmen unter derselben
+# Adresse. Mit eigenem Namen bleibt man nach einem Wechsel in jeder Firma angemeldet.
+SESSION_COOKIE_NAME = f"sessionid-{FIRMA}" if FIRMA else "sessionid"
 # Im Netzwerk erreichbar, sobald andere Adressen als der eigene Rechner erlaubt sind;
 # dann ist die Zwei-Faktor-Anmeldung für Inhaber Pflicht.
 NETZWERK = any(

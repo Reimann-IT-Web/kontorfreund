@@ -443,3 +443,27 @@ if (zahlungDialog) {
     formular.elements["zahlung-betrag"].select();
   });
 }
+
+// Firmenwechsel: warten, bis der Server mit der gewählten Firma wieder läuft.
+const firmaWarten = document.querySelector("[data-firma-warten]");
+if (firmaWarten) {
+  const { firmaWarten: adresse, firma, weiter } = firmaWarten.dataset;
+  const beginn = Date.now();
+  const pruefen = async () => {
+    try {
+      const antwort = await fetch(adresse, { cache: "no-store" });
+      if (antwort.ok && (await antwort.text()) === firma) {
+        window.location.href = weiter;
+        return;
+      }
+    } catch {
+      // Der Server startet gerade neu.
+    }
+    if (Date.now() - beginn > 90000) {
+      firmaWarten.querySelector("[data-zu-lange]").hidden = false;
+      return;
+    }
+    setTimeout(pruefen, 700);
+  };
+  setTimeout(pruefen, 1500);
+}

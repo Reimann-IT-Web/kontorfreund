@@ -7,6 +7,7 @@ from artikel.models import Artikel
 from contacts.models import Kontakt
 from wiedervorlagen.models import Wiedervorlage
 
+from . import firmen
 from .models import Firmendaten
 from .navigation import NAVIGATION
 from .templatetags.kf import euro
@@ -23,8 +24,9 @@ def product(request):
 
 def navigation(request):
     """Seitenleiste mit Zählern, Suchindex (Strg+K) und Firmendaten für jede Seite."""
+    mehrere = firmen.mehrere(settings.HAUPTORDNER)
     if not request.user.is_authenticated:
-        return {"firma": Firmendaten.laden()}
+        return {"firma": Firmendaten.laden(), "mehrere_firmen": mehrere}
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
     faellig = (
@@ -75,6 +77,12 @@ def navigation(request):
             "url": reverse("eingang:liste"),
         },
         {
+            "titel": "Firmen",
+            "info": "Firma wechseln"
+            + (" oder anlegen" if request.user.ist_inhaber else ""),
+            "url": reverse("core:firmen"),
+        },
+        {
             "titel": "Mein Konto",
             "info": "Kennwort und Zwei-Faktor-Anmeldung",
             "url": reverse("konten:konto"),
@@ -91,6 +99,11 @@ def navigation(request):
                 "titel": "Benutzer",
                 "info": "Konten für Mitarbeiter",
                 "url": reverse("konten:benutzer"),
+            },
+            {
+                "titel": "Benachrichtigungen",
+                "info": "SMS, wenn etwas ansteht",
+                "url": reverse("benachrichtigungen:einstellungen"),
             },
             {
                 "titel": "Datensicherung",
@@ -123,4 +136,5 @@ def navigation(request):
         "navigation": eintraege,
         "suchindex": suchindex,
         "firma": Firmendaten.laden(),
+        "mehrere_firmen": mehrere,
     }

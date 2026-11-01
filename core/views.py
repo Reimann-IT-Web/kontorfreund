@@ -1,11 +1,18 @@
+import threading
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
-from django.http import Http404
+from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.views import redirect_to_login
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from angebote.models import Angebot
+from backups import sicherung
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
@@ -13,6 +20,7 @@ from wiedervorlagen.models import DEMNAECHST, Wiedervorlage
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
 
+from . import firmen
 from . import umsatz as umsaetze
 from .forms import FirmendatenForm
 from .models import Firmendaten
@@ -92,3 +100,97 @@ def platzhalter(request, slug):
         "core/platzhalter.html",
         {"bereich": slug, "titel": titel, "inhalt": inhalt, "phase": phase},
     )
+
+
+# ---------- Mehrere Firmen (core/firmen.py) ----------
+
+
+def _anmeldung_noetig(request):
+    """Firmen wechseln geht auch vor der Anmeldung, denn jede Firma hat eigene Konten;
+    im Netzwerk nur angemeldet."""
+    return settings.NETZWERK and not request.user.is_authenticated
+
+
+@login_not_required
+def firmen_liste(request):
+    if _anmeldung_noetig(request):
+        return redirect_to_login(request.get_full_path())
+    return render(
+        request,
+        "core/firmen.html",
+        {
+            "bereich": "firmen",
+            "firmen": firmen.alle(settings.HAUPTORDNER),
+            "offen": settings.FIRMA,
+            "rahmen": "base.html"
+            if request.user.is_authenticated
+            else "konten/schlicht.html",
+        },
+    )
+
+
+@login_not_required
+@require_POST
+def firma_oeffnen(request):
+    if _anmeldung_noetig(request):
+        return redirect_to_login(reverse("core:firmen"))
+    alle = {f.kennung: f for f in firmen.alle(settings.HAUPTORDNER)}
+    kennung = request.POST.get("firma", "")
+    if kennung not in alle:
+        raise Http404
+    if kennung == settings.FIRMA:
+        return redirect("core:start")
+    return _wechseln(request, alle[kennung])
+
+
+@require_POST
+@nur_inhaber
+def firma_anlegen(request):
+    kennung = firmen.anlegen(settings.HAUPTORDNER)
+    return _wechseln(
+        request,
+        firmen.Firma(kennung, firmen.ordner(settings.HAUPTORDNER, kennung), ""),
+        neu=True,
+    )
+
+
+@require_POST
+@nur_inhaber
+def firma_entfernen(request):
+    kennung = request.POST.get("firma", "")
+    try:
+        if kennung == settings.FIRMA:
+            raise ValueError
+        firmen.entfernen(settings.HAUPTORDNER, kennung)
+    except ValueError:
+        messages.error(
+            request,
+            "Entfernen lässt sich nur eine Firma, in der noch niemand ein Konto angelegt hat.",
+        )
+    else:
+        messages.success(request, "Die leere Firma ist entfernt.")
+    return redirect("core:firmen")
+
+
+def _wechseln(request, firma, neu=False):
+    firmen.waehlen(settings.HAUPTORDNER, firma.kennung)
+    if not settings.NEUSTART:
+        messages.info(
+            request,
+            f"{firma.anzeigename} öffnet sich beim nächsten Start von Kontorfreund.",
+        )
+        return redirect("core:firmen")
+    neu_starten()
+    return render(request, "core/wechseln.html", {"firma": firma, "neu": neu})
+
+
+def neu_starten():
+    """Den Server beenden, sobald die Antwort draußen ist. Das Startprogramm
+    (kontorfreund.py) startet ihn mit der gewählten Firma neu."""
+    threading.Timer(1, sicherung.beenden, args=[firmen.WECHSELN]).start()
+
+
+@login_not_required
+def firma_offen(request):
+    """Welche Firma der Server geöffnet hat; die Seite zum Wechseln wartet darauf."""
+    return HttpResponse(settings.FIRMA or "1", content_type="text/plain")

@@ -6,7 +6,7 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
-**Status:** frühe Entwicklung, Version 0.4.0. Im Einsatz sind Adressen mit Verlauf und Wiedervorlagen, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege, Anmeldung und verschlüsselte Datensicherung. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
+**Status:** frühe Entwicklung, Version 0.5.0. Im Einsatz sind Adressen mit Verlauf und Wiedervorlagen samt Erinnerung per SMS, Artikel, Angebote und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch mit Export als CSV, Excel und LibreOffice, der DATEV-Export für den Steuerberater, die Ablage übernommener Altbelege, Anmeldung, verschlüsselte Datensicherung und mehrere Firmen mit getrennten Daten. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
 
 ## Installation
 
@@ -22,6 +22,8 @@ Kontorfreund öffnet sich im Browser unter http://127.0.0.1:8765/. Das kleine Fe
 | Windows | `%LOCALAPPDATA%\Kontorfreund` |
 | macOS | `~/Library/Application Support/Kontorfreund` |
 | Linux | `~/.local/share/Kontorfreund` bzw. `$XDG_DATA_HOME/Kontorfreund` |
+
+Jede weitere Firma (Einstellungen → Firmen) bekommt dort einen eigenen Unterordner `firmen/2`, `firmen/3` und so weiter.
 
 Für ein Update installieren Sie die neue Version einfach darüber. Die Datenbank wird beim nächsten Start angepasst, vorher entsteht eine Sicherung. Beim Deinstallieren bleiben die Daten erhalten.
 

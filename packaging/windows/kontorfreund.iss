@@ -56,5 +56,9 @@ Source: "..\..\dist\Kontorfreund\*"; DestDir: "{app}"; Flags: ignoreversion recu
 Name: "{autoprograms}\Kontorfreund"; Filename: "{app}\Kontorfreund.exe"; WorkingDir: "{app}"; Flags: runminimized
 Name: "{autodesktop}\Kontorfreund"; Filename: "{app}\Kontorfreund.exe"; WorkingDir: "{app}"; Flags: runminimized; Tasks: desktopicon
 
+[Registry]
+; Den Start beim Anmelden (Einstellungen > Benachrichtigungen) beim Deinstallieren entfernen.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "Kontorfreund"; ValueType: none; Flags: uninsdeletevalue dontcreatekey
+
 [Run]
 Filename: "{app}\Kontorfreund.exe"; Description: "{cm:LaunchProgram,Kontorfreund}"; Flags: nowait postinstall skipifsilent runminimized

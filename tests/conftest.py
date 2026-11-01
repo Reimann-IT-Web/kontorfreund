@@ -8,6 +8,7 @@ from konten.models import Benutzer
 def datenordner(tmp_path, settings):
     """Kein Test schreibt in den echten Datenordner, auch keine Sicherung."""
     settings.DATA_DIR = tmp_path
+    settings.HAUPTORDNER = tmp_path
 
 
 @pytest.fixture

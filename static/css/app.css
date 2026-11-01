@@ -1974,6 +1974,11 @@ select {
   margin: calc(-1 * var(--s2)) 0 var(--s3);
 }
 
+/* Abschnitt nach einer Liste oder einem Formular, außerhalb davon */
+.abschnitt-danach {
+  margin-top: var(--s7);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
