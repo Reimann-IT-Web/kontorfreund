@@ -1001,6 +1001,83 @@ kbd {
   overflow-wrap: anywhere;
 }
 
+/* Dateien an Adressen und Vorgängen (Spezifikation K-3) */
+.verlauf-dateien {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+}
+
+.verlauf-dateien a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  overflow-wrap: anywhere;
+}
+
+.dateien {
+  list-style: none;
+  margin: 0 0 var(--s3);
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.datei {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+
+.datei > .icon {
+  flex: none;
+  color: var(--ink-2);
+}
+
+.datei-main {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ablage {
+  display: grid;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  transition: border-color 0.15s ease-out, background-color 0.15s ease-out;
+}
+
+.ablage > label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.ablage.is-ziel {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Auf der Seite eines Vorgangs unter dem Formular, so breit wie dieses */
+.anhaenge {
+  max-width: 52rem;
+  margin-top: var(--s6);
+}
+
+.rueckgaengig {
+  align-items: center;
+  margin: 0 0 var(--s3);
+}
+
+.rueckgaengig form {
+  margin-left: auto;
+}
+
 .erfassen-art {
   margin-bottom: var(--s4);
 }

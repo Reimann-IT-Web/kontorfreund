@@ -37,6 +37,7 @@ ERFASST = [
     "auswertungen.Datev",
     "wiedervorlagen.Wiedervorlage",
     "historie.Vorgang",
+    "historie.Datei",
     "benachrichtigungen.Einstellung",
 ]
 # Stehen nie im Klartext im Protokoll.

@@ -151,6 +151,45 @@ document.querySelectorAll("[data-auto-submit]").forEach((feld) => {
   feld.addEventListener("change", () => feld.form.requestSubmit());
 });
 
+// ---------- Dateien hineinziehen (Spezifikation K-3) ----------
+
+const ablagen = document.querySelectorAll("[data-ablage]");
+ablagen.forEach((zone) => {
+  const feld = zone.querySelector("input[type=file]");
+  zone.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    zone.classList.add("is-ziel");
+  });
+  zone.addEventListener("dragleave", (e) => {
+    if (!zone.contains(e.relatedTarget)) zone.classList.remove("is-ziel");
+  });
+  zone.addEventListener("drop", (e) => {
+    zone.classList.remove("is-ziel");
+    if (!e.dataTransfer.files.length) return;
+    e.preventDefault();
+    feld.files = e.dataTransfer.files;
+    const anzahl = feld.files.length === 1 ? "1 Datei" : `${feld.files.length} Dateien`;
+    if (zone.hasAttribute("data-sofort")) {
+      ansage(`${anzahl} werden hochgeladen.`);
+      feld.form.requestSubmit();
+    } else {
+      ansage(`${anzahl} ausgewählt.`);
+    }
+  });
+});
+// Daneben fallen gelassen, würde der Browser die Datei öffnen und die Seite verlassen.
+if (ablagen.length) {
+  for (const art of ["dragover", "drop"]) {
+    window.addEventListener(art, (e) => {
+      if (e.target.closest?.("[data-ablage]")) return;
+      e.preventDefault();
+      if (art === "dragover") e.dataTransfer.dropEffect = "none";
+    });
+  }
+}
+
 // ---------- Adressformular: Firmenfeld nur bei Firmen ----------
 
 const kontaktForm = document.querySelector("[data-kontakt-form]");

@@ -24,7 +24,7 @@ NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -124,6 +124,8 @@ LOGIN_URL = "konten:anmelden"
 # Automatisch abgemeldet nach so vielen Stunden ohne Anfrage.
 SESSION_COOKIE_AGE = int(os.environ.get("APP_ABMELDEN_NACH_STUNDEN", "8")) * 3600
 SESSION_SAVE_EVERY_REQUEST = True
+# Größte Datei, die sich an eine Adresse hängen lässt (Spezifikation K-3).
+DATEI_MB = int(os.environ.get("APP_DATEI_MB", "50"))
 # Jede Firma hat eigene Anmeldungen, Cookies gelten aber für alle Firmen unter derselben
 # Adresse. Mit eigenem Namen bleibt man nach einem Wechsel in jeder Firma angemeldet.
 SESSION_COOKIE_NAME = f"sessionid-{FIRMA}" if FIRMA else "sessionid"

@@ -1,0 +1,28 @@
+{% load kf %}{% comment %}Dateiliste mit Ansehen, Herunterladen und Löschen. von="vorgang" auf der Seite eines Vorgangs.{% endcomment %}
+{% if geloescht %}
+<div class="callout rueckgaengig" role="status">
+  {% icon "check" %}<span>„{{ geloescht.name }}“ ist gelöscht.</span>
+  <form method="post" action="{% url 'historie:datei_zurueckholen' geloescht.pk %}">
+    {% csrf_token %}{% if von %}<input type="hidden" name="von" value="{{ von }}">{% endif %}
+    <button class="btn btn-sm" type="submit">{% icon "restore" %}Rückgängig</button>
+  </form>
+</div>
+{% endif %}
+{% if dateien %}
+<ul class="dateien">
+  {% for d in dateien %}
+  <li class="datei">
+    {% icon "paperclip" %}
+    <div class="datei-main">
+      <a href="{% url 'historie:datei' d.pk %}"{% if d.vorschau %} target="_blank" rel="noopener"{% endif %}>{{ d.name }}</a>
+      <span class="cell-sub">{{ d.art }} · {{ d.groesse|filesizeformat }} · {{ d.erstellt|date:"d.m.Y" }}{% if d.vorgang and not von %} · zu {{ d.vorgang.get_art_display }}{% if d.vorgang.betreff %} „{{ d.vorgang.betreff }}“{% endif %}{% endif %}</span>
+    </div>
+    {% if d.vorschau %}<a class="btn btn-ghost btn-icon" href="{% url 'historie:datei' d.pk %}?herunterladen">{% icon "download" %}<span class="visually-hidden">{{ d.name }} herunterladen</span></a>{% endif %}
+    <form method="post" action="{% url 'historie:datei_loeschen' d.pk %}">
+      {% csrf_token %}{% if von %}<input type="hidden" name="von" value="{{ von }}">{% endif %}
+      <button class="btn btn-ghost btn-icon" type="submit">{% icon "trash" %}<span class="visually-hidden">{{ d.name }} löschen</span></button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

@@ -1,16 +1,18 @@
 """Zeitleiste einer Adresse (Spezifikation K-2): alles, was zu ihr geschah, neueste zuerst.
 
-Von Hand erfasste Vorgänge kommen aus `Vorgang`; Angebote, Auftragsbestätigungen,
-Rechnungen, Zahlungen, Mahnungen, erledigte Wiedervorlagen, Altbelege und
-Eingangsrechnungen werden aus ihren eigenen Daten gelesen, damit nichts doppelt
-gespeichert ist.
+Von Hand erfasste Vorgänge kommen aus `Vorgang`, abgelegte Dateien aus `Datei` (an
+einem Vorgang stehen sie bei ihm, sonst als eigener Punkt); Angebote,
+Auftragsbestätigungen, Rechnungen, Zahlungen, Mahnungen, erledigte Wiedervorlagen,
+Altbelege und Eingangsrechnungen werden aus ihren eigenen Daten gelesen, damit nichts
+doppelt gespeichert ist.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from decimal import Decimal
 from urllib.parse import urlencode
 
+from django.db.models import Prefetch
 from django.urls import reverse
 from django.utils import timezone
 
@@ -19,7 +21,7 @@ from auftraege.models import Auftragsbestaetigung
 from invoicing.models import Rechnung
 from zahlungen.models import Mahnung, Zahlung
 
-from .models import Vorgang
+from .models import Datei, Vorgang
 
 ICONS = {
     Vorgang.Art.NOTIZ: "pencil",
@@ -29,6 +31,7 @@ ICONS = {
     "wiedervorlage": "check",
     "beleg": "file",
     "zahlung": "banknote",
+    "dokument": "paperclip",
 }
 ARTEN = [
     ("", "Alles"),
@@ -36,6 +39,7 @@ ARTEN = [
     ("wiedervorlage", "Wiedervorlagen"),
     ("beleg", "Belege"),
     ("zahlung", "Zahlungen und Mahnungen"),
+    ("dokument", "Dokumente"),
 ]
 
 
@@ -53,6 +57,7 @@ class Punkt:
     neues_fenster: bool = False
     # Vorbelegung für „Wiedervorlage“ aus diesem Eintrag, als Teil einer Adresse.
     nachfassen: str = ""
+    dateien: list = field(default_factory=list)
 
     @property
     def icon(self):
@@ -66,7 +71,10 @@ def _lokal(zeitpunkt):
 
 def punkte(kontakt):
     ergebnis = []
-    for v in kontakt.vorgaenge.select_related("benutzer"):
+    vorhanden = Datei.objects.filter(geloescht_am__isnull=True)
+    for v in kontakt.vorgaenge.select_related("benutzer").prefetch_related(
+        Prefetch("dateien", queryset=vorhanden)
+    ):
         ergebnis.append(
             Punkt(
                 *_lokal(v.zeitpunkt),
@@ -75,9 +83,21 @@ def punkte(kontakt):
                 text=v.text,
                 benutzer=str(v.benutzer or ""),
                 vorgang=v,
+                dateien=list(v.dateien.all()),
                 nachfassen=urlencode(
                     {"titel": f"Nachfassen: {v.betreff or v.get_art_display()}"}
                 ),
+            )
+        )
+    for d in vorhanden.filter(kontakt=kontakt, vorgang=None).select_related("benutzer"):
+        ergebnis.append(
+            Punkt(
+                *_lokal(d.erstellt),
+                art="dokument",
+                titel=d.name,
+                url=reverse("historie:datei", args=[d.pk]),
+                benutzer=str(d.benutzer or ""),
+                neues_fenster=d.vorschau,
             )
         )
     for w in kontakt.wiedervorlagen.filter(erledigt_am__isnull=False).select_related(

@@ -1,0 +1,6 @@
+{% comment %}Dateien auswählen oder hierher ziehen. sofort: ein Ablegen schickt das Formular gleich ab; kurz: nur der knappe Hinweis.{% endcomment %}
+<div class="ablage" data-ablage{% if sofort %} data-sofort{% endif %}>
+  <label for="{{ id }}">{{ titel }}</label>
+  <input type="file" id="{{ id }}" name="dateien" multiple aria-describedby="{{ id }}-hinweis">
+  <p class="hint" id="{{ id }}-hinweis">{% if kurz %}Auch zum Hineinziehen. Höchstens {{ datei_mb }} MB je Datei.{% else %}Auch zum Hineinziehen, mehrere auf einmal. PDF und Bilder lassen sich im Browser ansehen, alles andere herunterladen. Höchstens {{ datei_mb }} MB je Datei.{% endif %}</p>
+</div>

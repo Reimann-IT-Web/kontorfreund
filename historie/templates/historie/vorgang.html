@@ -19,7 +19,7 @@
   </div>
 </div>
 
-<form class="form" method="post" novalidate>
+<form class="form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   {% for fehler in form.non_field_errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
   <fieldset class="field erfassen-art">
@@ -31,11 +31,19 @@
     {% include "core/feld.html" with f=form.zeitpunkt %}
     {% include "core/feld.html" with f=form.text breit=True optional=True %}
   </div>
+  {% include "historie/ablage.html" with id="dateien-eintrag" titel="Dateien anhängen (optional)" %}
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
     <a class="btn" href="{% url 'historie:verlauf' vorgang.kontakt_id %}">Abbrechen</a>
   </div>
 </form>
+
+{% if dateien or geloescht %}
+<section class="group anhaenge" aria-labelledby="dateien">
+  <h2 class="group-head" id="dateien">Angehängte Dateien</h2>
+  {% include "historie/dateien.html" with von="vorgang" %}
+</section>
+{% endif %}
 
 <form method="post" action="{% url 'historie:loeschen' vorgang.pk %}">
   {% csrf_token %}

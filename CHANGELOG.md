@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.12.0 – 01.11.2026
+
+- Dateien an Adressen und Einträgen: Auf der Seite einer Adresse (Verlauf und Notizen) gibt es den Bereich „Dateien“. Verträge, Fotos, PDFs oder andere Dateien wählen Sie dort aus oder ziehen sie einfach hinein, auch mehrere auf einmal. An einen Anruf, eine E-Mail, eine Notiz oder einen Termin hängen Sie Dateien gleich beim Eintragen oder später auf der Seite des Eintrags. PDF und Bilder öffnen sich im Browser, alle anderen Dateien werden heruntergeladen; eine HTML-Datei wird nie im Browser ausgeführt. Höchstens 50 MB je Datei.
+- Gelöschte Dateien holen Sie mit „Rückgängig“ sofort zurück. Endgültig entfernt werden sie nach 30 Tagen. Hochladen, Löschen und Zurückholen stehen im Protokoll.
+- Die Dateien liegen im Datenordner unter „archiv/dateien“, je Adresse ein Ordner mit der Kundennummer, und sind damit in jeder Datensicherung enthalten.
+
 ## 0.11.0 – 01.11.2026
 
 - Adressen und offene Posten herunterladen: Unter beiden Listen steht „Herunterladen als Excel, LibreOffice oder CSV“. Heruntergeladen wird genau die Liste, die Sie gerade sehen, also mit Suche, Kategorie, Archiv, Ansicht (offen, überfällig, bezahlt, alle) und Kunde. Die Adressen enthalten alle Felder bis zur Notiz, die offenen Posten Fälligkeit, Betrag, Bezahltes, Offenes, Stand und die letzte Mahnung.

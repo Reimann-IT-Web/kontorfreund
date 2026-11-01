@@ -27,7 +27,7 @@
   <div>
     <section class="form-section" aria-labelledby="t-erfassen">
       <h2 class="form-title" id="t-erfassen">Eintragen</h2>
-      <form class="form" method="post" novalidate>
+      <form class="form" method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         {% for fehler in form.non_field_errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
         <fieldset class="field erfassen-art">
@@ -39,6 +39,7 @@
           {% include "core/feld.html" with f=form.zeitpunkt %}
           {% include "core/feld.html" with f=form.text breit=True optional=True %}
         </div>
+        {% include "historie/ablage.html" with id="dateien-eintrag" titel="Dateien anhängen (optional)" kurz=True %}
         <button class="btn btn-primary" type="submit">{% icon "check" %}Eintragen</button>
       </form>
     </section>
@@ -51,6 +52,16 @@
       </ul>
     </section>
     {% endif %}
+
+    <section class="group" aria-labelledby="dateien">
+      <h2 class="group-head" id="dateien">Dateien{% if dateien %} <span class="count">{{ dateien|length }}</span>{% endif %}</h2>
+      {% include "historie/dateien.html" %}
+      <form class="ablage-form" method="post" action="{% url 'historie:hochladen' kontakt.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include "historie/ablage.html" with id="dateien-neu" titel="Dateien zur Adresse ablegen" sofort=True %}
+        <button class="btn" type="submit">{% icon "upload" %}Hochladen</button>
+      </form>
+    </section>
 
     <section class="group" aria-labelledby="t-verlauf">
       <div class="verlauf-kopf">
@@ -75,6 +86,7 @@
           <div class="row-main">
             <p class="row-title">{% if p.url %}<a href="{{ p.url }}"{% if p.neues_fenster %} target="_blank" rel="noopener"{% endif %}>{{ p.titel }}</a>{% elif p.vorgang %}<a href="{% url 'historie:bearbeiten' p.vorgang.pk %}">{{ p.titel }}</a>{% else %}{{ p.titel }}{% endif %}</p>
             {% if p.text %}<p class="verlauf-text">{{ p.text|linebreaksbr }}</p>{% endif %}
+            {% if p.dateien %}<p class="verlauf-dateien">{% for d in p.dateien %}<a href="{% url 'historie:datei' d.pk %}"{% if d.vorschau %} target="_blank" rel="noopener"{% endif %}>{% icon "paperclip" %}{{ d.name }}</a>{% endfor %}</p>{% endif %}
             {% if p.benutzer %}<p class="row-meta">{{ p.benutzer }}</p>{% endif %}
           </div>
           <span class="amount">{% if p.betrag is not None %}{{ p.betrag|euro }}{% endif %}</span>
@@ -87,7 +99,7 @@
       {% else %}
       <div class="empty empty-inline">
         <h3>Noch nichts passiert</h3>
-        <p class="muted">Tragen Sie oben Anrufe, E-Mails, Termine und Notizen ein. Angebote, Rechnungen und Zahlungen erscheinen hier von selbst.</p>
+        <p class="muted">Tragen Sie oben Anrufe, E-Mails, Termine und Notizen ein oder legen Sie Dateien ab. Angebote, Rechnungen und Zahlungen erscheinen hier von selbst.</p>
       </div>
       {% endif %}
     </section>
