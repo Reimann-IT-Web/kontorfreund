@@ -14,7 +14,7 @@
 <div class="page-head">
   <div>
     <h1>{{ kontakt }}</h1>
-    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
+    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if firma %} · Ansprechpartner bei <a href="{% url 'historie:verlauf' firma.pk %}">{{ firma }}</a>{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
   </div>
   <div class="actions">
     {% if kontakt.gesperrt_am %}
@@ -80,7 +80,7 @@
     <section class="group" aria-labelledby="t-verlauf">
       <div class="verlauf-kopf">
         <h2 class="group-head" id="t-verlauf">Verlauf <span class="count">{{ punkte|length }}</span></h2>
-        {% if anzahl %}
+        {% if anzahl or personen %}
         <form method="get">
           <label class="field field-inline">
             <span class="visually-hidden">Nur diese Art zeigen</span>
@@ -88,6 +88,15 @@
               {% for wert, name in arten %}<option value="{{ wert }}"{% if wert == art %} selected{% endif %}>{{ name }}</option>{% endfor %}
             </select>
           </label>
+          {% if personen %}
+          <label class="field field-inline">
+            <span class="visually-hidden">Einträge der Ansprechpartner</span>
+            <select name="personen" data-auto-submit>
+              <option value="">mit Ansprechpartnern</option>
+              <option value="0"{% if not mit_personen %} selected{% endif %}>ohne Ansprechpartner</option>
+            </select>
+          </label>
+          {% endif %}
           <noscript><button class="btn btn-sm" type="submit">Anzeigen</button></noscript>
         </form>
         {% endif %}
@@ -101,10 +110,10 @@
             <p class="row-title">{% if p.url %}<a href="{{ p.url }}"{% if p.neues_fenster %} target="_blank" rel="noopener"{% endif %}>{{ p.titel }}</a>{% elif p.vorgang and not kontakt.gesperrt_am %}<a href="{% url 'historie:bearbeiten' p.vorgang.pk %}">{{ p.titel }}</a>{% else %}{{ p.titel }}{% endif %}</p>
             {% if p.text %}<p class="verlauf-text">{{ p.text|linebreaksbr }}</p>{% endif %}
             {% if p.dateien %}<p class="verlauf-dateien">{% for d in p.dateien %}<a href="{% url 'historie:datei' d.pk %}"{% if d.vorschau %} target="_blank" rel="noopener"{% endif %}>{% icon "paperclip" %}{{ d.name }}</a>{% endfor %}</p>{% endif %}
-            {% if p.benutzer %}<p class="row-meta">{{ p.benutzer }}</p>{% endif %}
+            {% if p.kontakt or p.benutzer %}<p class="row-meta">{% if p.kontakt %}<a href="{% url 'historie:verlauf' p.kontakt.pk %}">{{ p.kontakt }}</a>{% if p.benutzer %} · {% endif %}{% endif %}{{ p.benutzer }}</p>{% endif %}
           </div>
           <span class="amount">{% if p.betrag is not None %}{{ p.betrag|euro }}{% endif %}</span>
-          {% if p.nachfassen and not kontakt.gesperrt_am %}<a class="btn btn-sm btn-ghost" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ kontakt.pk }}&amp;in=7&amp;{{ p.nachfassen }}&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Nachfassen</a>{% endif %}
+          {% if p.nachfassen and not kontakt.gesperrt_am %}<a class="btn btn-sm btn-ghost" href="{% url 'wiedervorlagen:neu' %}?kontakt={{ p.kontakt.pk|default:kontakt.pk }}&amp;in=7&amp;{{ p.nachfassen }}&amp;weiter={{ weiter|urlencode }}">{% icon "clock" %}Nachfassen</a>{% endif %}
         </li>
         {% endfor %}
       </ul>
@@ -131,6 +140,17 @@
       <h2 id="t-anschrift" class="panel-title">Anschrift</h2>
       <address class="plain">{% for zeile in kontakt.anschrift_zeilen %}{{ zeile }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</address>
     </section>
+    {% if kontakt.art == "firma" %}
+    <section class="side-section" aria-labelledby="t-personen">
+      <h2 id="t-personen" class="panel-title">Ansprechpartner</h2>
+      {% for person in personen %}
+      <p><a class="link" href="{% url 'historie:verlauf' person.pk %}">{{ person }}</a>{% if person.archiviert %} <span class="small muted">(archiviert)</span>{% endif %}{% if person.telefon or person.email %}<br><span class="small muted">{{ person.telefon }}{% if person.telefon and person.email %} · {% endif %}{{ person.email }}</span>{% endif %}</p>
+      {% empty %}
+      <p class="small muted">Legen Sie Personen dieser Firma an, um ihre Anrufe und Notizen einzeln festzuhalten. Sie erscheinen dann auch hier im Verlauf.</p>
+      {% endfor %}
+      {% if not kontakt.gesperrt_am %}<p><a class="btn btn-sm" href="{% url 'contacts:neu' %}?firma={{ kontakt.pk }}">{% icon "user-plus" %}Ansprechpartner anlegen</a></p>{% endif %}
+    </section>
+    {% endif %}
     {% if kontakt.notiz %}
     <section class="side-section" aria-labelledby="t-notiz">
       <h2 id="t-notiz" class="panel-title">Notiz</h2>

@@ -53,6 +53,7 @@
       {% include "core/feld.html" with f=form.titel optional=True %}
       {% include "core/feld.html" with f=form.vorname optional=True %}
       {% include "core/feld.html" with f=form.nachname optional_firma=True %}
+      <div class="field-wide" data-nur-person>{% include "core/feld.html" with f=form.firma optional=True %}</div>
     </div>
   </section>
 

@@ -963,6 +963,12 @@ kbd {
   margin-bottom: 0;
 }
 
+.verlauf-kopf form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
 .row-verlauf {
   align-items: start;
 }

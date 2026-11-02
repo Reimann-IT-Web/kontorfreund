@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from benachrichtigungen import telegram
 from config.fehlerprotokoll import MitZeitzone
@@ -138,7 +139,7 @@ def test_erstes_kennwort_wird_bei_der_anmeldung_ersetzt(client):
 def test_pruefer_waehlt_sein_kennwort_selbst(anna):
     anna.rolle = Benutzer.Rolle.PRUEFER
     anna.kennwort_vorlaeufig = True
-    anna.zugang_bis = anna.erstellt.date()
+    anna.zugang_bis = timezone.localdate()
     anna.pruefung_von = anna.pruefung_bis = 2025
     anna.save()
 

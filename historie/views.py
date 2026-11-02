@@ -64,7 +64,11 @@ def verlauf(request, pk):
     art = request.GET.get("art", "")
     if art not in dict(zeitleiste.ARTEN):
         art = ""
-    punkte = zeitleiste.punkte(kontakt)
+    # Ansprechpartner einer Firma (Spezifikation K-1/K-2); gesperrte erscheinen nirgends.
+    personen = list(kontakt.personen.filter(gesperrt_am__isnull=True))
+    mit_personen = request.GET.get("personen") != "0"
+    punkte = zeitleiste.punkte(kontakt, personen if mit_personen else ())
+    firma = kontakt.firma if kontakt.firma and not kontakt.firma.gesperrt_am else None
     return render(
         request,
         "historie/verlauf.html",
@@ -84,6 +88,9 @@ def verlauf(request, pk):
             "anzahl": len(punkte),
             "art": art,
             "arten": zeitleiste.ARTEN,
+            "personen": personen,
+            "mit_personen": mit_personen,
+            "firma": firma,
             "weiter": request.get_full_path(),
         },
     )

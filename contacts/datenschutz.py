@@ -105,6 +105,8 @@ def stammdaten(kontakt):
         wert = getattr(kontakt, name)
         if feld.choices and wert:
             wert = getattr(kontakt, f"get_{name}_display")()
+        elif feld.is_relation:
+            wert = f"{wert.kundennummer} {wert}" if wert else ""
         daten[str(feld.verbose_name)] = wert
     daten["Angelegt am"] = kontakt.erstellt
     daten["Zuletzt geändert am"] = kontakt.geaendert

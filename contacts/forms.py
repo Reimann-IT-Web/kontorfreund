@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.urls import reverse_lazy
 
 from .models import Kontakt
@@ -23,6 +24,7 @@ class KontaktForm(forms.ModelForm):
             "titel",
             "vorname",
             "nachname",
+            "firma",
             "strasse",
             "plz",
             "ort",
@@ -51,4 +53,18 @@ class KontaktForm(forms.ModelForm):
             "ust_id": "Nur nötig bei Geschäften mit Unternehmen im EU-Ausland oder § 13b.",
             "kaeuferreferenz": "Steht auf jeder Rechnung an diese Adresse. Behörden nennen Ihnen dafür ihre Leitweg-ID, z. B. 991-01234-38.",
             "xrechnung": "Für Behörden und Kunden, die eine XRechnung verlangen. Zu jeder Rechnung legt Kontorfreund dann die XML-Datei bei, die Sie im Portal der Behörde hochladen oder mitschicken.",
+            "firma": "Dann steht die Person bei der Firma, und ihre Einträge erscheinen auch im Verlauf der Firma.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Archivierte Firmen nur, wenn die Person schon zu einer gehört.
+        firmen = Kontakt.objects.filter(
+            Q(archiviert=False) | Q(pk=self.instance.firma_id),
+            art=Kontakt.Art.FIRMA,
+            gesperrt_am__isnull=True,
+        )
+        if self.instance.pk:
+            firmen = firmen.exclude(pk=self.instance.pk)
+        self.fields["firma"].queryset = firmen
+        self.fields["firma"].empty_label = "– keiner Firma –"

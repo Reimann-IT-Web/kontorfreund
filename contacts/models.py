@@ -64,6 +64,16 @@ class Kontakt(models.Model):
     titel = models.CharField("Titel", max_length=50, blank=True)
     vorname = models.CharField("Vorname", max_length=100, blank=True)
     nachname = models.CharField("Nachname", max_length=100, blank=True)
+    # Nur bei Personen: die Firma, bei der sie Ansprechpartner sind (Spezifikation K-1).
+    firma = models.ForeignKey(
+        "self",
+        verbose_name="Ansprechpartner bei",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="personen",
+        limit_choices_to={"art": "firma"},
+    )
     strasse = models.CharField("Straße und Hausnummer", max_length=200, blank=True)
     plz = models.CharField("PLZ", max_length=10, blank=True)
     ort = models.CharField("Ort", max_length=100, blank=True)
@@ -108,6 +118,8 @@ class Kontakt(models.Model):
         if ist_leitweg_id(self.kaeuferreferenz):
             self.kaeuferreferenz = self.kaeuferreferenz.upper()
         self.anzeigename = self.name_berechnen()
+        if self.art == self.Art.FIRMA:
+            self.firma = None
         if self.nummer is None:
             hoechste = Kontakt.objects.aggregate(m=Max("nummer"))["m"] or 0
             self.nummer = hoechste + 1
@@ -118,6 +130,13 @@ class Kontakt(models.Model):
             raise ValidationError({"firmenname": "Bitte geben Sie den Firmennamen an."})
         if self.art == self.Art.PERSON and not self.nachname.strip():
             raise ValidationError({"nachname": "Bitte geben Sie den Nachnamen an."})
+        if self.art == self.Art.PERSON and self.pk and self.personen.exists():
+            raise ValidationError(
+                {
+                    "art": "Diese Firma hat Ansprechpartner. Ordnen Sie sie zuerst einer "
+                    "anderen Firma zu, bevor Sie daraus eine Person machen."
+                }
+            )
         if self.xrechnung and not self.kaeuferreferenz.strip():
             raise ValidationError(
                 {

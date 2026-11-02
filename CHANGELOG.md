@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.21.0 – 03.11.2026
+
+- Ansprechpartner: Eine Person lässt sich einer Firma zuordnen (im Formular der Person unter „Ansprechpartner bei“). Die Firma zeigt ihre Ansprechpartner rechts auf ihrer Seite, mit Telefon und E-Mail; dort legen Sie mit „Ansprechpartner anlegen“ gleich einen neuen an. Bei der Person steht, zu welcher Firma sie gehört, in der Adressliste ebenso.
+- Im Verlauf einer Firma stehen auch die Anrufe, Notizen und übrigen Einträge ihrer Ansprechpartner, jeweils mit deren Namen. Mit der Auswahl „ohne Ansprechpartner“ blenden Sie sie aus. „Nachfassen“ legt die Wiedervorlage bei der Person an, zu der der Eintrag gehört.
+- Ansprechpartner ohne eigene Anschrift gelten in der Liste nicht mehr als „Anschrift unvollständig“.
+- Die Auskunft nach Art. 15 DSGVO nennt bei einer Person die Firma, der Gesamtexport hat dafür die Spalte „Kundennummer der Firma“.
+
 ## 0.20.0 – 02.11.2026
 
 - Adressen und Artikel lassen sich aus Excel (.xlsx), LibreOffice (.ods) oder einer CSV-Datei übernehmen: in der Liste der Adressen bzw. Artikel unter „Importieren“. Die Spalten erkennt Kontorfreund selbst bei seinen eigenen Exporten, bei Lexware Office und Google Kontakte und bei üblichen Namen wie „PLZ“ oder „E-Mail“; alles andere ordnen Sie per Auswahl zu.

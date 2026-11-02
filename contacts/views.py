@@ -77,7 +77,7 @@ def liste(request):
         kontakte = Kontakt.objects.filter(gesperrt_am__isnull=False)
     else:
         kontakte = Kontakt.objects.filter(archiviert=archiv, gesperrt_am__isnull=True)
-    kontakte = kontakte.annotate(
+    kontakte = kontakte.select_related("firma").annotate(
         anzahl_belege=Count("altbelege", distinct=True),
         anzahl_eingang=Count("eingangsrechnungen", distinct=True),
     )
@@ -142,7 +142,18 @@ def bearbeiten(request, pk=None):
     if kontakt and kontakt.gesperrt_am:
         ds.zugriff(request, kontakt)
         return redirect("contacts:datenschutz", kontakt.pk)
-    form = KontaktForm(request.POST or None, instance=kontakt)
+    # „Ansprechpartner anlegen“ bei einer Firma: Person dieser Firma, gleiche Kategorie.
+    firma = None
+    if not kontakt and request.GET.get("firma", "").isdigit():
+        firma = Kontakt.objects.filter(
+            pk=request.GET["firma"], art=Kontakt.Art.FIRMA, gesperrt_am__isnull=True
+        ).first()
+    initial = (
+        {"art": Kontakt.Art.PERSON, "firma": firma.pk, "kategorie": firma.kategorie}
+        if firma
+        else None
+    )
+    form = KontaktForm(request.POST or None, instance=kontakt, initial=initial)
     dubletten = []
     if request.method == "POST" and form.is_valid():
         dubletten = moegliche_dubletten(form.instance)
@@ -150,6 +161,8 @@ def bearbeiten(request, pk=None):
             kontakt = form.save()
             aktion = "gespeichert" if pk else "angelegt"
             messages.success(request, f"Adresse {kontakt.kundennummer} {aktion}.")
+            if firma and kontakt.firma_id == firma.pk:
+                return redirect("historie:verlauf", firma.pk)
             return redirect(f"{reverse('contacts:liste')}?offen={kontakt.pk}")
     return render(
         request,

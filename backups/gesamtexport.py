@@ -56,9 +56,15 @@ TABELLEN = [
     (
         "adressen.csv",
         "Adressen",
-        Kontakt.objects.all(),
+        Kontakt.objects.select_related("firma"),
         ID + [("Kundennummer", lambda k: k.kundennummer)],
-        [("Angelegt am", lambda k: _zeit(k.erstellt))],
+        [
+            (
+                "Kundennummer der Firma",
+                lambda k: k.firma.kundennummer if k.firma else "",
+            ),
+            ("Angelegt am", lambda k: _zeit(k.erstellt)),
+        ],
     ),
     (
         "artikel.csv",

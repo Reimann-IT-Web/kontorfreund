@@ -58,7 +58,8 @@
         <td>
           <span class="cell-title">{{ k.anzeigename }}</span>
           {% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}
-          {% if not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
+          {% if k.firma and not k.firma.gesperrt_am %}<span class="cell-sub">Ansprechpartner bei {{ k.firma }}</span>
+          {% elif not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
         </td>
         <td class="col-ort">{{ k.ort|default:"–" }}</td>
         <td class="col-kat"><span class="tag">{{ k.get_kategorie_display }}</span></td>

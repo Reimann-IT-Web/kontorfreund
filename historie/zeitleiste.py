@@ -4,7 +4,8 @@ Von Hand erfasste Vorgänge kommen aus `Vorgang`, abgelegte Dateien aus `Datei` 
 einem Vorgang stehen sie bei ihm, sonst als eigener Punkt); Angebote,
 Auftragsbestätigungen, Rechnungen, Zahlungen, Mahnungen, erledigte Wiedervorlagen,
 Altbelege und Eingangsrechnungen werden aus ihren eigenen Daten gelesen, damit nichts
-doppelt gespeichert ist.
+doppelt gespeichert ist. Bei einer Firma kommen, solange der Nutzer sie nicht
+ausblendet, die Einträge ihrer Ansprechpartner dazu, jeweils mit deren Namen.
 """
 
 from dataclasses import dataclass, field
@@ -58,6 +59,8 @@ class Punkt:
     # Vorbelegung für „Wiedervorlage“ aus diesem Eintrag, als Teil einer Adresse.
     nachfassen: str = ""
     dateien: list = field(default_factory=list)
+    # Der Ansprechpartner, wenn der Eintrag zu ihm gehört und bei seiner Firma steht.
+    kontakt: object = None
 
     @property
     def icon(self):
@@ -69,7 +72,22 @@ def _lokal(zeitpunkt):
     return zeitpunkt.date(), zeitpunkt.time().replace(second=0, microsecond=0)
 
 
-def punkte(kontakt):
+def punkte(kontakt, personen=()):
+    """Die Zeitleiste; mit `personen` auch die Einträge dieser Ansprechpartner."""
+    ergebnis = _eigene(kontakt)
+    for person in personen:
+        for punkt in _eigene(person):
+            punkt.kontakt = person
+            ergebnis.append(punkt)
+    # Ohne Uhrzeit (Belege, Zahlungen) steht ein Eintrag am Ende seines Tages.
+    return sorted(
+        ergebnis,
+        key=lambda p: datetime.combine(p.tag, p.uhrzeit or time.min),
+        reverse=True,
+    )
+
+
+def _eigene(kontakt):
     ergebnis = []
     vorhanden = Datei.objects.filter(geloescht_am__isnull=True)
     for v in kontakt.vorgaenge.select_related("benutzer").prefetch_related(
@@ -208,9 +226,4 @@ def punkte(kontakt):
                 betrag=e.brutto,
             )
         )
-    # Ohne Uhrzeit (Belege, Zahlungen) steht ein Eintrag am Ende seines Tages.
-    return sorted(
-        ergebnis,
-        key=lambda p: datetime.combine(p.tag, p.uhrzeit or time.min),
-        reverse=True,
-    )
+    return ergebnis

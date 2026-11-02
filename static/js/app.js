@@ -190,16 +190,20 @@ if (ablagen.length) {
   }
 }
 
-// ---------- Adressformular: Firmenfeld nur bei Firmen ----------
+// ---------- Adressformular: Firmenfeld nur bei Firmen, „Ansprechpartner bei“ nur bei Personen ----------
 
 const kontaktForm = document.querySelector("[data-kontakt-form]");
 if (kontaktForm) {
   const titel = kontaktForm.querySelector("[data-titel-firma]");
   const nurFirma = kontaktForm.querySelectorAll("[data-nur-firma]");
+  const nurPerson = kontaktForm.querySelectorAll("[data-nur-person]");
   const umschalten = () => {
     const firma = kontaktForm.querySelector("[name=art]:checked")?.value !== "person";
     nurFirma.forEach((el) => {
       el.hidden = !firma;
+    });
+    nurPerson.forEach((el) => {
+      el.hidden = firma;
     });
     titel.textContent = firma ? titel.dataset.titelFirma : titel.dataset.titelPerson;
   };
