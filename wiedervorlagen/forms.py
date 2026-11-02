@@ -26,7 +26,9 @@ class WiedervorlageForm(forms.ModelForm):
             kontakte = Kontakt.objects.filter(pk=self.instance.kontakt_id) | kontakte
         self.fields["kontakt"].queryset = kontakte
         self.fields["kontakt"].empty_label = "ohne Adresse"
-        self.fields["zustaendig"].queryset = Benutzer.objects.filter(is_active=True)
+        self.fields["zustaendig"].queryset = Benutzer.objects.filter(
+            is_active=True
+        ).exclude(rolle=Benutzer.Rolle.PRUEFER)
         self.fields["zustaendig"].empty_label = "alle"
 
 

@@ -25,6 +25,7 @@ urlpatterns = [
     path("konto/", include("konten.urls")),
     path("protokoll/", include("protokoll.urls")),
     path("dokumentation/", include("dokumentation.urls")),
+    path("datenzugriff/", include("datenzugriff.urls")),
     # Zuletzt: core enthält die Platzhalter-Bereiche unter /<bereich>/.
     path("", include("core.urls")),
 ]

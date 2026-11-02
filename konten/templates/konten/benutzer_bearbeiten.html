@@ -28,7 +28,23 @@
   </section>
   {% endif %}
 
-  {% if not selbst %}
+  {% if pruefung_form %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="form-section" aria-labelledby="t-pruefung">
+      <h2 class="form-title" id="t-pruefung">Betriebsprüfung</h2>
+      <p class="form-hint small">{% if konto.zugang_offen %}{{ konto.name }} kann sich bis einschließlich {{ konto.zugang_bis|date:"d.m.Y" }} anmelden und dabei nur lesen.{% else %}Der Zugang ist am {{ konto.zugang_bis|date:"d.m.Y" }} abgelaufen. Dauert die Prüfung länger, verlängern Sie ihn hier.{% endif %} <a href="{% url 'datenzugriff:start' %}">So sieht es der Prüfer</a></p>
+      <div class="form-grid">
+        {% include "core/feld.html" with f=pruefung_form.pruefung_von %}
+        {% include "core/feld.html" with f=pruefung_form.pruefung_bis %}
+        {% include "core/feld.html" with f=pruefung_form.zugang_bis %}
+      </div>
+      <button class="btn" type="submit" name="aktion" value="pruefung">{% icon "check" %}Speichern</button>
+    </section>
+  </form>
+  {% endif %}
+
+  {% if not selbst and not konto.ist_pruefer %}
   <section class="form-section" aria-labelledby="t-rolle">
     <h2 class="form-title" id="t-rolle">Rolle</h2>
     <form method="post">
@@ -69,7 +85,7 @@
   <section class="form-section" aria-labelledby="t-zugang">
     <h2 class="form-title" id="t-zugang">Zugang</h2>
     {% if konto.is_active %}
-    <p class="small">Wer nicht mehr mitarbeitet, verliert den Zugang. Das Konto bleibt erhalten, damit nachvollziehbar bleibt, wer was bearbeitet hat.</p>
+    <p class="small">{% if konto.ist_pruefer %}Ist die Prüfung vorbei, sperren Sie den Zugang gleich, statt auf den letzten Tag zu warten.{% else %}Wer nicht mehr mitarbeitet, verliert den Zugang.{% endif %} Das Konto bleibt erhalten, damit nachvollziehbar bleibt, wer was bearbeitet hat.</p>
     <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="zugang" data-confirm="{{ konto.name }} wirklich sperren?">{% icon "x" %}Zugang sperren</button></form>
     {% else %}
     <p class="small">{{ konto.name }} kann sich zurzeit nicht anmelden.</p>

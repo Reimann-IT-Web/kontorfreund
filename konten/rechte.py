@@ -3,6 +3,8 @@
 from functools import wraps
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import logout
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -34,6 +36,35 @@ def zwei_faktor_pflicht(get_response):
             not in (reverse("konten:zwei_faktor"), reverse("konten:abmelden"))
         ):
             return redirect("konten:zwei_faktor")
+        return get_response(request)
+
+    return middleware
+
+
+LESEN = ("GET", "HEAD")
+
+
+def nur_lesen(get_response):
+    """Prüfer sehen nur den Datenzugriff, schicken nichts ab außer der Abmeldung und
+    verlieren den Zugang nach `zugang_bis`, auch mitten in einer Sitzung."""
+
+    def middleware(request):
+        benutzer = request.user
+        if benutzer.is_authenticated and benutzer.ist_pruefer:
+            if not benutzer.zugang_offen:
+                logout(request)
+                messages.info(
+                    request, "Der Zugang für die Betriebsprüfung ist abgelaufen."
+                )
+                return redirect("konten:anmelden")
+            if request.path == reverse("konten:abmelden"):
+                pass
+            elif not request.path.startswith(reverse("datenzugriff:start")):
+                if request.method in LESEN:
+                    return redirect("datenzugriff:start")
+                raise PermissionDenied
+            elif request.method not in LESEN:
+                raise PermissionDenied
         return get_response(request)
 
     return middleware

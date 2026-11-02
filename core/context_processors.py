@@ -28,6 +28,9 @@ def navigation(request):
     mehrere = firmen.mehrere(settings.HAUPTORDNER)
     if not request.user.is_authenticated:
         return {"firma": Firmendaten.laden(), "mehrere_firmen": mehrere}
+    if request.user.ist_pruefer:
+        # Kein Suchindex und keine Zähler: Prüfer sehen nur den Datenzugriff.
+        return {"firma": Firmendaten.laden(), "mehrere_firmen": False}
     kontakte = Kontakt.objects.filter(archiviert=False)
     anzahl = kontakte.count()
     faellig = (

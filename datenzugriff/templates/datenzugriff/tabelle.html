@@ -1,0 +1,52 @@
+{% extends "datenzugriff/rahmen.html" %}
+{% load kf %}
+
+{% block title %}{{ ansicht.tabelle.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'datenzugriff:start' %}{% if jahr %}?jahr={{ jahr }}{% endif %}">Daten {{ zeitraum }}</a></li>
+    <li aria-current="page">{{ ansicht.tabelle.name }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ ansicht.tabelle.name }}</h1>
+    <p class="muted">{{ ansicht.tabelle.beschreibung }}</p>
+  </div>
+</div>
+
+{% include "datenzugriff/jahre.html" %}
+
+{% if zeilen %}
+<div class="table-wrap">
+  <table class="table pruefer-tabelle">
+    <thead>
+      <tr>
+        {% for s in spalten %}<th scope="col"{% if s.rechts %} class="num"{% endif %}{% if s.sortiert %} aria-sort="{{ s.sortiert }}"{% endif %}><a href="{{ s.adresse }}"{% if s.erklaerung %} title="{{ s.erklaerung }}"{% endif %}>{{ s.name }}{% if s.sortiert == "ascending" %} ↑{% elif s.sortiert == "descending" %} ↓{% endif %}</a></th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for z in zeilen %}
+      <tr>
+        {% for c in z %}<td{% if c.rechts %} class="num"{% elif c.lang %} class="lang"{% endif %}>{% if c.datei %}<a href="{% url 'datenzugriff:beleg' %}?pfad={{ c.datei|urlencode }}" target="_blank" rel="noopener" title="{{ c.datei }}">öffnen</a>{% elif c.kurz %}<span class="hash" title="{{ c.text }}">{{ c.kurz }}</span>{% else %}{{ c.text }}{% endif %}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% if fuss %}
+    <tfoot>
+      <tr>{% for c in fuss %}<td{% if c.rechts %} class="num"{% endif %}><strong>{{ c.text }}</strong></td>{% endfor %}</tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+<p class="table-foot muted">{% if suche %}{{ zeilen|length }} von {{ anzahl }} Zeile{{ anzahl|pluralize:"n" }} enthalten „{{ suche }}“.{% else %}{{ anzahl }} Zeile{{ anzahl|pluralize:"n" }}.{% endif %} Ein Klick auf eine Spalte sortiert, ein zweiter dreht die Reihenfolge um.</p>
+{% else %}
+<div class="empty">
+  <h2>{% if suche %}Nichts gefunden{% else %}Keine Einträge{% endif %}</h2>
+  <p class="muted">{% if suche %}Keine Zeile enthält „{{ suche }}“.{% else %}In diesem Zeitraum gibt es hier nichts.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

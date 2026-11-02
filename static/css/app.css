@@ -3018,3 +3018,35 @@ input[type="file"]::file-selector-button {
     scroll-behavior: auto !important;
   }
 }
+
+/* Datenzugriff für die Betriebsprüfung */
+.pruefer-konto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2) var(--s3);
+}
+
+.pruefer-tabelle th a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pruefer-tabelle th a:hover {
+  text-decoration: underline;
+}
+
+.pruefer-tabelle td {
+  white-space: nowrap;
+}
+
+.pruefer-tabelle td.lang {
+  min-width: 18rem;
+  white-space: normal;
+}
+
+.table-foot + .form-section,
+.pruefer-zugang {
+  margin-top: var(--s6);
+}

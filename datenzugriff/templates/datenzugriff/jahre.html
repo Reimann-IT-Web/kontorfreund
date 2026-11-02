@@ -1,0 +1,21 @@
+{% load kf %}<form class="filterbar" method="get">
+  {% if jahre|length > 1 %}
+  <label class="field field-inline">
+    <span class="visually-hidden">Jahr</span>
+    <select name="jahr" data-auto-submit>
+      <option value="">Alle Jahre ({{ jahre.0 }} bis {{ jahre|last }})</option>
+      {% for j in jahre %}<option value="{{ j }}"{% if j == jahr %} selected{% endif %}>{{ j }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% if ansicht %}
+  <label class="field field-search">
+    {% icon "search" %}
+    <span class="visually-hidden">In der Tabelle suchen</span>
+    <input type="search" name="q" value="{{ suche }}" placeholder="In der Tabelle suchen">
+  </label>
+  <button class="btn" type="submit">Anzeigen</button>
+  {% else %}
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+  {% endif %}
+</form>

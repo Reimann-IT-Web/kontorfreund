@@ -14,7 +14,7 @@
 <div class="page-head">
   <div>
     <h1>Benutzer</h1>
-    <p class="muted">Inhaber dürfen alles. Mitarbeiter bearbeiten Adressen und Belege, sehen aber keine Einstellungen und keine Datensicherung.</p>
+    <p class="muted">Inhaber dürfen alles. Mitarbeiter bearbeiten Adressen und Belege, sehen aber keine Einstellungen und keine Datensicherung. Prüfer des Finanzamts lesen nur, nur die Jahre der Prüfung und nur bis zu einem festen Tag.</p>
   </div>
 </div>
 
@@ -34,9 +34,9 @@
       <tr class="data-row">
         <td><a href="{% url 'konten:benutzer_bearbeiten' konto.pk %}">{{ konto.name }}</a>{% if konto == user %} <span class="muted">(Sie)</span>{% endif %}</td>
         <td>{{ konto.email }}</td>
-        <td>{{ konto.get_rolle_display }}</td>
+        <td>{{ konto.get_rolle_display }}{% if konto.ist_pruefer %} <span class="muted">· {{ konto.pruefung_von }}{% if konto.pruefung_bis != konto.pruefung_von %} bis {{ konto.pruefung_bis }}{% endif %}</span>{% endif %}</td>
         <td>{% if konto.zwei_faktor %}<span class="status status-ok">{% icon "check" %}Ein</span>{% else %}<span class="muted">aus</span>{% endif %}</td>
-        <td>{% if not konto.is_active %}<span class="status status-void">{% icon "x" %}Gesperrt</span>{% elif konto.gesperrt %}<span class="status status-danger">{% icon "clock" %}Nach Fehlversuchen gesperrt</span>{% else %}<span class="muted">aktiv</span>{% endif %}</td>
+        <td>{% if not konto.is_active %}<span class="status status-void">{% icon "x" %}Gesperrt</span>{% elif konto.gesperrt %}<span class="status status-danger">{% icon "clock" %}Nach Fehlversuchen gesperrt</span>{% elif not konto.zugang_offen %}<span class="status status-void">{% icon "clock" %}Abgelaufen am {{ konto.zugang_bis|date:"d.m.Y" }}</span>{% elif konto.ist_pruefer %}<span class="muted">bis {{ konto.zugang_bis|date:"d.m.Y" }}</span>{% else %}<span class="muted">aktiv</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -61,4 +61,27 @@
     <button class="btn btn-primary" type="submit">{% icon "user-plus" %}Konto anlegen</button>
   </div>
 </form>
+
+<details class="disclosure pruefer-zugang"{% if pruefer_offen %} open{% endif %}>
+  <summary>Zugang für einen Betriebsprüfer</summary>
+  <form class="form" method="post" novalidate>
+    {% csrf_token %}
+    <section class="form-section">
+      <p class="form-hint small muted">Verlangt das Finanzamt bei einer Betriebsprüfung Zugriff auf Ihre Daten (§ 147 Abs. 6 AO), legen Sie hier ein Konto an. Der Prüfer sieht nur die Jahre der Prüfung: Rechnungen, Zahlungen, Mahnungen, Eingangsrechnungen, Belege aus dem früheren Programm, das Rechnungsausgangsbuch, das Änderungsprotokoll und die Verfahrensdokumentation. Ändern kann er nichts, und am letzten Tag endet der Zugang von selbst.</p>
+      <div class="form-grid">
+        {% include "core/feld.html" with f=pruefer_form.name %}
+        {% include "core/feld.html" with f=pruefer_form.email %}
+        {% include "core/feld.html" with f=pruefung_form.pruefung_von %}
+        {% include "core/feld.html" with f=pruefung_form.pruefung_bis %}
+        {% include "core/feld.html" with f=pruefung_form.zugang_bis %}
+        <div></div>
+        {% include "core/feld.html" with f=pruefer_form.kennwort %}
+        {% include "core/feld.html" with f=pruefer_form.wiederholung %}
+      </div>
+    </section>
+    <div class="form-actions">
+      <button class="btn" type="submit" name="aktion" value="pruefer">{% icon "user-plus" %}Zugang anlegen</button>
+    </div>
+  </form>
+</details>
 {% endblock %}

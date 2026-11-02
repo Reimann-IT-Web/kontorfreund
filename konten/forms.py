@@ -1,7 +1,15 @@
+from datetime import timedelta
+
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
+
+from datenzugriff.daten import jahre
 
 from .models import Benutzer
+
+# Höchstens so lange gilt ein Zugang für die Betriebsprüfung am Stück.
+LAENGSTENS = timedelta(days=365)
 
 
 class Formular(forms.Form):
@@ -95,7 +103,11 @@ class BenutzerForm(EinrichtenForm):
 
     rolle = forms.ChoiceField(
         label="Rolle",
-        choices=Benutzer.Rolle.choices,
+        choices=[
+            (wert, text)
+            for wert, text in Benutzer.Rolle.choices
+            if wert != Benutzer.Rolle.PRUEFER
+        ],
         initial=Benutzer.Rolle.MITARBEITER,
     )
     field_order = ["name", "email", "rolle", "kennwort", "wiederholung"]
@@ -112,6 +124,70 @@ class BenutzerForm(EinrichtenForm):
         if Benutzer.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Für diese Adresse gibt es schon ein Konto.")
         return email
+
+
+class PrueferForm(BenutzerForm):
+    """Konto für einen Betriebsprüfer; Zeitraum und Ablauf stehen in PruefungForm."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        del self.fields["rolle"]
+        self.fields[
+            "name"
+        ].help_text = (
+            "Wie in der Prüfungsanordnung, z. B. Frau Beispiel, Finanzamt Mitte."
+        )
+
+
+class PruefungForm(forms.ModelForm):
+    """Prüfungszeitraum und Ablauf des Zugangs eines Prüfers."""
+
+    class Meta:
+        model = Benutzer
+        fields = ["pruefung_von", "pruefung_bis", "zugang_bis"]
+        widgets = {
+            "zugang_bis": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+        }
+        help_texts = {
+            "pruefung_bis": "Die Jahre stehen in der Prüfungsanordnung.",
+            "zugang_bis": "Danach kann sich der Prüfer nicht mehr anmelden, höchstens ein Jahr ab heute.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("auto_id", "%s")
+        super().__init__(*args, **kwargs)
+        auswahl = [(j, str(j)) for j in jahre()]
+        for name in ("pruefung_von", "pruefung_bis", "zugang_bis"):
+            self.fields[name].required = True
+        for name in ("pruefung_von", "pruefung_bis"):
+            self.fields[name] = forms.TypedChoiceField(
+                label=self.fields[name].label,
+                help_text=self.fields[name].help_text,
+                choices=auswahl,
+                coerce=int,
+            )
+        if not self.instance.pk:
+            # Meist prüft das Finanzamt die letzten drei abgeschlossenen Jahre.
+            vorjahr = auswahl[-2][0] if len(auswahl) > 1 else auswahl[-1][0]
+            self.initial |= {
+                "pruefung_von": max(vorjahr - 2, auswahl[0][0]),
+                "pruefung_bis": vorjahr,
+                "zugang_bis": timezone.localdate() + timedelta(days=30),
+            }
+
+    def clean(self):
+        daten = super().clean()
+        von, bis = daten.get("pruefung_von"), daten.get("pruefung_bis")
+        if von and bis and von > bis:
+            self.add_error("pruefung_bis", "Das letzte Jahr liegt vor dem ersten.")
+        zugang = daten.get("zugang_bis")
+        heute = timezone.localdate()
+        if zugang and not heute <= zugang <= heute + LAENGSTENS:
+            self.add_error(
+                "zugang_bis",
+                f"Bitte ein Datum zwischen heute und dem {heute + LAENGSTENS:%d.%m.%Y}.",
+            )
+        return daten
 
 
 class KennwortAendernForm(NeuesKennwortForm):

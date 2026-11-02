@@ -29,6 +29,7 @@ APPS = [
     "konten",
     "protokoll",
     "dokumentation",
+    "datenzugriff",
 ]
 
 # Lädt Django erst zur Laufzeit über Namen aus den Einstellungen.

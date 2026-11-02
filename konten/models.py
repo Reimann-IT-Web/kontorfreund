@@ -1,6 +1,6 @@
 """Benutzer mit Anmeldung per E-Mail, Rolle und Zwei-Faktor-Anmeldung (Spezifikation K-5)."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
@@ -29,6 +29,9 @@ class Benutzer(AbstractBaseUser):
     class Rolle(models.TextChoices):
         INHABER = "inhaber", "Inhaber"
         MITARBEITER = "mitarbeiter", "Mitarbeiter"
+        # Betriebsprüfer des Finanzamts: liest nur, nur den Prüfungszeitraum, nur bis
+        # `zugang_bis` (Datenzugriff nach § 147 Abs. 6 AO, Spezifikation D-6).
+        PRUEFER = "pruefer", "Prüfer"
 
     email = models.EmailField("E-Mail-Adresse", unique=True)
     name = models.CharField("Name", max_length=100)
@@ -43,6 +46,13 @@ class Benutzer(AbstractBaseUser):
     fehlversuche = models.PositiveSmallIntegerField(default=0, editable=False)
     gesperrt_bis = models.DateTimeField(null=True, blank=True, editable=False)
     erstellt = models.DateTimeField(auto_now_add=True)
+    zugang_bis = models.DateField("Zugang bis", null=True, blank=True)
+    pruefung_von = models.PositiveSmallIntegerField(
+        "Prüfungszeitraum von", null=True, blank=True
+    )
+    pruefung_bis = models.PositiveSmallIntegerField(
+        "Prüfungszeitraum bis", null=True, blank=True
+    )
 
     objects = BenutzerManager()
 
@@ -65,6 +75,22 @@ class Benutzer(AbstractBaseUser):
     @property
     def ist_inhaber(self):
         return self.rolle == self.Rolle.INHABER
+
+    @property
+    def ist_pruefer(self):
+        return self.rolle == self.Rolle.PRUEFER
+
+    @property
+    def zugang_offen(self):
+        """Ein Prüfer meldet sich bis einschließlich `zugang_bis` an, danach nicht mehr."""
+        return not self.ist_pruefer or bool(
+            self.zugang_bis and timezone.localdate() <= self.zugang_bis
+        )
+
+    @property
+    def zeitraum(self):
+        """Erster und letzter Tag des Prüfungszeitraums."""
+        return date(self.pruefung_von, 1, 1), date(self.pruefung_bis, 12, 31)
 
     @property
     def zwei_faktor(self):

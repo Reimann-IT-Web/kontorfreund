@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.18.0 – 02.11.2026
+
+- Zugang für den Betriebsprüfer: Verlangt das Finanzamt bei einer Betriebsprüfung Zugriff auf Ihre Daten (§ 147 Abs. 6 AO), legen Sie unter Einstellungen › Benutzer › „Zugang für einen Betriebsprüfer“ ein Konto an, mit den Jahren der Prüfung und einem letzten Tag, höchstens ein Jahr voraus. Der Prüfer sieht nach der Anmeldung nur einen eigenen Bereich: Rechnungsausgangsbuch, Rechnungen mit Positionen, Zahlungen, Mahnungen, Eingangsrechnungen, Belege aus dem früheren Programm, die zugehörigen Adressen, das Änderungsprotokoll und die Verfahrensdokumentation, nur für diese Jahre. Er kann jede Tabelle durchsuchen und sortieren und die Belege öffnen, aber nichts ändern, nichts anlegen und keine anderen Bereiche aufrufen. Nach dem letzten Tag ist keine Anmeldung mehr möglich, auch eine offene Sitzung endet. Verlängern oder vorzeitig sperren können Sie den Zugang jederzeit; „So sieht es der Prüfer“ zeigt Ihnen vorher seine Ansicht.
+- Die Verfahrensdokumentation beschreibt den Zugang für den Prüfer.
+
 ## 0.17.0 – 02.11.2026
 
 - Dokumentation: Unter Einstellungen › Dokumentation erstellt Kontorfreund die Verfahrensdokumentation nach den GoBD, nach der das Finanzamt bei einer Betriebsprüfung fragt, und das Verzeichnis von Verarbeitungstätigkeiten nach Art. 30 DSGVO mit den technischen und organisatorischen Maßnahmen (Art. 32 DSGVO), beide als PDF. Was das Programm betrifft, schreibt Kontorfreund selbst und aus Ihren Einstellungen: wie Rechnungen entstehen, festgeschrieben, abgelegt, geprüft und gesichert werden, wer Zugang hat, welche Daten über Personen wofür gespeichert und wann sie gelöscht werden. Sie ergänzen ein paar Sätze zu Ihrem Betrieb, etwa wie Sie Kontoauszüge und Papierbelege aufbewahren, und kreuzen an, wie Rechner und Akten geschützt sind. Was noch fehlt, steht im Dokument als „Noch offen“.

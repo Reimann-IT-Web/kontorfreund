@@ -1,0 +1,48 @@
+{% extends "datenzugriff/rahmen.html" %}
+{% load kf %}
+
+{% block title %}Betriebsprüfung{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Daten {% if jahr or jahre|length == 1 %}des Jahres{% else %}der Jahre{% endif %} {{ zeitraum }}</h1>
+    <p class="muted">Unmittelbarer Datenzugriff nach § 147 Abs. 6 AO. Sie können alles ansehen, filtern und sortieren und die Belege öffnen; ändern lässt sich nichts.</p>
+  </div>
+</div>
+
+{% include "datenzugriff/jahre.html" %}
+
+<div class="table-wrap">
+  <table class="table stapel">
+    <thead>
+      <tr>
+        <th scope="col">Tabelle</th>
+        <th scope="col">Inhalt</th>
+        <th scope="col" class="num">Einträge</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in ansichten %}
+      <tr class="data-row">
+        <td><a class="cell-title" href="{% url 'datenzugriff:tabelle' a.name %}{% if jahr %}?jahr={{ jahr }}{% endif %}">{{ a.tabelle.name }}</a></td>
+        <td class="voll">{{ a.tabelle.beschreibung }}</td>
+        <td class="num" data-label="Einträge">{{ a.tabelle.zeilen|length }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">Dazu {{ belege }} Belegdatei{{ belege|pluralize:"en" }}, zu öffnen aus den Tabellen. Adressen zeigen den Stand von heute.</p>
+
+<section class="form-section" aria-labelledby="t-verfahren">
+  <h2 class="form-title" id="t-verfahren">Verfahrensdokumentation</h2>
+  {% if fassungen %}
+  <ul class="plain-list">
+    {% for f in fassungen %}<li><a href="{% url 'datenzugriff:dokumentation' f.pk %}">Fassung {{ f.nummer }} vom {{ f.erstellt|date:"d.m.Y" }}</a> <span class="muted">· Kontorfreund {{ f.version }}</span></li>{% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Der Inhaber hat noch keine Fassung erstellt.</p>
+  {% endif %}
+</section>
+{% endblock %}

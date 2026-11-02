@@ -27,6 +27,8 @@ from .forms import (
     KennwortAendernForm,
     KennwortBestaetigenForm,
     NeuesKennwortForm,
+    PrueferForm,
+    PruefungForm,
 )
 from .models import FEHLVERSUCHE, Benutzer
 from .rechte import nur_inhaber
@@ -38,6 +40,8 @@ AUSSTEHEND = "anmeldung_ausstehend"
 CODE_FRIST = 300  # Sekunden
 # Geheimnis für die Zwei-Faktor-Anmeldung, bis der erste Code es bestätigt.
 NEUES_GEHEIMNIS = "zwei_faktor_geheimnis"
+# Wechseln lässt sich nur zwischen diesen; ein Prüfer-Konto bleibt eines.
+ROLLEN = (Benutzer.Rolle.INHABER, Benutzer.Rolle.MITARBEITER)
 
 
 def _ziel(request):
@@ -89,14 +93,24 @@ def anmelden(request):
         elif geprueft := authenticate(
             request, username=email, password=form.cleaned_data["kennwort"]
         ):
-            if not geprueft.zwei_faktor:
+            if not geprueft.zugang_offen:
+                anmeldung(
+                    Eintrag.Aktion.FEHLVERSUCH, email, geprueft, "Zugang abgelaufen"
+                )
+                form.add_error(
+                    None,
+                    "Der Zugang für die Betriebsprüfung ist am "
+                    f"{geprueft.zugang_bis:%d.%m.%Y} abgelaufen.",
+                )
+            elif not geprueft.zwei_faktor:
                 return _anmelden(request, geprueft, _ziel(request))
-            request.session[AUSSTEHEND] = {
-                "pk": geprueft.pk,
-                "ziel": _ziel(request),
-                "zeit": time.time(),
-            }
-            return redirect("konten:code")
+            else:
+                request.session[AUSSTEHEND] = {
+                    "pk": geprueft.pk,
+                    "ziel": _ziel(request),
+                    "zeit": time.time(),
+                }
+                return redirect("konten:code")
         else:
             logger.warning("Anmeldung fehlgeschlagen: %s", email)
             form.add_error(
@@ -259,8 +273,28 @@ def zwei_faktor_aus(request):
 
 @nur_inhaber
 def benutzer(request):
-    form = BenutzerForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
+    pruefer = request.POST.get("aktion") == "pruefer"
+    form = BenutzerForm(None if pruefer else request.POST or None)
+    pruefer_form = PrueferForm(request.POST if pruefer else None, prefix="p")
+    pruefung_form = PruefungForm(request.POST if pruefer else None, prefix="p")
+    # Beide prüfen, damit alle Fehler auf einmal erscheinen.
+    if pruefer and pruefer_form.is_valid() & pruefung_form.is_valid():
+        konto = pruefer_form.cleaned_data
+        neu = Benutzer.objects.create_user(
+            konto["email"],
+            konto["kennwort"],
+            name=konto["name"],
+            rolle=Benutzer.Rolle.PRUEFER,
+            **pruefung_form.cleaned_data,
+        )
+        messages.success(
+            request,
+            f"Der Zugang für {neu.name} ist angelegt und gilt bis zum "
+            f"{neu.zugang_bis:%d.%m.%Y}. Geben Sie E-Mail-Adresse und Kennwort "
+            "persönlich weiter.",
+        )
+        return redirect("konten:benutzer")
+    if not pruefer and request.method == "POST" and form.is_valid():
         daten = form.cleaned_data
         neu = Benutzer.objects.create_user(
             daten["email"], daten["kennwort"], name=daten["name"], rolle=daten["rolle"]
@@ -274,7 +308,14 @@ def benutzer(request):
     return render(
         request,
         "konten/benutzer.html",
-        {"bereich": "einstellungen", "konten": Benutzer.objects.all(), "form": form},
+        {
+            "bereich": "einstellungen",
+            "konten": Benutzer.objects.all(),
+            "form": form,
+            "pruefer_form": pruefer_form,
+            "pruefung_form": pruefung_form,
+            "pruefer_offen": pruefer,
+        },
     )
 
 
@@ -286,16 +327,27 @@ def benutzer_bearbeiten(request, pk):
     kennwort_form = NeuesKennwortForm(
         request.POST if aktion == "kennwort" else None, benutzer=konto
     )
+    pruefung_form = (
+        PruefungForm(request.POST if aktion == "pruefung" else None, instance=konto)
+        if konto.ist_pruefer
+        else None
+    )
     if request.method == "POST":
         if aktion == "kennwort" and kennwort_form.is_valid():
             konto.set_password(kennwort_form.cleaned_data["kennwort"])
             konto.save()
             konto.entsperren()
             meldung = f"Das Kennwort von {konto.name} ist neu gesetzt."
+        elif aktion == "pruefung" and pruefung_form and pruefung_form.is_valid():
+            pruefung_form.save()
+            meldung = (
+                f"Der Zugang für {konto.name} gilt bis zum {konto.zugang_bis:%d.%m.%Y}."
+            )
         elif (
             aktion == "rolle"
             and not selbst
-            and request.POST.get("rolle") in Benutzer.Rolle
+            and not konto.ist_pruefer
+            and request.POST.get("rolle") in ROLLEN
         ):
             konto.rolle = request.POST["rolle"]
             konto.save(update_fields=["rolle"])
@@ -334,6 +386,7 @@ def benutzer_bearbeiten(request, pk):
             "konto": konto,
             "selbst": selbst,
             "kennwort_form": kennwort_form,
-            "rollen": Benutzer.Rolle.choices,
+            "pruefung_form": pruefung_form,
+            "rollen": [(r, Benutzer.Rolle(r).label) for r in ROLLEN],
         },
     )

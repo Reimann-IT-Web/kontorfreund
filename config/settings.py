@@ -24,7 +24,7 @@ NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "konten",
     "protokoll",
     "dokumentation",
+    "datenzugriff",
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "konten.rechte.zwei_faktor_pflicht",
+    "konten.rechte.nur_lesen",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "backups.middleware.taegliche_sicherung",
     "archive.middleware.taegliche_pruefung",

@@ -125,6 +125,20 @@ NUR_INHABER = (
 )
 
 
+PRUEFER = (
+    "Ein Prüfer des Finanzamts liest nur, nur die Jahre seiner Prüfung und nur bis zu "
+    "einem festen Tag."
+)
+
+
+def _zugang_benutzer(b):
+    if not b.is_active:
+        return "abgeschaltet"
+    if b.ist_pruefer:
+        return f"bis {_datum(b.zugang_bis)}"
+    return "aktiv"
+
+
 # ---------- Verfahrensdokumentation ----------
 
 
@@ -184,7 +198,7 @@ def verfahren():
                             b.email,
                             b.get_rolle_display(),
                             "ja" if b.zwei_faktor else "nein",
-                            "aktiv" if b.is_active else "abgeschaltet",
+                            _zugang_benutzer(b),
                         ]
                         for b in benutzer
                     ],
@@ -193,7 +207,7 @@ def verfahren():
                 absatz(
                     "Mitarbeiter arbeiten mit Adressen, Artikeln, Angeboten, "
                     "Auftragsbestätigungen, Rechnungen, Zahlungen, Mahnungen, "
-                    f"Eingangsrechnungen und Wiedervorlagen. {NUR_INHABER}"
+                    f"Eingangsrechnungen und Wiedervorlagen. {NUR_INHABER} {PRUEFER}"
                 ),
             ),
             teil(
@@ -545,10 +559,18 @@ def verfahren():
                     "Für die Datenträgerüberlassung (§ 147 Abs. 6 AO) erzeugt Kontorfreund "
                     "je Zeitraum ein Datenpaket: die Tabellen als CSV mit einer "
                     "Beschreibung index.xml nach dem Beschreibungsstandard der "
-                    "Finanzverwaltung und alle Belegdateien des Zeitraums. Beim "
-                    "unmittelbaren Zugriff sieht der Prüfer die Belege, Listen und "
-                    "Auswertungen am Rechner des Unternehmens ein, angemeldet vom Inhaber. "
-                    "Ein Gesamtexport aller Daten und Belege in offenen Formaten hält die "
+                    "Finanzverwaltung und alle Belegdateien des Zeitraums. Für den "
+                    "unmittelbaren Zugriff legt der Inhaber dem Prüfer ein eigenes Konto "
+                    "mit der Rolle Prüfer an, mit den Jahren des Prüfungszeitraums und "
+                    "einem letzten Tag, höchstens ein Jahr voraus. Der Prüfer sieht nur "
+                    "diese Jahre: Rechnungsausgangsbuch, Rechnungen mit Positionen, "
+                    "Zahlungen, Mahnungen, Eingangsrechnungen, "
+                    + ("Belege aus dem bisherigen Programm, " if alt["anzahl"] else "")
+                    + "die zugehörigen Adressen, das Änderungsprotokoll und die "
+                    "Verfahrensdokumentation. Er filtert und sortiert die Tabellen und "
+                    "öffnet die Belege, kann aber nichts ändern, nichts anlegen und keine "
+                    "anderen Bereiche aufrufen. Nach dem letzten Tag ist keine Anmeldung "
+                    "mehr möglich, eine laufende Sitzung endet. Ein Gesamtexport aller Daten und Belege in offenen Formaten hält die "
                     "Unterlagen auch nach einem Programmwechsel lesbar."
                 ),
             ),
@@ -752,7 +774,8 @@ def datenschutz():
                     "Nutzung.",
                     f"Zwei-Faktor-Anmeldung eingeschaltet für {zwei_faktor} von {aktiv} "
                     f"Benutzer{'n' if aktiv != 1 else ''}.",
-                    "Rollen Inhaber und Mitarbeiter. " + NUR_INHABER,
+                    "Rollen Inhaber, Mitarbeiter und Prüfer. " + NUR_INHABER,
+                    PRUEFER,
                     "Gesperrte Adressen erscheinen in keiner Liste und Suche und sind nur "
                     "für den Inhaber einsehbar.",
                     "Keine Übermittlung an den Hersteller, keine Inhalte aus dem Internet; "
