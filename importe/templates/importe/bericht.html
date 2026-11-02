@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Probelauf{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url liste %}">{{ mehrzahl }}</a></li>
+    <li><a href="{% url 'importe:zuordnen' imp.pk %}">Spalten zuordnen</a></li>
+    <li aria-current="page">Probelauf</li>
+  </ol>
+</nav>
+
+{% with neu=bericht.neu|length dubletten=bericht.dubletten|length fehler=bericht.fehler|length %}
+<div class="page-head">
+  <div>
+    <h1>Probelauf</h1>
+    <p class="muted">{{ imp.dateiname }} · {{ imp.zeilen|length }} Zeile{{ imp.zeilen|length|pluralize:"n" }}. Übernommen ist noch nichts.</p>
+  </div>
+</div>
+
+<ul class="plain-list ergebnis">
+  <li><span class="status status-ok">{% icon "check" %}{{ neu }}</span> {% if neu == 1 %}{{ einzahl }} wird{% else %}{{ mehrzahl }} werden{% endif %} angelegt</li>
+  {% if dubletten %}<li><span class="status status-open">{% icon "alert" %}{{ dubletten }}</span> mögliche Dublette{{ dubletten|pluralize:"n" }} {% if imp.dubletten_anlegen %}{{ dubletten|pluralize:"wird,werden" }} trotzdem angelegt{% else %}{{ dubletten|pluralize:"wird,werden" }} übersprungen{% endif %}</li>{% endif %}
+  {% if fehler %}<li><span class="status status-danger">{% icon "x" %}{{ fehler }}</span> Zeile{{ fehler|pluralize:"n" }} mit Fehlern {{ fehler|pluralize:"wird,werden" }} ausgelassen</li>{% endif %}
+</ul>
+
+{% if fehler %}
+<p class="callout">{% icon "alert" %}<span>Am einfachsten korrigieren Sie die Fehler in Ihrer Datei und laden sie neu hoch. Sonst übernimmt Kontorfreund nur die Zeilen ohne Fehler.</span></p>
+{% endif %}
+
+<div class="form-actions">
+  <form method="post" action="{% url 'importe:uebernehmen' imp.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit"{% if not neu %} disabled{% endif %}>{% icon "check" %}{% if neu == 1 %}1 {{ einzahl }}{% else %}{{ neu }} {{ mehrzahl }}{% endif %} übernehmen</button>
+  </form>
+  <a class="btn" href="{% url 'importe:zuordnen' imp.pk %}">{% icon "pencil" %}Zuordnung ändern</a>
+  <form method="post" action="{% url 'importe:verwerfen' imp.pk %}">
+    {% csrf_token %}
+    <button class="btn" type="submit">Abbrechen</button>
+  </form>
+</div>
+
+{% if fehler %}
+<section class="form-section" aria-labelledby="t-fehler">
+  <h2 class="form-title" id="t-fehler">Zeilen mit Fehlern</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col" class="num">Zeile</th><th scope="col">Was nicht passt</th></tr></thead>
+      <tbody>
+        {% for nr, meldungen in bericht.fehler|slice:":100" %}
+        <tr><td class="num">{{ nr }}</td><td>{% for m in meldungen %}{{ m }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if fehler > 100 %}<p class="table-foot muted">Die ersten 100 von {{ fehler }} Zeilen.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if dubletten %}
+<section class="form-section" aria-labelledby="t-dubletten">
+  <h2 class="form-title" id="t-dubletten">Mögliche Dubletten</h2>
+  <p class="muted form-hint">{% if imp.ziel == "artikel" %}Gleiche Bezeichnung{% else %}Gleiche E-Mail-Adresse oder gleicher Name am selben Ort{% endif %} wie ein vorhandener Eintrag oder eine Zeile weiter oben.</p>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col" class="num">Zeile</th><th scope="col">Name</th><th scope="col">gleicht</th></tr></thead>
+      <tbody>
+        {% for nr, name, gleich in bericht.dubletten|slice:":100" %}
+        <tr><td class="num">{{ nr }}</td><td>{{ name }}</td><td>{{ gleich }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if dubletten > 100 %}<p class="table-foot muted">Die ersten 100 von {{ dubletten }}.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if bericht.hinweise %}
+<section class="form-section" aria-labelledby="t-hinweise">
+  <h2 class="form-title" id="t-hinweise">Hinweise</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col" class="num">Zeile</th><th scope="col">Hinweis</th></tr></thead>
+      <tbody>
+        {% for nr, text in bericht.hinweise|slice:":100" %}
+        <tr><td class="num">{{ nr }}</td><td>{{ text }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if bericht.hinweise|length > 100 %}<p class="table-foot muted">Die ersten 100 von {{ bericht.hinweise|length }}.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if neu %}
+<section class="form-section" aria-labelledby="t-neu">
+  <h2 class="form-title" id="t-neu">Vorschau</h2>
+  <div class="table-wrap">
+    {% if imp.ziel == "kontakte" %}
+    <table class="table">
+      <thead><tr><th scope="col">Nr.</th><th scope="col">Name</th><th scope="col">Anschrift</th><th scope="col">E-Mail und Telefon</th><th scope="col">Kategorie</th></tr></thead>
+      <tbody>
+        {% for k in bericht.neu|slice:":50" %}
+        <tr>
+          <td class="docnr">{{ k.kundennummer }}</td>
+          <td>{{ k.anzeigename }}{% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}</td>
+          <td>{{ k.strasse }}{% if k.plz or k.ort %}<span class="cell-sub">{{ k.plz }} {{ k.ort }}{% if k.land != "Deutschland" %}, {{ k.land }}{% endif %}</span>{% endif %}</td>
+          <td>{{ k.email }}{% if k.telefon %}<span class="cell-sub">{{ k.telefon }}</span>{% endif %}</td>
+          <td>{{ k.get_kategorie_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <table class="table">
+      <thead><tr><th scope="col">Nr.</th><th scope="col">Bezeichnung</th><th scope="col">Einheit</th><th scope="col" class="num">Einzelpreis</th></tr></thead>
+      <tbody>
+        {% for a in bericht.neu|slice:":50" %}
+        <tr>
+          <td class="docnr">{{ a.artikelnummer }}</td>
+          <td>{{ a.bezeichnung }}{% if a.beschreibung %}<span class="cell-sub">{{ a.beschreibung|truncatechars:80 }}</span>{% endif %}</td>
+          <td>{{ a.einheit }}</td>
+          <td class="num"><span class="amount">{{ a.preis|euro }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  {% if neu > 50 %}<p class="table-foot muted">Die ersten 50 von {{ neu }}.</p>{% endif %}
+</section>
+{% endif %}
+{% endwith %}
+{% endblock %}

@@ -32,6 +32,7 @@ Zusammenhänge, die das Programm prüft:
 - Festgeschriebene Belege ändert niemand mehr; geändert wird über Storno und Korrektur.
 - Beim Prüfungszeitraum liegt das erste Jahr nicht nach dem letzten; der Zugang endet frühestens heute und spätestens in einem Jahr.
 - Ein neues Kennwort unterscheidet sich vom bisherigen.
+- Importierte Adressen und Artikel durchlaufen dieselben Formulare wie Eingaben von Hand.
 
 Grenzen je Benutzer:
 
@@ -42,6 +43,7 @@ Grenzen je Benutzer:
 Grenzen für alle:
 
 - Dateigrößen siehe „Dateien“,
+- Import höchstens 10.000 Zeilen und 100 Spalten,
 - eine Sicherung zur Zeit,
 - Warnung vor den Umsatzgrenzen nach § 19 UStG.
 
@@ -51,10 +53,11 @@ Grenzen für alle:
 |---|---|---|---|---|
 | Dateien an Adressen und Vorgängen | jede Art | 50 MB (`APP_DATEI_MB`) | Name bereinigt, Zufallsvorsatz; bei PDF und Bildern muss der Dateianfang zur Endung passen | PDF und Bilder im Browser, alles andere als Download mit `sandbox` |
 | E-Rechnungen | XML (UBL, CII), PDF mit eingebetteter XML | 20 MB | ohne Dokumenttyp-Definition, bekanntes Wurzelelement, PDF mit pypdf | PDF im Browser, XML als Download |
+| Tabellen importieren (Adressen, Artikel) | CSV, XLSX, ODS | 10 MB, entpackt 100 MB | ohne Dokumenttyp-Definition in jeder XML des Archivs, bekannter Inhalt (Excel oder LibreOffice), jede Zeile wie eine Eingabe im Formular | – |
 | Logo | SVG, PNG, JPG | 1 MB | Dateianfang, Typst muss es lesen können | im PDF; in den Einstellungen als `<img>` |
 | Sicherung einlesen | `.sicherung` | keine Grenze | Kennung, Entschlüsselung (AES-GCM), Prüfsummen, `PRAGMA integrity_check`, Pfade | – |
 
-Eine schädliche oder unlesbare E-Rechnung lehnt das Programm mit einer Meldung ab und legt nichts ab. Anhänge öffnet es nie; es gibt sie nur zurück. Den Virenschutz übernimmt das Betriebssystem (Microsoft Defender unter Windows).
+Eine schädliche oder unlesbare E-Rechnung lehnt das Programm mit einer Meldung ab und legt nichts ab. Anhänge öffnet es nie; es gibt sie nur zurück. Eine Tabelle zum Import legt es nicht ab: Ihre Zellen stehen bis zur Übernahme oder zum Abbruch in der Datenbank, sichtbar nur für den, der sie hochgeladen hat; was länger als einen Tag liegen bleibt, löscht das nächste Hochladen. Den Virenschutz übernimmt das Betriebssystem (Microsoft Defender unter Windows).
 
 ## Anmeldung (6.1.1 bis 6.1.3)
 
@@ -101,7 +104,7 @@ Begründung: Das Programm läuft am eigenen Arbeitsplatz und soll einen Arbeitst
 | Wer | Darf |
 |---|---|
 | ohne Anmeldung | anmelden; das erste Konto einrichten, solange es keins gibt; die Namen der Firmen sehen und eine öffnen (im Netzwerk nur angemeldet) |
-| Mitarbeiter | Adressen mit Verlauf und Dateien, Wiedervorlagen, Angebote, Auftragsbestätigungen, Rechnungen, offene Posten, Artikel, Eingangsrechnungen, Ablage und Auswertungen; das eigene Konto |
+| Mitarbeiter | Adressen mit Verlauf und Dateien, Wiedervorlagen, Angebote, Auftragsbestätigungen, Rechnungen, offene Posten, Artikel, Import von Adressen und Artikeln, Eingangsrechnungen, Ablage und Auswertungen; das eigene Konto |
 | Inhaber | alles; nur er: Einstellungen, Firmen anlegen und entfernen, Benutzer, Datensicherung und Gesamtexport, Datenschutz je Adresse, Aufbewahrungsfristen, DATEV-Einstellungen, Datenpaket für die Betriebsprüfung, Benachrichtigungen, Mahnwesen-Einstellungen, Protokoll, Dokumentation |
 | Prüfer | nur `/datenzugriff/`, nur lesen, nur die Jahre der Prüfung, nur Belege aus diesen Tabellen, nur bis `zugang_bis`; das eigene Kennwort ändern |
 
@@ -111,7 +114,7 @@ Felder:
 
 - Festgeschriebene Belege ändert niemand.
 - Gesperrte Adressen (Art. 18 DSGVO) sieht nur der Inhaber, und auch er ändert sie nicht.
-- Technische Felder lassen sich über kein Formular ändern: Nummern, Status, Prüfsummen, Zeitpunkte, Zwei-Faktor-Geheimnis, Sperren.
+- Technische Felder lassen sich über kein Formular ändern: Nummern, Status, Prüfsummen, Zeitpunkte, Zwei-Faktor-Geheimnis, Sperren. Nur der Import übernimmt die Nummer einer neuen Adresse oder eines neuen Artikels aus der Datei, wenn sie frei ist.
 - Die Rolle ändert nur der Inhaber, nicht am eigenen Konto und nie zum oder vom Prüfer.
 - SMTP-Kennwort und Bot-Schlüssel schickt das Programm nie an den Browser zurück.
 
@@ -171,6 +174,7 @@ Aufwendig sind:
 - Datensicherung und Wiederherstellung (scrypt, Verschlüsselung),
 - tägliche Prüfung der Ablage (alle Prüfsummen),
 - E-Rechnungen lesen,
+- Tabellen importieren (bis 10.000 Zeilen in einer Transaktion),
 - Kennwörter prüfen (Argon2, 100 MiB).
 
 So bleibt das Programm verfügbar:
@@ -245,7 +249,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 1.4.1 | 2 | erfüllt | Speicher | Python verwaltet den Speicher. Bibliotheken in C und Rust (lxml, Pillow, pypdfium2, typst) siehe V15.2.1. |
 | 1.4.2 | 2 | erfüllt | Ganzzahlen | Python-Ganzzahlen laufen nicht über; Beträge als `Decimal`. |
 | 1.4.3 | 2 | erfüllt | Freigeben | Python gibt Speicher selbst frei; Dateien werden mit `with` geschlossen. |
-| 1.5.1 | 1 | erfüllt | XXE | Eine E-Rechnung mit Dokumenttyp-Definition wird abgelehnt, bevor ElementTree sie liest (`eingang/lesen.py`, Prüfung mit expat). Andere XML liest das Programm nicht. |
+| 1.5.1 | 1 | erfüllt | XXE | Eine E-Rechnung mit Dokumenttyp-Definition wird abgelehnt, bevor ElementTree sie liest (`eingang/lesen.py`, Prüfung mit expat). Ebenso jede XML in einer Tabelle zum Import (XLSX, ODS), bevor openpyxl oder ElementTree sie liest (`importe/lesen.py`). Andere XML liest das Programm nicht. |
 | 1.5.2 | 2 | erfüllt | Deserialisieren | Kein `pickle`. Sitzungen als JSON (Djangos Vorgabe). Sicherungen sind authentifiziert verschlüsselt; ihr Inhalt ist JSON und eine SQLite-Datei, die vor dem Einspielen geprüft wird. |
 
 ### V2 Prüfung von Eingaben und Geschäftslogik
@@ -308,9 +312,9 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | Nr. | Stufe | Ergebnis | Thema | Umsetzung |
 |---|---|---|---|---|
 | 5.1.1 | 2 | erfüllt | Dokumentiert | Abschnitt „Dateien“. |
-| 5.2.1 | 1 | erfüllt | Größe | Dateien an Adressen bis 50 MB (`APP_DATEI_MB`), E-Rechnungen bis 20 MB, Logo bis 1 MB. Sicherungen haben keine Grenze, weil eigene Sicherungen groß sind; nur der Inhaber spielt sie ein, verarbeitet wird blockweise. |
-| 5.2.2 | 1 | begründet | Endung und Inhalt | Geprüft wird, was das Programm liest oder anzeigt: E-Rechnung (XML-Wurzel bzw. PDF mit eingebetteter XML), Logo (Dateianfang, Typst liest es), Sicherung (Kennung und Entschlüsselung), PDF und Bilder an Adressen (Dateianfang; passt er nicht, nur Download). Dateien an Adressen dürfen jede Art haben, z. B. Verträge als DOCX; sie werden nie geöffnet, nur abgelegt und als Download zurückgegeben. |
-| 5.2.3 | 2 | begründet | Archive | Das Programm entpackt nur eigene Sicherungen. Sie sind mit AES-GCM authentifiziert, ohne das Kennwort lässt sich keine gültige Sicherung bauen; jede Datei hat eine Prüfsumme, jeder Pfad muss im Zielordner bleiben. Eingebettete XML in PDF begrenzt pypdf auf 75 MB je Datenstrom. |
+| 5.2.1 | 1 | erfüllt | Größe | Dateien an Adressen bis 50 MB (`APP_DATEI_MB`), E-Rechnungen bis 20 MB, Tabellen zum Import bis 10 MB, Logo bis 1 MB. Sicherungen haben keine Grenze, weil eigene Sicherungen groß sind; nur der Inhaber spielt sie ein, verarbeitet wird blockweise. |
+| 5.2.2 | 1 | begründet | Endung und Inhalt | Geprüft wird, was das Programm liest oder anzeigt: E-Rechnung (XML-Wurzel bzw. PDF mit eingebetteter XML), Tabelle zum Import (ZIP mit dem Inhalt einer Excel- oder LibreOffice-Datei, sonst Text), Logo (Dateianfang, Typst liest es), Sicherung (Kennung und Entschlüsselung), PDF und Bilder an Adressen (Dateianfang; passt er nicht, nur Download). Dateien an Adressen dürfen jede Art haben, z. B. Verträge als DOCX; sie werden nie geöffnet, nur abgelegt und als Download zurückgegeben. |
+| 5.2.3 | 2 | begründet | Archive | Das Programm entpackt eigene Sicherungen und Tabellen zum Import (XLSX, ODS sind ZIP-Archive). Bei Tabellen prüft es vor dem Lesen die entpackte Größe (höchstens 100 MB) und schreibt nichts aus dem Archiv auf die Platte. Sie sind mit AES-GCM authentifiziert, ohne das Kennwort lässt sich keine gültige Sicherung bauen; jede Datei hat eine Prüfsumme, jeder Pfad muss im Zielordner bleiben. Eingebettete XML in PDF begrenzt pypdf auf 75 MB je Datenstrom. |
 | 5.3.1 | 1 | erfüllt | Nicht ausführen | Die Ablage liegt außerhalb der statischen Dateien; ausgeliefert wird nur über Ansichten mit Rechteprüfung, ausgeführt wird nichts. |
 | 5.3.2 | 1 | erfüllt | Pfade | Ablagepfade aus Kundennummer, Zufall und bereinigtem Namen. Beleg-Pfade im Datenzugriff nur aus den Tabellen des Prüfungszeitraums. Beim Wiederherstellen muss jeder Pfad im Zielordner bleiben. |
 | 5.4.1 | 2 | erfüllt | Dateiname | Jeder Download hat `Content-Disposition` mit einem Namen vom Programm; der hochgeladene Name wird bereinigt gespeichert. |

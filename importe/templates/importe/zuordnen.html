@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Spalten zuordnen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url liste %}">{{ mehrzahl }}</a></li>
+    <li><a href="{% url hochladen %}">Importieren</a></li>
+    <li aria-current="page">Spalten zuordnen</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Spalten zuordnen</h1>
+    <p class="muted">{{ imp.dateiname }} · {{ imp.zeilen|length }} Zeile{{ imp.zeilen|length|pluralize:"n" }}. Wählen Sie zu jedem Feld die Spalte Ihrer Datei, aus der es kommt.</p>
+  </div>
+</div>
+
+{% if imp.vorlage %}
+<p class="callout">{% icon "check" %}<span>Die Spalten passen zur Vorlage „{{ imp.vorlage }}“. Prüfen Sie die Zuordnung trotzdem kurz.</span></p>
+{% endif %}
+
+{% if vorlagen %}
+<form class="filterbar vorlage-wahl" method="post">
+  {% csrf_token %}
+  <label class="field field-inline">
+    <span>Vorlage</span>
+    <select name="vorlage">
+      {% for name in vorlagen %}<option{% if name == imp.vorlage %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn" type="submit">Vorlage anwenden</button>
+</form>
+{% endif %}
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  {% for fehler in form.non_field_errors %}<p class="callout">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+
+  <section class="form-section" aria-labelledby="t-felder">
+    <h2 class="form-title" id="t-felder">Felder</h2>
+    <div class="table-wrap">
+      <table class="table stapel zuordnung">
+        <thead>
+          <tr>
+            <th scope="col">Feld in Kontorfreund</th>
+            <th scope="col">Spalte in Ihrer Datei</th>
+            <th scope="col">Beispiele</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f, beispiele in form.felder %}
+          <tr{% if f.errors %} class="has-error"{% endif %}>
+            <th scope="row"><label for="{{ f.id_for_label }}">{{ f.label }}</label></th>
+            <td>
+              {{ f }}
+              {% for fehler in f.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+            </td>
+            <td class="muted">{{ beispiele|join:" · " }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-optionen">
+    <h2 class="form-title" id="t-optionen">Übernahme</h2>
+    <div class="form-grid">
+      {% if form.kategorie %}{% include "core/feld.html" with f=form.kategorie %}{% endif %}
+      {% include "core/feld.html" with f=form.dubletten_anlegen %}
+      {% include "core/feld.html" with f=form.speichern_als optional=True breit=True %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "eye" %}Probelauf starten</button>
+    <button class="btn" type="submit" formaction="{% url 'importe:verwerfen' imp.pk %}" formnovalidate>Abbrechen</button>
+  </div>
+</form>
+
+<section class="form-section" aria-labelledby="t-vorschau">
+  <h2 class="form-title" id="t-vorschau">Die ersten Zeilen Ihrer Datei</h2>
+  <div class="table-wrap">
+    <table class="table vorschau">
+      <thead>
+        <tr>
+          <th scope="col">Zeile</th>
+          {% for spalte in imp.spalten %}<th scope="col">{{ spalte }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for nr, werte in vorschau %}
+        <tr>
+          <td class="num">{{ nr }}</td>
+          {% for wert in werte %}<td>{{ wert|linebreaksbr }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

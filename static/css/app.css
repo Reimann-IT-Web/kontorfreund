@@ -3059,3 +3059,40 @@ input[type="file"]::file-selector-button {
   padding: 0;
   list-style: none;
 }
+
+/* Import (importe/): Vorlage wählen, Spalten zuordnen, gespeicherte Zuordnungen. */
+.vorlage-wahl {
+  align-items: flex-end;
+}
+
+.form-actions + .form-section {
+  margin-top: var(--s6);
+}
+
+.zuordnungen {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zuordnungen li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+@media (max-width: 40rem) {
+  .zuordnung th[scope="row"],
+  .zuordnung td {
+    flex-basis: 100%;
+    padding: 0;
+    border: 0;
+  }
+
+  .zuordnung select {
+    width: 100%;
+  }
+}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ mehrzahl }} importieren{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url liste %}">{{ mehrzahl }}</a></li>
+    <li aria-current="page">Importieren</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ mehrzahl }} importieren</h1>
+    <p class="muted">Übernehmen Sie {{ mehrzahl }} aus Excel, LibreOffice oder einem anderen Programm. Bevor etwas angelegt wird, zeigt ein Probelauf, was übernommen wird.</p>
+  </div>
+</div>
+
+<form class="panel upload" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="field{% if form.datei.errors %} has-error{% endif %}">
+    <label for="{{ form.datei.id_for_label }}">{{ form.datei.label }}</label>
+    <div class="upload-zeile">
+      <input type="file" id="{{ form.datei.id_for_label }}" name="datei" accept=".csv,.txt,.xlsx,.ods" required aria-describedby="datei-hinweis">
+      <button class="btn btn-primary" type="submit">{% icon "upload" %}Hochladen</button>
+    </div>
+    {% for fehler in form.datei.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+    <p class="hint" id="datei-hinweis">CSV, Excel (.xlsx) oder LibreOffice (.ods), höchstens {{ groesste_mb }} MB. In der ersten Zeile stehen die Spaltenüberschriften.</p>
+  </div>
+</form>
+
+<p class="small muted">Exporte aus {% for name in vorlagen %}{{ name }}{% if forloop.revcounter == 2 %} und {% elif not forloop.last %}, {% endif %}{% endfor %} erkennt Kontorfreund selbst, ebenso übliche Spaltennamen wie „PLZ“ oder „E-Mail“. Alles andere ordnen Sie im nächsten Schritt zu.</p>
+
+{% if zuordnungen %}
+<section class="panel" aria-labelledby="t-zuordnungen">
+  <h2 class="panel-title" id="t-zuordnungen">Gespeicherte Zuordnungen</h2>
+  <p class="muted">Passt eine Datei zu einer davon, wählt Kontorfreund sie selbst aus.</p>
+  <ul class="zuordnungen">
+    {% for z in zuordnungen %}
+    <li>
+      <span>{{ z.name }}</span>
+      <form method="post" action="{% url 'importe:zuordnung_loeschen' z.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-sm" type="submit">{% icon "trash" %}Löschen<span class="visually-hidden"> „{{ z.name }}“</span></button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

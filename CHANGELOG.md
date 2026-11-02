@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.20.0 – 02.11.2026
+
+- Adressen und Artikel lassen sich aus Excel (.xlsx), LibreOffice (.ods) oder einer CSV-Datei übernehmen: in der Liste der Adressen bzw. Artikel unter „Importieren“. Die Spalten erkennt Kontorfreund selbst bei seinen eigenen Exporten, bei Lexware Office und Google Kontakte und bei üblichen Namen wie „PLZ“ oder „E-Mail“; alles andere ordnen Sie per Auswahl zu.
+- Vor der Übernahme zeigt ein Probelauf, was angelegt wird, welche Zeilen Fehler haben und welche Einträge es vermutlich schon gibt (gleiche E-Mail-Adresse oder gleicher Name am selben Ort, bei Artikeln gleiche Bezeichnung). Mögliche Dubletten überspringt Kontorfreund, wenn Sie nichts anderes wählen.
+- Eine Zuordnung lässt sich unter einem Namen speichern; Dateien mit denselben Spalten erkennt Kontorfreund dann beim nächsten Mal selbst.
+- Kunden- und Artikelnummern aus der Datei bleiben erhalten, wenn sie noch frei sind. Typische Eigenheiten von Excel gleicht der Import aus, etwa eine deutsche PLZ ohne die Null vorn, „Stk“ oder „h“ als Einheit und Preise wie „1.234,50 €“.
+- Jede übernommene Adresse und jeder Artikel steht wie eine Eingabe von Hand im Änderungsprotokoll. Die Verfahrensdokumentation beschreibt den Import; beim nächsten Herunterladen entsteht eine neue Fassung.
+- Der Quellcode liegt jetzt in der Organisation „Reimann IT & Web“ unter github.com/Reimann-IT-Web/kontorfreund; der Link in der Hilfe und im Installationsprogramm zeigt dorthin.
+
 ## 0.19.0 – 02.11.2026
 
 - Sicherheitsprüfung nach OWASP ASVS 5.0, Stufe 2: Alle 253 Anforderungen sind durchgegangen und in `docs/sicherheit.md` festgehalten, mit Begründung, wo Kontorfreund bewusst abweicht. Daraus die folgenden Änderungen.

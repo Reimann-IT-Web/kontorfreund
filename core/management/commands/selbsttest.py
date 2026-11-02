@@ -9,13 +9,14 @@ from django.templatetags.static import static
 from django.test import Client
 from django.utils import timezone
 
-from auswertungen import pruefer
+from auswertungen import pruefer, tabelle
 from contacts import datenschutz, plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from dokumentation import fassungen
 from dokumentation.models import Fassung
 from eingang import lesen
+from importe import lesen as tabellen
 from invoicing import beleg
 from invoicing.models import Rechnung
 
@@ -23,7 +24,7 @@ from invoicing.models import Rechnung
 class Command(BaseCommand):
     help = (
         "Prüft, ob alle Teile des Programms vorhanden sind und arbeiten: Seiten, "
-        "Kennwörter, PDF und E-Rechnung. Für das Installationspaket; alles, was "
+        "Kennwörter, PDF, E-Rechnung und Tabellen. Für das Installationspaket; alles, was "
         "dabei in der Datenbank entsteht, wird zurückgenommen."
     )
 
@@ -98,6 +99,20 @@ class Command(BaseCommand):
         self.pruefen(
             d["nummer"] == "T-1" and d["summen"]["zahlbetrag"] == Decimal("95.20"),
             "ZUGFeRD schreiben und lesen",
+        )
+        spalten, zeilen = (
+            [("Name", "text"), ("Preis", "betrag")],
+            [["Prüfung", Decimal("12.50")]],
+        )
+        self.pruefen(
+            all(
+                tabellen.lesen(datei) == (["Name", "Preis"], [[2, ["Prüfung", "12,5"]]])
+                for datei in (
+                    tabelle.xlsx(spalten, zeilen, "Selbsttest"),
+                    tabelle.ods(spalten, zeilen, "Selbsttest"),
+                )
+            ),
+            "Tabellen aus Excel und LibreOffice lesen",
         )
         self.stdout.write(self.style.SUCCESS("Selbsttest bestanden."))
 

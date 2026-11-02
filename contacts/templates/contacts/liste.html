@@ -14,6 +14,7 @@
     </p>
   </div>
   <div class="actions">
+    <a class="btn" href="{% url 'importe:adressen' %}">{% icon "upload" %}Importieren</a>
     <a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Neue Adresse</a>
   </div>
 </div>
@@ -132,8 +133,8 @@
 {% else %}
 <div class="empty">
   <h2>Noch keine Adressen</h2>
-  <p class="muted">Legen Sie Ihre erste Adresse an. Nur der Name ist Pflicht, alles andere können Sie später ergänzen.</p>
-  <p class="actions"><a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Erste Adresse anlegen</a></p>
+  <p class="muted">Legen Sie Ihre erste Adresse an. Nur der Name ist Pflicht, alles andere können Sie später ergänzen. Haben Sie Ihre Adressen schon in Excel oder einem anderen Programm, übernehmen Sie sie mit „Liste importieren“.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Erste Adresse anlegen</a><a class="btn" href="{% url 'importe:adressen' %}">{% icon "upload" %}Liste importieren</a></p>
 </div>
 {% endif %}
 {% endblock %}
