@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 from pypdf import PdfReader
 
 from angebote.models import Angebot
@@ -30,7 +31,7 @@ from zahlungen.models import Zahlung
 
 pytestmark = pytest.mark.django_db
 
-HEUTE = date.today()
+HEUTE = timezone.localdate()
 JAHR = HEUTE.year
 
 

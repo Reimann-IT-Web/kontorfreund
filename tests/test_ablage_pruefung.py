@@ -1,7 +1,7 @@
 """Tägliche Prüfung der abgelegten Dateien (Spezifikation B-9) – mit erfundenen Daten."""
 
 import hashlib
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -26,7 +26,7 @@ from protokoll.models import Eintrag
 
 pytestmark = pytest.mark.django_db
 
-HEUTE = date.today()
+HEUTE = timezone.localdate()
 
 
 @pytest.fixture
