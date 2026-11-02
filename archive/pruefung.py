@@ -27,6 +27,7 @@ from django.utils import timezone
 from angebote.models import Angebot
 from auftraege.models import Auftragsbestaetigung
 from backups import sicherung
+from dokumentation.models import Fassung
 from eingang.models import Eingangsrechnung
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen
@@ -68,6 +69,8 @@ def _dateien():
     for e in Eingangsrechnung.objects.all():
         url = reverse("eingang:anzeigen", args=[e.pk])
         yield e, f"Eingangsrechnung {e.nummer}", url, e.datei, e.sha256
+    for f in Fassung.objects.all():
+        yield f, str(f), reverse("dokumentation:seite"), f.datei, f.sha256
 
 
 def _zustand(datei, sha256):

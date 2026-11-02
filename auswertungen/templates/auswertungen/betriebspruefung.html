@@ -45,7 +45,7 @@
 </div>
 <p class="table-foot muted">Dazu {{ belege }} Belegdatei{{ belege|pluralize:"en" }} (PDF und XML) mit zusammen {{ groesse|filesizeformat }}, die Beschreibung index.xml und die Datei {{ dtd }} der Finanzverwaltung.</p>
 
-<p class="callout">{% icon "help" %}<span>Verlangt der Prüfer die Daten auf einem Datenträger, geben Sie ihm die ZIP-Datei, zum Beispiel auf einem USB-Stick. Seine Prüfsoftware liest sie ohne weitere Erklärung ein. Eine Prüfung umfasst meist mehrere Jahre: Laden Sie für jedes Jahr ein eigenes Paket herunter.</span></p>
+<p class="callout">{% icon "help" %}<span>Verlangt der Prüfer die Daten auf einem Datenträger, geben Sie ihm die ZIP-Datei, zum Beispiel auf einem USB-Stick. Seine Prüfsoftware liest sie ohne weitere Erklärung ein. Eine Prüfung umfasst meist mehrere Jahre: Laden Sie für jedes Jahr ein eigenes Paket herunter. Fragt er nach der Verfahrensdokumentation, finden Sie sie unter <a href="{% url 'dokumentation:seite' %}">Einstellungen › Dokumentation</a>.</span></p>
 {% else %}
 <div class="empty">
   <h2>Keine Daten {{ text }}</h2>

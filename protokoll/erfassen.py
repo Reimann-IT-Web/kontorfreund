@@ -39,6 +39,8 @@ ERFASST = [
     "historie.Vorgang",
     "historie.Datei",
     "benachrichtigungen.Einstellung",
+    "dokumentation.Angaben",
+    "dokumentation.Fassung",
 ]
 # Stehen nie im Klartext im Protokoll.
 VERDECKT = {"password", "mail_passwort", "bot_schluessel"}

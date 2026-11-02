@@ -13,6 +13,8 @@ from auswertungen import pruefer
 from contacts import datenschutz, plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
+from dokumentation import fassungen
+from dokumentation.models import Fassung
 from eingang import lesen
 from invoicing import beleg
 from invoicing.models import Rechnung
@@ -70,10 +72,28 @@ class Command(BaseCommand):
                     kunde, datenschutz.auskunft_daten(kunde, [], jetzt), None, jetzt
                 )
             )
+            dokumente = [
+                fassungen.setzen(
+                    fassungen.druckdaten(
+                        Fassung(
+                            art=art,
+                            nummer=1,
+                            version="selbsttest",
+                            inhalt=fassungen.entwurf(art),
+                        ),
+                        [],
+                    )
+                )
+                for art in Fassung.Art.values
+            ]
             transaction.set_rollback(True)
         self.pruefen(b"AtkinsonHyperlegibleNext" in pdf, "PDF mit eigener Schrift")
         self.pruefen(len(beleg.seitenbilder(pdf)) == 1, "Seitenbild")
         self.pruefen(auskunft.startswith(b"%PDF"), "Auskunft nach Art. 15 DSGVO")
+        self.pruefen(
+            all(d.startswith(b"%PDF") for d in dokumente),
+            "Verfahrensdokumentation und Verzeichnis von Verarbeitungstätigkeiten",
+        )
         d = lesen.auswerten(lesen.einlesen(pdf)[1])
         self.pruefen(
             d["nummer"] == "T-1" and d["summen"]["zahlbetrag"] == Decimal("95.20"),

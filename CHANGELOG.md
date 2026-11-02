@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.17.0 – 02.11.2026
+
+- Dokumentation: Unter Einstellungen › Dokumentation erstellt Kontorfreund die Verfahrensdokumentation nach den GoBD, nach der das Finanzamt bei einer Betriebsprüfung fragt, und das Verzeichnis von Verarbeitungstätigkeiten nach Art. 30 DSGVO mit den technischen und organisatorischen Maßnahmen (Art. 32 DSGVO), beide als PDF. Was das Programm betrifft, schreibt Kontorfreund selbst und aus Ihren Einstellungen: wie Rechnungen entstehen, festgeschrieben, abgelegt, geprüft und gesichert werden, wer Zugang hat, welche Daten über Personen wofür gespeichert und wann sie gelöscht werden. Sie ergänzen ein paar Sätze zu Ihrem Betrieb, etwa wie Sie Kontoauszüge und Papierbelege aufbewahren, und kreuzen an, wie Rechner und Akten geschützt sind. Was noch fehlt, steht im Dokument als „Noch offen“.
+- Jede Änderung ergibt beim Herunterladen eine neue Fassung mit Datum, Programmversion und den geänderten Abschnitten. Alle Fassungen bleiben in der Ablage, werden täglich mitgeprüft und gesichert und stehen im Gesamtexport.
+
 ## 0.16.0 – 02.11.2026
 
 - Gesamtexport: Unter Datensicherung lädt „Gesamtexport herunterladen“ alle Daten und Belege in einer ZIP-Datei herunter, die sich ohne Kontorfreund öffnen lässt: je Tabelle eine CSV-Datei für Excel oder LibreOffice (Adressen, Artikel, Angebote, Auftragsbestätigungen und Rechnungen samt Positionen, Zahlungen, Mahnungen, Eingangsrechnungen, Altbelege, Verlauf, Dateien, Wiedervorlagen, Änderungsprotokoll und die eigenen Firmendaten), alle Belege und Dateien im Original und eine LIESMICH.txt, die erklärt, wie alles zusammenhängt. So bleiben Ihre Daten lesbar, auch wenn Sie einmal das Programm wechseln. Der Export ist nicht verschlüsselt; zum Wiederherstellen dient weiter die Datensicherung.

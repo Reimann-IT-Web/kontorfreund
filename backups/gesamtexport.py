@@ -28,6 +28,7 @@ from auswertungen import tabelle
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from core.templatetags.kf import zahl
+from dokumentation.models import Angaben, Fassung
 from eingang.models import Eingangsrechnung
 from historie.models import Datei, Vorgang
 from invoicing.models import Position as Rechnungsposition
@@ -176,6 +177,20 @@ TABELLEN = [
             ("Erledigt von", lambda w: w.erledigt_von or ""),
         ],
     ),
+    (
+        "dokumentation-angaben.csv",
+        "Angaben zum Betrieb für Verfahrensdokumentation und Datenschutz",
+        Angaben.objects.all(),
+        [],
+        [],
+    ),
+    (
+        "dokumentation-fassungen.csv",
+        "Abgelegte Fassungen der Dokumentation",
+        Fassung.objects.select_related("erstellt_von"),
+        ID,
+        [("Geändert", lambda f: "; ".join(f.aenderungen))],
+    ),
 ]
 
 
@@ -229,7 +244,7 @@ def dateien():
         pfade += [p for p in (r.datei, r.xml_datei) if p]
     for modell in (Angebot, Auftragsbestaetigung):
         pfade += modell.objects.exclude(datei="").values_list("datei", flat=True)
-    for modell in (Mahnung, Altbeleg, Eingangsrechnung, Datei):
+    for modell in (Mahnung, Altbeleg, Eingangsrechnung, Datei, Fassung):
         pfade += modell.objects.exclude(datei="").values_list("datei", flat=True)
     return pfade
 

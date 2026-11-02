@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Dokumentation{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li aria-current="page">Dokumentation</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Dokumentation</h1>
+    <p class="muted">Für das Finanzamt und den Datenschutz. Was das Programm betrifft, schreibt Kontorfreund selbst; Sie ergänzen unten die Angaben zu Ihrem Betrieb.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  {% for d in dokumente %}
+  <section class="panel stack" aria-labelledby="t-{{ d.art }}">
+    <h2 class="panel-title" id="t-{{ d.art }}">{{ d.titel }}{% if d.offen %}<span class="status status-open">{{ d.offen }} Angabe{{ d.offen|pluralize:"n" }} offen</span>{% else %}<span class="status status-ok">{% icon "check" %}vollständig</span>{% endif %}</h2>
+    <p class="small">{{ d.zweck }}</p>
+    <p class="small muted">{% if not d.geltend %}Beim ersten Herunterladen legt Kontorfreund Fassung 1 in der Ablage ab.{% elif d.neu %}Seit Fassung {{ d.geltend.nummer }} vom {{ d.geltend.erstellt|date:"d.m.Y" }} hat sich etwas geändert. Beim Herunterladen legt Kontorfreund Fassung {{ d.geltend.nummer|add:1 }} ab; die bisherige bleibt erhalten.{% else %}Es gilt Fassung {{ d.geltend.nummer }} vom {{ d.geltend.erstellt|date:"d.m.Y" }}.{% endif %}</p>
+    <form method="post" action="{% url 'dokumentation:herunterladen' d.art %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">{% icon "download" %}Herunterladen</button>
+    </form>
+    {% if d.frueher %}
+    <details class="disclosure">
+      <summary>Frühere Fassungen</summary>
+      <ul class="plain-list small">
+        {% for f in d.frueher %}<li><a href="{% url 'dokumentation:fassung' f.pk %}">Fassung {{ f.nummer }} vom {{ f.erstellt|date:"d.m.Y" }}</a> <span class="muted">· Kontorfreund {{ f.version }}</span></li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+
+<form class="form" method="post" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-betrieb">
+    <h2 class="form-title" id="t-betrieb">Ihr Betrieb</h2>
+    <p class="muted form-hint">Für die Verfahrensdokumentation. Schreiben Sie in eigenen Worten, wie es bei Ihnen ist; ein, zwei Sätze genügen. Was leer bleibt, steht im Dokument als „Noch offen“.</p>
+    <div class="form-grid">
+      {% for f in text %}{% include "core/feld.html" with f=f breit=True %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-datenschutz">
+    <h2 class="form-title" id="t-datenschutz">Datenschutz</h2>
+    <p class="muted form-hint">Für das Verzeichnis von Verarbeitungstätigkeiten. Was in Kontorfreund geschieht, trägt das Programm selbst ein.</p>
+    <div class="form-grid">
+      {% for f in datenschutz %}{% include "core/feld.html" with f=f breit=True %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-massnahmen">
+    <h2 class="form-title" id="t-massnahmen">Schutz am Arbeitsplatz</h2>
+    <p class="muted form-hint">Kreuzen Sie an, was bei Ihnen zutrifft. Nur Angekreuztes steht im Verzeichnis; was fehlt, lohnt sich nachzuholen.</p>
+    <div class="choice-group">
+      {% for f in massnahmen %}<label class="choice">{{ f }}<span>{{ f.label }}</span></label>{% endfor %}
+    </div>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.tom_weitere breit=True optional=True %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+  </div>
+</form>
+{% endblock %}
