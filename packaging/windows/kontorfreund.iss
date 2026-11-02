@@ -17,7 +17,7 @@ AppName=Kontorfreund
 AppVersion={#Version}
 AppVerName=Kontorfreund {#Version}
 AppPublisher=Reimann IT & Web
-AppPublisherURL=https://github.com/hajo808/kontorfreund
+AppPublisherURL=https://github.com/Reimann-IT-Web/kontorfreund
 ; Ohne BOM liest Inno Setup das Skript nicht sicher als UTF-8, daher nur ASCII.
 AppCopyright=Copyright (C) 2026 Reimann IT & Web, freie Software unter der AGPL-3.0
 ; Urheber und Lizenz in Kurzform vor der Installation; der volle Text liegt im Programmordner.

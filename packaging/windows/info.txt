@@ -6,4 +6,4 @@ Kontorfreund ist freie Software (Open Source) unter der GNU Affero General Publi
 
 Das Programm wird ohne jede Gewährleistung bereitgestellt. Den vollständigen Lizenztext finden Sie nach der Installation in der Datei LICENSE.txt im Programmordner.
 
-Quellcode: https://github.com/hajo808/kontorfreund
+Quellcode: https://github.com/Reimann-IT-Web/kontorfreund
