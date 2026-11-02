@@ -101,6 +101,11 @@
       <h2 class="panel-title" id="t-einlesen">Von einem anderen Rechner</h2>
       {% include "backups/einlesen.html" with im_seitenrand=True %}
     </section>
+
+    <section class="side-section" aria-labelledby="t-export">
+      <h2 class="panel-title" id="t-export">Gesamtexport</h2>
+      {% include "backups/gesamtexport.html" %}
+    </section>
   </aside>
 </div>
 
@@ -135,6 +140,11 @@
 <section class="form-section" aria-labelledby="t-einlesen">
   <h2 class="form-title" id="t-einlesen">Neuer Rechner?</h2>
   {% include "backups/einlesen.html" %}
+</section>
+
+<section class="form-section" aria-labelledby="t-export">
+  <h2 class="form-title" id="t-export">Gesamtexport</h2>
+  {% include "backups/gesamtexport.html" %}
 </section>
 {% endif %}
 {% endblock %}

@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.16.0 – 02.11.2026
+
+- Gesamtexport: Unter Datensicherung lädt „Gesamtexport herunterladen“ alle Daten und Belege in einer ZIP-Datei herunter, die sich ohne Kontorfreund öffnen lässt: je Tabelle eine CSV-Datei für Excel oder LibreOffice (Adressen, Artikel, Angebote, Auftragsbestätigungen und Rechnungen samt Positionen, Zahlungen, Mahnungen, Eingangsrechnungen, Altbelege, Verlauf, Dateien, Wiedervorlagen, Änderungsprotokoll und die eigenen Firmendaten), alle Belege und Dateien im Original und eine LIESMICH.txt, die erklärt, wie alles zusammenhängt. So bleiben Ihre Daten lesbar, auch wenn Sie einmal das Programm wechseln. Der Export ist nicht verschlüsselt; zum Wiederherstellen dient weiter die Datensicherung.
+
 ## 0.15.0 – 01.11.2026
 
 - Aufbewahrungsfristen: Einmal im Jahr zeigt die Übersicht dem Inhaber, für wie viele Belege die Aufbewahrungsfrist abgelaufen ist (Rechnungen 8 Jahre, Angebote, Mahnungen und andere Geschäftsbriefe 6 Jahre, jeweils ab Ende des Jahres). Die neue Seite „Aufbewahrungsfristen“ unter Ablage listet sie nach Jahren; Sie wählen aus, was gelöscht wird, oder behalten alles. Gelöscht werden die Belege mit ihren Dateien und Zahlungen; im Änderungsprotokoll bleibt nur, wann wer etwas getan hat. Belege, auf die noch ein aufzubewahrender Beleg verweist, etwa eine spätere Mahnung oder Stornorechnung, bleiben. Gesperrte Adressen, deren Frist abgelaufen ist, lassen sich dort ebenfalls endgültig löschen. Ihre Entscheidung steht im Protokoll und gilt bis zum Jahresende.

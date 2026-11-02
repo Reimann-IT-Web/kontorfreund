@@ -24,7 +24,7 @@ NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")

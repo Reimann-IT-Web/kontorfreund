@@ -1,12 +1,14 @@
 import logging
+from datetime import date
 
 from django.contrib import messages
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from konten.rechte import nur_inhaber
 
+from . import gesamtexport as export
 from . import sicherung
 from .forms import EinlesenForm, KennwortForm, OrtForm, WiederherstellenForm
 
@@ -130,6 +132,17 @@ def wiederherstellen(request, ort, name):
             "jetzt": sicherung.umfang_jetzt(),
             "form": form,
         },
+    )
+
+
+@nur_inhaber
+def gesamtexport(request):
+    """Alle Daten und Belege, lesbar ohne Kontorfreund (backups/gesamtexport.py)."""
+    return FileResponse(
+        export.paket(),
+        as_attachment=True,
+        filename=f"Kontorfreund Gesamtexport {date.today():%Y-%m-%d}.zip",
+        content_type="application/zip",
     )
 
 
