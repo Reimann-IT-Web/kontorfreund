@@ -14,7 +14,7 @@
 <div class="page-head">
   <div>
     <h1>{{ kontakt }}</h1>
-    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if firma %} · Ansprechpartner bei <a href="{% url 'historie:verlauf' firma.pk %}">{{ firma }}</a>{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
+    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if firma %} · {{ kontakt.position|default:"Ansprechpartner" }} bei <a href="{% url 'historie:verlauf' firma.pk %}">{{ firma }}</a>{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
   </div>
   <div class="actions">
     {% if kontakt.gesperrt_am %}
@@ -132,9 +132,11 @@
     <section class="side-section" aria-labelledby="t-kontakt">
       <h2 id="t-kontakt" class="panel-title">Kontakt</h2>
       {% if kontakt.telefon %}<p><a class="link" href="tel:{{ kontakt.telefon|cut:' ' }}">{% icon "phone" %}{{ kontakt.telefon }}</a></p>{% endif %}
+      {% include "contacts/kontaktwege.html" with wege=kontakt.weitere_telefon %}
       {% if kontakt.email %}<p><a class="link" href="mailto:{{ kontakt.email }}">{% icon "mail" %}{{ kontakt.email }}</a></p>{% endif %}
+      {% include "contacts/kontaktwege.html" with wege=kontakt.weitere_email %}
       {% if kontakt.website %}<p class="small muted">{{ kontakt.website }}</p>{% endif %}
-      {% if not kontakt.telefon and not kontakt.email and not kontakt.website %}<p class="small muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
+      {% if not kontakt.telefon and not kontakt.email and not kontakt.website and not kontakt.kontaktwege.all %}<p class="small muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
     </section>
     <section class="side-section" aria-labelledby="t-anschrift">
       <h2 id="t-anschrift" class="panel-title">Anschrift</h2>
@@ -144,7 +146,7 @@
     <section class="side-section" aria-labelledby="t-personen">
       <h2 id="t-personen" class="panel-title">Ansprechpartner</h2>
       {% for person in personen %}
-      <p><a class="link" href="{% url 'historie:verlauf' person.pk %}">{{ person }}</a>{% if person.archiviert %} <span class="small muted">(archiviert)</span>{% endif %}{% if person.telefon or person.email %}<br><span class="small muted">{{ person.telefon }}{% if person.telefon and person.email %} · {% endif %}{{ person.email }}</span>{% endif %}</p>
+      <p><a class="link" href="{% url 'historie:verlauf' person.pk %}">{{ person }}</a>{% if person.archiviert %} <span class="small muted">(archiviert)</span>{% endif %}{% if person.position %}<br><span class="small">{{ person.position }}</span>{% endif %}{% if person.telefon or person.email %}<br><span class="small muted">{{ person.telefon }}{% if person.telefon and person.email %} · {% endif %}{{ person.email }}</span>{% endif %}</p>
       {% empty %}
       <p class="small muted">Legen Sie Personen dieser Firma an, um ihre Anrufe und Notizen einzeln festzuhalten. Sie erscheinen dann auch hier im Verlauf.</p>
       {% endfor %}

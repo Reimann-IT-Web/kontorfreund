@@ -53,7 +53,8 @@
       {% include "core/feld.html" with f=form.titel optional=True %}
       {% include "core/feld.html" with f=form.vorname optional=True %}
       {% include "core/feld.html" with f=form.nachname optional_firma=True %}
-      <div class="field-wide" data-nur-person>{% include "core/feld.html" with f=form.firma optional=True %}</div>
+      {% include "core/feld.html" with f=form.position optional=True %}
+      <div data-nur-person>{% include "core/feld.html" with f=form.firma optional=True %}</div>
     </div>
   </section>
 
@@ -73,6 +74,16 @@
     <div class="form-grid">
       {% include "core/feld.html" with f=form.email optional=True %}
       {% include "core/feld.html" with f=form.telefon optional=True %}
+      <div class="field-wide" data-kontaktwege>
+        <div data-kontaktwege-liste>{% for w in wege %}{% include "contacts/kontaktweg.html" with art=w.art %}{% endfor %}</div>
+        <div class="actions">
+          <button class="btn btn-sm" type="button" data-kontaktweg-neu="telefon">{% icon "plus" %}Weitere Telefonnummer</button>
+          <button class="btn btn-sm" type="button" data-kontaktweg-neu="email">{% icon "plus" %}Weitere E-Mail-Adresse</button>
+        </div>
+        <template id="kontaktweg-telefon">{% include "contacts/kontaktweg.html" with w=None art="telefon" %}</template>
+        <template id="kontaktweg-email">{% include "contacts/kontaktweg.html" with w=None art="email" %}</template>
+        <datalist id="kontaktweg-bezeichnungen">{% for b in bezeichnungen %}<option value="{{ b }}"></option>{% endfor %}</datalist>
+      </div>
       {% include "core/feld.html" with f=form.website optional=True %}
       {% include "core/feld.html" with f=form.ust_id optional=True %}
       {% include "core/feld.html" with f=form.notiz breit=True optional=True %}

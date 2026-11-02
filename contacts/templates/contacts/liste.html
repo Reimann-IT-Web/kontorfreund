@@ -57,13 +57,13 @@
         <td class="docnr">{{ k.kundennummer }}</td>
         <td>
           <span class="cell-title">{{ k.anzeigename }}</span>
-          {% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}
-          {% if k.firma and not k.firma.gesperrt_am %}<span class="cell-sub">Ansprechpartner bei {{ k.firma }}</span>
+          {% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}{% if k.position %}, {{ k.position }}{% endif %}</span>{% endif %}
+          {% if k.firma and not k.firma.gesperrt_am %}<span class="cell-sub">{{ k.position|default:"Ansprechpartner" }} bei {{ k.firma }}</span>
           {% elif not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
         </td>
         <td class="col-ort">{{ k.ort|default:"–" }}</td>
         <td class="col-kat"><span class="tag">{{ k.get_kategorie_display }}</span></td>
-        <td class="col-kontakt">{{ k.telefon|default:"–" }}</td>
+        <td class="col-kontakt">{% firstof k.telefon k.weitere_telefon.0.wert "–" %}</td>
         <td class="cell-action">
           <button class="btn btn-ghost btn-icon" type="button" data-expand aria-controls="details-{{ k.pk }}" aria-expanded="{% if offen == auf %}true{% else %}false{% endif %}">
             {% icon "chevron-down" %}<span class="visually-hidden">Details zu {{ k.anzeigename }}</span>
@@ -76,9 +76,11 @@
             <div>
               <h3 class="detail-title">Kontakt</h3>
               {% if k.telefon %}<p><a class="link" href="tel:{{ k.telefon|cut:' ' }}">{% icon "phone" %}{{ k.telefon }}</a></p>{% endif %}
+              {% include "contacts/kontaktwege.html" with wege=k.weitere_telefon %}
               {% if k.email %}<p><a class="link" href="mailto:{{ k.email }}">{% icon "mail" %}{{ k.email }}</a></p>{% endif %}
+              {% include "contacts/kontaktwege.html" with wege=k.weitere_email %}
               {% if k.website %}<p class="muted">{{ k.website }}</p>{% endif %}
-              {% if not k.telefon and not k.email and not k.website %}<p class="muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
+              {% if not k.telefon and not k.email and not k.website and not k.kontaktwege.all %}<p class="muted">Keine Kontaktdaten hinterlegt.</p>{% endif %}
             </div>
             <div>
               <h3 class="detail-title">Anschrift</h3>

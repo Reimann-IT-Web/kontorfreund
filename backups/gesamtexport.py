@@ -25,7 +25,7 @@ from artikel.models import Artikel
 from auftraege.models import Auftragsbestaetigung
 from auftraege.models import Position as Auftragsposition
 from auswertungen import tabelle
-from contacts.models import Kontakt
+from contacts.models import Kontakt, Kontaktweg
 from core.models import Firmendaten
 from core.templatetags.kf import zahl
 from dokumentation.models import Angaben, Fassung
@@ -65,6 +65,13 @@ TABELLEN = [
             ),
             ("Angelegt am", lambda k: _zeit(k.erstellt)),
         ],
+    ),
+    (
+        "telefon-email.csv",
+        "Weitere Telefonnummern und E-Mail-Adressen der Adressen",
+        Kontaktweg.objects.select_related("kontakt"),
+        [("Kundennummer", _kunde)],
+        [],
     ),
     (
         "artikel.csv",

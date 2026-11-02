@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.22.0 – 03.11.2026
+
+- Mehrere Telefonnummern und E-Mail-Adressen je Adresse: Unter Telefon und E-Mail fügen Sie mit „Weitere Telefonnummer“ und „Weitere E-Mail-Adresse“ weitere hinzu, jeweils mit einer Bezeichnung wie „Mobil“, „Fax“ oder „Buchhaltung“, bis zu 20 je Adresse. Sie stehen in der Adressliste, auf der Seite der Adresse und im Export der Liste. Für Rechnungen und die XRechnung gilt weiter die Adresse im Feld „E-Mail“.
+- Position: Bei Personen und beim Ansprechpartner einer Firma lässt sich die Position eintragen, etwa „Geschäftsführerin“. Bei einem Ansprechpartner steht dann „Geschäftsführerin bei …“ statt „Ansprechpartner bei …“, und die Firma nennt sie in ihrer Liste der Ansprechpartner.
+- Die Suche in der Adressliste findet auch die weiteren E-Mail-Adressen, und die Warnung vor Dubletten beim Anlegen vergleicht sie mit. Hat eine Adresse nur eine weitere Telefonnummer, zeigt die Liste diese in der Spalte „Telefon“.
+- Der Import erkennt Spalten wie „Mobil“, „Handy“, „Fax“ und „Position“ und übernimmt die weiteren Nummern und Adressen aus dem eigenen Export der Adressliste.
+- Die Auskunft nach Art. 15 DSGVO und der Gesamtexport (neue Tabelle `telefon-email.csv`) enthalten die weiteren Nummern und Adressen, das Änderungsprotokoll verzeichnet Änderungen daran. Das Verzeichnis von Verarbeitungstätigkeiten nennt die Position; beim nächsten Herunterladen entsteht eine neue Fassung.
+
 ## 0.21.0 – 03.11.2026
 
 - Ansprechpartner: Eine Person lässt sich einer Firma zuordnen (im Formular der Person unter „Ansprechpartner bei“). Die Firma zeigt ihre Ansprechpartner rechts auf ihrer Seite, mit Telefon und E-Mail; dort legen Sie mit „Ansprechpartner anlegen“ gleich einen neuen an. Bei der Person steht, zu welcher Firma sie gehört, in der Adressliste ebenso.

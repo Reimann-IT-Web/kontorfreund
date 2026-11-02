@@ -2,6 +2,7 @@ import re
 from datetime import date
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,8 +14,13 @@ from konten.rechte import nur_inhaber
 
 from . import datenschutz as ds
 from . import plz
-from .forms import KontaktForm
-from .models import Kontakt
+from .forms import (
+    BEZEICHNUNGEN,
+    KontaktForm,
+    kontaktwege_lesen,
+    kontaktwege_speichern,
+)
+from .models import Kontakt, Kontaktweg
 
 KATEGORIEN_PLURAL = {
     Kontakt.Kategorie.KUNDE: "Kunden",
@@ -33,12 +39,14 @@ EXPORT = [
     ("Titel", "titel"),
     ("Vorname", "vorname"),
     ("Nachname", "nachname"),
+    ("Position", "position"),
     ("Straße und Hausnummer", "strasse"),
     ("PLZ", "plz"),
     ("Ort", "ort"),
     ("Land", "land"),
     ("E-Mail", "email"),
     ("Telefon", "telefon"),
+    ("Weitere Telefonnummern und E-Mail-Adressen", "kontaktwege_text"),
     ("Website", "website"),
     ("USt-IdNr.", "ust_id"),
     ("Käuferreferenz oder Leitweg-ID", "kaeuferreferenz"),
@@ -77,9 +85,13 @@ def liste(request):
         kontakte = Kontakt.objects.filter(gesperrt_am__isnull=False)
     else:
         kontakte = Kontakt.objects.filter(archiviert=archiv, gesperrt_am__isnull=True)
-    kontakte = kontakte.select_related("firma").annotate(
-        anzahl_belege=Count("altbelege", distinct=True),
-        anzahl_eingang=Count("eingangsrechnungen", distinct=True),
+    kontakte = (
+        kontakte.select_related("firma")
+        .prefetch_related("kontaktwege")
+        .annotate(
+            anzahl_belege=Count("altbelege", distinct=True),
+            anzahl_eingang=Count("eingangsrechnungen", distinct=True),
+        )
     )
     if kategorie in Kontakt.Kategorie.values:
         kontakte = kontakte.filter(kategorie=kategorie)
@@ -90,6 +102,11 @@ def liste(request):
             | Q(nachname__icontains=q)
             | Q(ort__icontains=q)
             | Q(email__icontains=q)
+            | Q(
+                pk__in=Kontaktweg.objects.filter(
+                    art=Kontaktweg.Art.EMAIL, wert__icontains=q
+                ).values("kontakt")
+            )
         )
         if (nummer := _nummer(q)) is not None:
             bedingung |= Q(nummer=nummer)
@@ -126,14 +143,22 @@ def liste(request):
     )
 
 
-def moegliche_dubletten(kontakt):
-    """Gleiche E-Mail-Adresse oder gleicher Name am selben Ort."""
+def moegliche_dubletten(kontakt, wege=()):
+    """Gleiche E-Mail-Adresse oder gleicher Name am selben Ort.
+
+    E-Mail-Adressen zählen auch unter den weiteren, bei beiden Adressen.
+    """
     andere = Kontakt.objects.filter(gesperrt_am__isnull=True)
     if kontakt.pk:
         andere = andere.exclude(pk=kontakt.pk)
     bedingung = Q(anzeigename__iexact=kontakt.name_berechnen(), ort__iexact=kontakt.ort)
-    if kontakt.email:
-        bedingung |= Q(email__iexact=kontakt.email)
+    emails = [kontakt.email] + [w.wert for w in wege if w.art == Kontaktweg.Art.EMAIL]
+    for email in filter(None, emails):
+        bedingung |= Q(email__iexact=email) | Q(
+            pk__in=Kontaktweg.objects.filter(
+                art=Kontaktweg.Art.EMAIL, wert__iexact=email
+            ).values("kontakt")
+        )
     return list(andere.filter(bedingung)[:3])
 
 
@@ -154,11 +179,19 @@ def bearbeiten(request, pk=None):
         else None
     )
     form = KontaktForm(request.POST or None, instance=kontakt, initial=initial)
+    if request.method == "POST":
+        wege, fehler = kontaktwege_lesen(
+            *(request.POST.getlist(f"weg_{n}") for n in ("art", "bezeichnung", "wert"))
+        )
+    else:
+        wege, fehler = list(kontakt.kontaktwege.all()) if kontakt else [], []
     dubletten = []
-    if request.method == "POST" and form.is_valid():
-        dubletten = moegliche_dubletten(form.instance)
+    if request.method == "POST" and form.is_valid() and not fehler:
+        dubletten = moegliche_dubletten(form.instance, wege)
         if not dubletten or request.POST.get("trotzdem"):
-            kontakt = form.save()
+            with transaction.atomic():
+                kontakt = form.save()
+                kontaktwege_speichern(kontakt, wege)
             aktion = "gespeichert" if pk else "angelegt"
             messages.success(request, f"Adresse {kontakt.kundennummer} {aktion}.")
             if firma and kontakt.firma_id == firma.pk:
@@ -172,6 +205,8 @@ def bearbeiten(request, pk=None):
             "form": form,
             "kontakt": kontakt,
             "dubletten": dubletten,
+            "wege": wege,
+            "bezeichnungen": BEZEICHNUNGEN,
         },
     )
 

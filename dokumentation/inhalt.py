@@ -695,8 +695,9 @@ def datenschutz():
                 "Art. 6 Abs. 1 lit. b DSGVO (Vertrag und vorvertragliche Maßnahmen), "
                 "lit. f (berechtigtes Interesse an der Betreuung der Kunden)",
                 "Kunden, Interessenten und deren Ansprechpartner",
-                "Name, Anschrift, E-Mail, Telefon, Website, USt-IdNr., Notizen, Verlauf "
-                "von Anrufen, E-Mails und Terminen, Dateien zur Adresse",
+                "Name, Position, Anschrift, E-Mail-Adressen, Telefonnummern, Website, "
+                "USt-IdNr., Notizen, Verlauf von Anrufen, E-Mails und Terminen, Dateien "
+                "zur Adresse",
                 "keine",
                 "Adressen ohne Belege, sobald sie nicht mehr gebraucht werden oder die "
                 "Person es verlangt (Art. 17 DSGVO); mit Belegen gesperrt bis zum Ende "

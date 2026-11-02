@@ -213,6 +213,26 @@ if (kontaktForm) {
   umschalten();
 }
 
+// Weitere Telefonnummern und E-Mail-Adressen: Zeilen hinzufügen und entfernen.
+const kontaktwege = document.querySelector("[data-kontaktwege]");
+if (kontaktwege) {
+  const liste = kontaktwege.querySelector("[data-kontaktwege-liste]");
+  kontaktwege.addEventListener("click", (e) => {
+    const neu = e.target.closest("[data-kontaktweg-neu]");
+    if (neu) {
+      liste.append(document.getElementById(`kontaktweg-${neu.dataset.kontaktwegNeu}`).content.cloneNode(true));
+      liste.lastElementChild.querySelector("[name=weg_bezeichnung]").focus();
+      return;
+    }
+    const entfernen = e.target.closest("[data-kontaktweg-entfernen]");
+    if (entfernen) {
+      entfernen.closest("[data-kontaktweg]").remove();
+      kontaktwege.querySelector("[data-kontaktweg-neu]").focus();
+      ansage("Entfernt. Wirksam, sobald Sie die Adresse speichern.");
+    }
+  });
+}
+
 // ---------- Anschrift: Ort zur Postleitzahl ----------
 
 // Bei einer deutschen PLZ trägt Kontorfreund den Ort ein, solange er nicht von Hand

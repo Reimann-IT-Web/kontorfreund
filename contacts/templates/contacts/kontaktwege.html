@@ -1,0 +1,2 @@
+{% load kf %}{% for w in wege %}<p class="kontaktweg-zeile"><a class="link" href="{% if w.art == 'email' %}mailto:{{ w.wert }}{% else %}tel:{{ w.wert|cut:' ' }}{% endif %}">{% if w.art == "email" %}{% icon "mail" %}{% else %}{% icon "phone" %}{% endif %}{{ w.wert }}</a>{% if w.bezeichnung %}<span class="small muted">{{ w.bezeichnung }}</span>{% endif %}</p>
+{% endfor %}

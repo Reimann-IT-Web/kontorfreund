@@ -13,7 +13,10 @@ auch im Plural oder englisch, Anrede (unbekannte fallen mit Hinweis weg), Land
 als Ländercode, vierstellige deutsche PLZ, bei denen Excel die Null vorn
 verloren hat, Hausnummer aus eigener Spalte, Einheit („Stk“, „h“) und Preis
 in deutscher oder englischer Schreibweise. Eine Nummer aus der Datei gilt, wenn
-sie frei ist; die übrigen Zeilen bekommen die Nummern danach.
+sie frei ist; die übrigen Zeilen bekommen die Nummern danach. Mobiltelefon und
+Fax werden weitere Telefonnummern mit der Bezeichnung „Mobil“ bzw. „Fax“; die
+Spalte mit weiteren Nummern und Adressen hat je Zeile „Bezeichnung: Wert“ wie im
+Export der Adressliste, E-Mail-Adressen erkennt der Import am „@“.
 
 `uebernehmen` speichert in einer Transaktion, was der Probelauf dann ergibt.
 Das Protokoll verzeichnet jede Anlage wie eine Eingabe von Hand.
@@ -28,8 +31,8 @@ from django.db import transaction
 from artikel.forms import ArtikelForm
 from artikel.models import Artikel
 from artikel.views import _nummer as artikelnummer
-from contacts.forms import KontaktForm
-from contacts.models import Kontakt
+from contacts.forms import KontaktForm, kontaktwege_lesen, kontaktwege_speichern
+from contacts.models import Kontakt, Kontaktweg
 from contacts.views import _nummer as kundennummer
 from core.templatetags.kf import zahl
 from invoicing.beleg import EINHEIT_CODE, LAND_CODE
@@ -140,6 +143,8 @@ def uebernehmen(imp):
         bericht = pruefen(imp)
         for objekt in bericht.neu:
             objekt.save()
+            if getattr(objekt, "weitere", None):
+                kontaktwege_speichern(objekt, objekt.weitere)
     return bericht
 
 
@@ -188,20 +193,32 @@ def _kontakte(imp, zeilen, bericht):
         namen[(k.anzeigename.casefold(), k.ort.casefold())] = f"{k.kundennummer} {k}"
         if k.email:
             emails[k.email.casefold()] = f"{k.kundennummer} {k}"
+    for w in Kontaktweg.objects.filter(
+        art=Kontaktweg.Art.EMAIL, kontakt__gesperrt_am__isnull=True
+    ).select_related("kontakt"):
+        emails.setdefault(w.wert.casefold(), f"{w.kontakt.kundennummer} {w.kontakt}")
     vergeben = set(Kontakt.objects.values_list("nummer", flat=True))
     for nr, roh in zeilen:
         meldungen, hinweise = [], []
         daten = _kontakt_daten(roh, imp.kategorie, meldungen, hinweise)
         form = KontaktForm(data=daten)
         meldungen += [] if form.is_valid() else _fehler(form)
+        weitere, fehler = kontaktwege_lesen(*_kontaktwege(roh))
+        meldungen += fehler
         if meldungen:
             bericht.fehler.append((nr, meldungen))
             continue
         kontakt = form.instance
+        kontakt.weitere = weitere
         kontakt.anzeigename = kontakt.name_berechnen()
         name = (kontakt.anzeigename.casefold(), kontakt.ort.casefold())
-        email = kontakt.email.casefold()
-        gleich = namen.get(name) or (email and emails.get(email))
+        adressen = [kontakt.email] + [
+            w.wert for w in weitere if w.art == Kontaktweg.Art.EMAIL
+        ]
+        adressen = [a.casefold() for a in adressen if a]
+        gleich = namen.get(name) or next(
+            (emails[a] for a in adressen if a in emails), None
+        )
         if gleich:
             bericht.dubletten.append((nr, kontakt.anzeigename, gleich))
             if not imp.dubletten_anlegen:
@@ -212,8 +229,8 @@ def _kontakte(imp, zeilen, bericht):
         if kontakt.nummer:
             vergeben.add(kontakt.nummer)
         namen.setdefault(name, f"Zeile {nr}")
-        if email:
-            emails.setdefault(email, f"Zeile {nr}")
+        for adresse in adressen:
+            emails.setdefault(adresse, f"Zeile {nr}")
         bericht.neu.append(kontakt)
         # Hinweise nur zu Zeilen, die übernommen werden.
         bericht.hinweise += [(nr, h) for h in hinweise]
@@ -250,6 +267,21 @@ def _kontakt_daten(roh, kategorie, meldungen, hinweise):
     if daten["art"] == "person" and daten["firmenname"].casefold() == person.casefold():
         daten["firmenname"] = ""
     return daten
+
+
+def _kontaktwege(roh):
+    """(Arten, Bezeichnungen, Werte) für `kontaktwege_lesen`."""
+    arten, bezeichnungen, werte = [], [], []
+    for zeile in roh.get("weitere", "").splitlines():
+        bezeichnung, _, wert = zeile.rpartition(": ")
+        arten.append(Kontaktweg.Art.EMAIL if "@" in wert else Kontaktweg.Art.TELEFON)
+        bezeichnungen.append(bezeichnung)
+        werte.append(wert)
+    for feld, bezeichnung in (("mobil", "Mobil"), ("fax", "Fax")):
+        arten.append(Kontaktweg.Art.TELEFON)
+        bezeichnungen.append(bezeichnung)
+        werte.append(roh.get(feld, ""))
+    return arten, bezeichnungen, werte
 
 
 # ---------- Artikel ----------

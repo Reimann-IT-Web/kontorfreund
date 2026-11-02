@@ -1,8 +1,13 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Q
 from django.urls import reverse_lazy
 
-from .models import Kontakt
+from protokoll.erfassen import eintragen
+from protokoll.models import Eintrag
+
+from .models import Kontakt, Kontaktweg
 
 # Die PLZ füllt den Ort aus (static/js/app.js); dazu gehört ein Feld mit data-ort.
 PLZ_ATTRS = {
@@ -24,6 +29,7 @@ class KontaktForm(forms.ModelForm):
             "titel",
             "vorname",
             "nachname",
+            "position",
             "firma",
             "strasse",
             "plz",
@@ -68,3 +74,58 @@ class KontaktForm(forms.ModelForm):
             firmen = firmen.exclude(pk=self.instance.pk)
         self.fields["firma"].queryset = firmen
         self.fields["firma"].empty_label = "– keiner Firma –"
+
+
+HOECHSTENS_KONTAKTWEGE = 20
+# Vorschläge für die Bezeichnung im Formular.
+BEZEICHNUNGEN = ["Büro", "Mobil", "Privat", "Fax", "Zentrale", "Buchhaltung"]
+
+
+def kontaktwege_lesen(arten, bezeichnungen, werte):
+    """Weitere Telefonnummern und E-Mail-Adressen aus den Zeilen des Formulars.
+
+    Leere Zeilen fallen weg; fehlerhafte bleiben in der Liste, damit das Formular
+    sie zum Verbessern wieder zeigt, mit der Meldung in `fehler` an der Zeile.
+    """
+    wege = []
+    for art, bezeichnung, wert in zip(arten, bezeichnungen, werte, strict=False):
+        wert = wert.strip()
+        if art not in Kontaktweg.Art.values or not wert:
+            continue
+        weg = Kontaktweg(art=art, bezeichnung=bezeichnung.strip()[:50], wert=wert[:254])
+        weg.fehler = ""
+        if art == Kontaktweg.Art.EMAIL:
+            try:
+                validate_email(wert)
+            except ValidationError:
+                weg.fehler = f"„{wert[:60]}“ ist keine gültige E-Mail-Adresse."
+        elif len(wert) > 50:
+            weg.fehler = (
+                f"Die Telefonnummer „{wert[:20]}…“ ist zu lang, höchstens 50 Zeichen."
+            )
+        wege.append(weg)
+    if len(wege) > HOECHSTENS_KONTAKTWEGE and not wege[-1].fehler:
+        wege[-1].fehler = (
+            f"Höchstens {HOECHSTENS_KONTAKTWEGE} weitere Telefonnummern und "
+            "E-Mail-Adressen je Adresse."
+        )
+    return wege, [w.fehler for w in wege if w.fehler]
+
+
+def kontaktwege_speichern(kontakt, wege):
+    """Ersetzt die weiteren Nummern und Adressen; das Protokoll vermerkt Änderungen.
+
+    Als Ganzes wie die Positionen einer Rechnung, weil sie neu angelegt werden.
+    """
+    vorher = kontakt.kontaktwege_text
+    kontakt.kontaktwege.all().delete()
+    for weg in wege:
+        weg.kontakt = kontakt
+        weg.save()
+    nachher = "\n".join(str(w) for w in wege)
+    if nachher != vorher:
+        eintragen(
+            Eintrag.Aktion.GEAENDERT,
+            kontakt,
+            [["Weitere Telefonnummern und E-Mail-Adressen", vorher, nachher]],
+        )

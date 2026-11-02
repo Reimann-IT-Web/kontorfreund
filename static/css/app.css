@@ -2074,6 +2074,44 @@ select {
   grid-column: 1 / -1;
 }
 
+/* Weitere Telefonnummern und E-Mail-Adressen im Adressformular */
+.kontaktweg {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: var(--s3);
+  align-items: end;
+  margin-bottom: var(--s3);
+}
+
+.kontaktweg .field > span {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.kontaktweg .field-error {
+  grid-column: 1 / -1;
+}
+
+/* Auf dem Handy die Bezeichnung über der Nummer, damit beide lesbar bleiben. */
+@media (max-width: 40rem) {
+  .kontaktweg {
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-bottom: var(--s4);
+  }
+
+  .kontaktweg > .field:first-of-type {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Angezeigte Nummer mit ihrer Bezeichnung daneben */
+.kontaktweg-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--s2);
+}
+
 .form-actions {
   display: flex;
   flex-wrap: wrap;

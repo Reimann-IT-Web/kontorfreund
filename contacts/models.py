@@ -64,6 +64,7 @@ class Kontakt(models.Model):
     titel = models.CharField("Titel", max_length=50, blank=True)
     vorname = models.CharField("Vorname", max_length=100, blank=True)
     nachname = models.CharField("Nachname", max_length=100, blank=True)
+    position = models.CharField("Position", max_length=100, blank=True)
     # Nur bei Personen: die Firma, bei der sie Ansprechpartner sind (Spezifikation K-1).
     firma = models.ForeignKey(
         "self",
@@ -168,6 +169,19 @@ class Kontakt(models.Model):
         return " ".join(t for t in [self.titel, self.vorname, self.nachname] if t)
 
     @property
+    def weitere_telefon(self):
+        return [w for w in self.kontaktwege.all() if w.art == Kontaktweg.Art.TELEFON]
+
+    @property
+    def weitere_email(self):
+        return [w for w in self.kontaktwege.all() if w.art == Kontaktweg.Art.EMAIL]
+
+    @property
+    def kontaktwege_text(self):
+        """Weitere Telefonnummern und E-Mail-Adressen, je eine Zeile."""
+        return "\n".join(str(w) for w in self.kontaktwege.all())
+
+    @property
     def anschrift_vollstaendig(self):
         return bool(self.strasse and self.plz and self.ort)
 
@@ -190,3 +204,33 @@ class Kontakt(models.Model):
         if self.land and self.land != "Deutschland":
             zeilen.append(self.land)
         return zeilen
+
+
+class Kontaktweg(models.Model):
+    """Weitere Telefonnummer oder E-Mail-Adresse einer Adresse, z. B. „Mobil“ (K-1).
+
+    Die erste steht in `Kontakt.telefon` bzw. `Kontakt.email`; an diese E-Mail-Adresse
+    gehen Rechnungen.
+    """
+
+    class Art(models.TextChoices):
+        TELEFON = "telefon", "Telefon"
+        EMAIL = "email", "E-Mail"
+
+    kontakt = models.ForeignKey(
+        Kontakt,
+        verbose_name="Adresse",
+        on_delete=models.CASCADE,
+        related_name="kontaktwege",
+    )
+    art = models.CharField("Art", max_length=10, choices=Art.choices)
+    bezeichnung = models.CharField("Bezeichnung", max_length=50, blank=True)
+    wert = models.CharField("Nummer oder Adresse", max_length=254)
+
+    class Meta:
+        ordering = ["pk"]
+        verbose_name = "Telefonnummer oder E-Mail-Adresse"
+        verbose_name_plural = "Telefonnummern und E-Mail-Adressen"
+
+    def __str__(self):
+        return f"{self.bezeichnung}: {self.wert}" if self.bezeichnung else self.wert

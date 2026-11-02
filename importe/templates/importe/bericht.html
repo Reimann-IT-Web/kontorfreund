@@ -107,7 +107,7 @@
           <td class="docnr">{{ k.kundennummer }}</td>
           <td>{{ k.anzeigename }}{% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}</td>
           <td>{{ k.strasse }}{% if k.plz or k.ort %}<span class="cell-sub">{{ k.plz }} {{ k.ort }}{% if k.land != "Deutschland" %}, {{ k.land }}{% endif %}</span>{% endif %}</td>
-          <td>{{ k.email }}{% if k.telefon %}<span class="cell-sub">{{ k.telefon }}</span>{% endif %}</td>
+          <td>{{ k.email }}{% if k.telefon %}<span class="cell-sub">{{ k.telefon }}</span>{% endif %}{% for w in k.weitere %}<span class="cell-sub">{{ w }}</span>{% endfor %}</td>
           <td>{{ k.get_kategorie_display }}</td>
         </tr>
         {% endfor %}

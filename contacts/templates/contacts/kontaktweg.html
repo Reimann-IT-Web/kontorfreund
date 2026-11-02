@@ -1,0 +1,13 @@
+{% load kf %}<div class="kontaktweg" data-kontaktweg>
+  <input type="hidden" name="weg_art" value="{{ art }}">
+  <label class="field">
+    <span>Bezeichnung <span class="optional">optional</span></span>
+    <input name="weg_bezeichnung" type="text" value="{{ w.bezeichnung }}" maxlength="50" list="kontaktweg-bezeichnungen" placeholder="z. B. {% if art == 'email' %}Buchhaltung{% else %}Mobil{% endif %}">
+  </label>
+  <label class="field{% if w.fehler %} has-error{% endif %}">
+    <span>{% if art == "email" %}Weitere E-Mail-Adresse{% else %}Weitere Telefonnummer{% endif %}</span>
+    {% if art == "email" %}<input name="weg_wert" type="email" value="{{ w.wert }}" maxlength="254" autocomplete="email"{% if w.fehler %} aria-invalid="true"{% endif %}>{% else %}<input name="weg_wert" type="tel" value="{{ w.wert }}" maxlength="50" autocomplete="tel"{% if w.fehler %} aria-invalid="true"{% endif %}>{% endif %}
+  </label>
+  <button class="btn btn-ghost btn-icon" type="button" data-kontaktweg-entfernen>{% icon "x" %}<span class="visually-hidden">{% if art == "email" %}E-Mail-Adresse{% else %}Telefonnummer{% endif %} entfernen</span></button>
+  {% if w.fehler %}<p class="field-error">{% icon "alert" %}<span>{{ w.fehler }}</span></p>{% endif %}
+</div>
