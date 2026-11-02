@@ -20,6 +20,7 @@ from backups import sicherung
 from benachrichtigungen.models import Einstellung
 from core.models import Firmendaten
 from konten.models import Benutzer
+from konten.sitzungen import HOECHSTENS
 
 from .models import Angaben
 
@@ -466,7 +467,8 @@ def verfahren():
                     "Kontorfreund schreibt jede Anlage, Änderung und Löschung von Adressen, "
                     "Artikeln, Belegen, Zahlungen, Einstellungen und Benutzern in ein "
                     "Protokoll: Zeitpunkt, Benutzer, Feld, alter und neuer Wert. Dazu "
-                    "kommen Anmeldungen, Fehlversuche, Datenschutz-Auskünfte und Befunde "
+                    "kommen An- und Abmeldungen, Fehlversuche, verweigerte Zugriffe, "
+                    "Datenschutz-Auskünfte und Befunde "
                     "der Prüfung der Ablage. Einträge lassen sich im Programm weder ändern "
                     "noch löschen. Einzige Ausnahme: Nach einer Löschung auf Verlangen "
                     "(Art. 17 DSGVO) oder nach Ablauf der Aufbewahrungsfrist werden die "
@@ -478,12 +480,17 @@ def verfahren():
                 "Zugriffsschutz",
                 absatz(
                     "Jede Seite verlangt eine Anmeldung mit E-Mail-Adresse und Kennwort. "
-                    "Kennwörter haben mindestens 12 Zeichen und werden nur als Argon2-Hash "
-                    "gespeichert. Nach fünf Fehlversuchen ist das Konto 15 Minuten "
+                    "Kennwörter haben mindestens 12 Zeichen; bekannte aus Datenlecks und "
+                    "solche aus Firmen- oder Benutzernamen lehnt das Programm ab. "
+                    "Gespeichert werden sie nur als Argon2-Hash. Ein Kennwort, das der "
+                    "Inhaber vergeben hat, ersetzt der Benutzer bei der ersten Anmeldung "
+                    "durch ein eigenes. Nach fünf Fehlversuchen ist das Konto 15 Minuten "
                     "gesperrt. Wer "
                     f"{settings.SESSION_COOKIE_AGE // 3600} Stunden nichts tut, wird "
-                    "abgemeldet. Eine Zwei-Faktor-Anmeldung mit Einmalcodes aus einer App "
-                    "lässt sich je Benutzer einschalten."
+                    f"abgemeldet, spätestens {HOECHSTENS // 3600} Stunden nach der "
+                    "Anmeldung. Eine Zwei-Faktor-Anmeldung mit Einmalcodes aus einer App "
+                    "lässt sich je Benutzer einschalten. Unter „Mein Konto“ sieht jeder, "
+                    "wo er angemeldet ist, und kann andere Geräte abmelden."
                 ),
             ),
         ),
@@ -768,10 +775,12 @@ def datenschutz():
                 punkte(
                     _zugang(),
                     "Anmeldung mit E-Mail-Adresse und Kennwort von mindestens 12 Zeichen; "
-                    "Kennwörter nur als Argon2-Hash gespeichert.",
+                    "Kennwörter aus Datenlecks oder aus Firmen- und Benutzernamen werden "
+                    "abgelehnt, gespeichert nur als Argon2-Hash. Ein vom Inhaber "
+                    "vergebenes Kennwort wird bei der ersten Anmeldung ersetzt.",
                     "Nach fünf Fehlversuchen ist das Konto 15 Minuten gesperrt; "
                     f"Abmeldung nach {settings.SESSION_COOKIE_AGE // 3600} Stunden ohne "
-                    "Nutzung.",
+                    f"Nutzung, spätestens {HOECHSTENS // 3600} Stunden nach der Anmeldung.",
                     f"Zwei-Faktor-Anmeldung eingeschaltet für {zwei_faktor} von {aktiv} "
                     f"Benutzer{'n' if aktiv != 1 else ''}.",
                     "Rollen Inhaber, Mitarbeiter und Prüfer. " + NUR_INHABER,

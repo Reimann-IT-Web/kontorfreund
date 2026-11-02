@@ -64,7 +64,7 @@
     {% csrf_token %}
     <section class="form-section" aria-labelledby="t-kennwort">
       <h2 class="form-title" id="t-kennwort">Kennwort neu setzen</h2>
-      <p class="form-hint small muted">Zum Beispiel, wenn {{ konto.name }} es vergessen hat. Geben Sie das neue Kennwort persönlich weiter.</p>
+      <p class="form-hint small muted">Zum Beispiel, wenn {{ konto.name }} es vergessen hat. Geben Sie das neue Kennwort persönlich weiter; bei der nächsten Anmeldung wählt {{ konto.name }} damit ein eigenes.</p>
       <div class="form-grid">
         {% include "core/feld.html" with f=kennwort_form.kennwort %}
         {% include "core/feld.html" with f=kennwort_form.wiederholung %}
@@ -82,6 +82,19 @@
   {% endif %}
 
   {% if not selbst %}
+  <section class="form-section" aria-labelledby="t-geraete">
+    <h2 class="form-title" id="t-geraete">Angemeldete Geräte</h2>
+    {% if geraete %}
+    <ul class="geraete">
+      {% for g in geraete %}<li><strong>{{ g.geraet }}</strong> <span class="small muted">· angemeldet {{ g.seit|date:"d.m.Y, H:i" }} · zuletzt {{ g.zuletzt|date:"d.m.Y, H:i" }}</span></li>{% endfor %}
+    </ul>
+    <p class="small">Wird ein Gerät vermisst oder hat jemand Fremdes Zugriff, melden Sie {{ konto.name }} überall ab.</p>
+    <form method="post">{% csrf_token %}<button class="btn" type="submit" name="aktion" value="abmelden" data-confirm="{{ konto.name }} auf allen Geräten abmelden?">{% icon "log-out" %}Auf allen Geräten abmelden</button></form>
+    {% else %}
+    <p class="small muted">{{ konto.name }} ist zurzeit nirgends angemeldet.</p>
+    {% endif %}
+  </section>
+
   <section class="form-section" aria-labelledby="t-zugang">
     <h2 class="form-title" id="t-zugang">Zugang</h2>
     {% if konto.is_active %}

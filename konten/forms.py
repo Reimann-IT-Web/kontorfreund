@@ -77,8 +77,12 @@ class NeuesKennwortForm(Formular):
                     "wiederholung", "Die beiden Kennwörter sind nicht gleich."
                 )
             else:
+                # Neue Konten gibt es noch nicht; die Regeln brauchen Name und Adresse.
+                benutzer = self.benutzer or Benutzer(
+                    name=daten.get("name", ""), email=daten.get("email", "")
+                )
                 try:
-                    validate_password(kennwort, self.benutzer)
+                    validate_password(kennwort, benutzer)
                 except forms.ValidationError as fehler:
                     self.add_error("kennwort", fehler)
         return daten
@@ -203,6 +207,14 @@ class KennwortAendernForm(NeuesKennwortForm):
             raise forms.ValidationError("Das bisherige Kennwort stimmt nicht.")
         return self.cleaned_data["bisher"]
 
+    def clean(self):
+        daten = super().clean()
+        if daten.get("kennwort") and daten.get("kennwort") == daten.get("bisher"):
+            self.add_error(
+                "kennwort", "Bitte wählen Sie ein anderes als das bisherige Kennwort."
+            )
+        return daten
+
 
 class KennwortBestaetigenForm(forms.Form):
     kennwort = forms.CharField(
@@ -220,3 +232,15 @@ class KennwortBestaetigenForm(forms.Form):
         if not self.benutzer.check_password(self.cleaned_data["kennwort"]):
             raise forms.ValidationError("Das Kennwort stimmt nicht.")
         return self.cleaned_data["kennwort"]
+
+
+class EinschaltenForm(KennwortBestaetigenForm, CodeForm):
+    """Kennwort und erster Code aus der App: Wer die Anmeldung ändert, bestätigt sich
+    vorher (ASVS 7.5.1)."""
+
+    field_order = ["kennwort", "code"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, auto_id="%s", **kwargs)
+        self.fields["kennwort"].label = "Ihr Kennwort"
+        self.fields["code"].widget.attrs.pop("autofocus")

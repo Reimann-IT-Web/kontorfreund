@@ -17,7 +17,7 @@ pytestmark = pytest.mark.django_db
 
 HEUTE = date.today()
 JAHR = HEUTE.year
-KENNWORT = "Pruefung-Kennwort-2026"
+KENNWORT = "Laterne Wolke Fahrrad 7"
 
 
 @pytest.fixture

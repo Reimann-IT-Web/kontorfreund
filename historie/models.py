@@ -20,6 +20,16 @@ VORSCHAU = {
     ".gif": "image/gif",
     ".webp": "image/webp",
 }
+# Woran sich diese Arten erkennen lassen; passt der Anfang nicht, gibt es die Datei nur
+# als Download (ASVS 5.2.2).
+KENNUNG = {
+    ".pdf": (b"%PDF-",),
+    ".png": (b"\x89PNG\r\n\x1a\n",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".gif": (b"GIF87a", b"GIF89a"),
+    ".webp": (b"RIFF",),
+}
 # So lange lässt sich eine gelöschte Datei noch zurückholen.
 AUFBEWAHREN = timedelta(days=30)
 
@@ -178,6 +188,14 @@ class Datei(models.Model):
     @property
     def vorschau(self):
         return self.endung in VORSCHAU
+
+    def inhalt_passt(self):
+        """Beginnt die Datei so, wie es ihre Endung verspricht?"""
+        with self.pfad.open("rb") as f:
+            kopf = f.read(12)
+        if self.endung == ".webp" and kopf[8:12] != b"WEBP":
+            return False
+        return kopf.startswith(KENNUNG.get(self.endung, ()))
 
     @property
     def art(self):

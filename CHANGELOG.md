@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.19.0 – 02.11.2026
+
+- Sicherheitsprüfung nach OWASP ASVS 5.0, Stufe 2: Alle 253 Anforderungen sind durchgegangen und in `docs/sicherheit.md` festgehalten, mit Begründung, wo Kontorfreund bewusst abweicht. Daraus die folgenden Änderungen.
+- Kennwörter: Kontorfreund lehnt jetzt auch Kennwörter ab, die aus Datenlecks bekannt sind (eine Liste mit 36 701 Einträgen im Programm, ohne Abfrage im Internet), und solche, die fast nur aus dem eigenen Namen, dem Firmennamen oder „Kontorfreund“ bestehen. Ihr bisheriges Kennwort bleibt gültig.
+- Wer ein Konto vom Inhaber bekommt oder dessen Kennwort der Inhaber neu setzt, wählt bei der nächsten Anmeldung ein eigenes. Das gilt auch für den Prüfer.
+- Unter „Mein Konto“ stehen die angemeldeten Geräte mit Browser und Uhrzeit; alle anderen lassen sich nach Eingabe des Kennworts abmelden. Der Inhaber kann einen Benutzer auf allen Geräten abmelden.
+- Spätestens 12 Stunden nach der Anmeldung meldet Kontorfreund ab, auch wenn ständig gearbeitet wird; wie bisher auch nach 8 Stunden ohne Eingabe.
+- Ein neues Kennwort oder eine geänderte Zwei-Faktor-Anmeldung meldet alle anderen Geräte ab. Die Zwei-Faktor-Anmeldung einzuschalten verlangt jetzt das Kennwort.
+- Fünf falsche Kennwörter beim Bestätigen (Kennwort ändern, Zwei-Faktor-Anmeldung ausschalten, Geräte abmelden) sperren das Konto 15 Minuten, wie bei der Anmeldung.
+- Das Protokoll verzeichnet jetzt auch Abmeldungen mit Grund, verweigerte Zugriffe, abgelehnte Formulare und das Ein- und Ausschalten der Zwei-Faktor-Anmeldung. Das Fehlerprotokoll schreibt zu jedem Eintrag Datum und Uhrzeit.
+- Seiten und Belege bleiben nicht mehr im Zwischenspeicher des Browsers. Ein angehängtes Bild oder PDF zeigt Kontorfreund nur dann im Browser an, wenn der Inhalt zur Dateiendung passt, sonst gibt es die Datei als Download.
+- Kleinere Härtungen: Anfragearten außer GET und POST lehnt das Programm ab, Telegram folgt keiner Umleitung, der Code zum Verbinden mit Telegram ist länger. Jedes Release enthält eine Stückliste aller Bibliotheken (SBOM).
+- Die Verfahrensdokumentation beschreibt die neuen Regeln; beim nächsten Herunterladen entsteht eine neue Fassung.
+
 ## 0.18.0 – 02.11.2026
 
 - Zugang für den Betriebsprüfer: Verlangt das Finanzamt bei einer Betriebsprüfung Zugriff auf Ihre Daten (§ 147 Abs. 6 AO), legen Sie unter Einstellungen › Benutzer › „Zugang für einen Betriebsprüfer“ ein Konto an, mit den Jahren der Prüfung und einem letzten Tag, höchstens ein Jahr voraus. Der Prüfer sieht nach der Anmeldung nur einen eigenen Bereich: Rechnungsausgangsbuch, Rechnungen mit Positionen, Zahlungen, Mahnungen, Eingangsrechnungen, Belege aus dem früheren Programm, die zugehörigen Adressen, das Änderungsprotokoll und die Verfahrensdokumentation, nur für diese Jahre. Er kann jede Tabelle durchsuchen und sortieren und die Belege öffnen, aber nichts ändern, nichts anlegen und keine anderen Bereiche aufrufen. Nach dem letzten Tag ist keine Anmeldung mehr möglich, auch eine offene Sitzung endet. Verlängern oder vorzeitig sperren können Sie den Zugang jederzeit; „So sieht es der Prüfer“ zeigt Ihnen vorher seine Ansicht.

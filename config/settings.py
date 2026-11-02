@@ -24,7 +24,7 @@ NEUSTART = os.environ.get("APP_NEUSTART") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.18.0"
+VERSION = "0.19.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -76,6 +76,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "core.sicherheit.methoden",
+    "core.sicherheit.nicht_speichern",
     "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -84,6 +86,8 @@ MIDDLEWARE = [
     "protokoll.middleware.anfrage_merken",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "konten.sitzungen.hoechstdauer",
+    "konten.rechte.eigenes_kennwort",
     "konten.rechte.zwei_faktor_pflicht",
     "konten.rechte.nur_lesen",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -136,6 +140,10 @@ DATEI_MB = int(os.environ.get("APP_DATEI_MB", "50"))
 # Jede Firma hat eigene Anmeldungen, Cookies gelten aber für alle Firmen unter derselben
 # Adresse. Mit eigenem Namen bleibt man nach einem Wechsel in jeder Firma angemeldet.
 SESSION_COOKIE_NAME = f"sessionid-{FIRMA}" if FIRMA else "sessionid"
+# Kein Skript liest den Schlüssel gegen CSRF; die Formulare tragen ihn als Feld.
+CSRF_COOKIE_HTTPONLY = True
+# Formular ohne gültigen Schlüssel: verständliche Seite und Eintrag im Protokoll.
+CSRF_FAILURE_VIEW = "core.sicherheit.formular_abgelaufen"
 # Im Netzwerk erreichbar, sobald andere Adressen als der eigene Rechner erlaubt sind;
 # dann ist die Zwei-Faktor-Anmeldung für Inhaber Pflicht.
 NETZWERK = any(
@@ -152,10 +160,17 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # Ohne Debug-Modus liefert WhiteNoise die Dateien direkt aus dem Programmordner aus.
 WHITENOISE_USE_FINDERS = True
 
-# Fehler (Status 500) landen in einer Datei im Datenverzeichnis, für die Fehlersuche.
+# Fehler (Status 500) landen in einer Datei im Datenverzeichnis, für die Fehlersuche;
+# Anmeldungen und verweigerte Zugriffe stehen im Protokoll (protokoll.Eintrag).
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "zeit": {
+            "()": "config.fehlerprotokoll.MitZeitzone",
+            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        },
+    },
     "handlers": {
         "datei": {
             "class": "logging.handlers.RotatingFileHandler",
@@ -165,6 +180,7 @@ LOGGING = {
             "encoding": "utf-8",
             "delay": True,
             "level": "ERROR",
+            "formatter": "zeit",
         },
     },
     "root": {"handlers": ["datei"], "level": "ERROR"},
@@ -175,7 +191,7 @@ SECURE_CSP = {
     "default-src": [CSP.SELF],
     "img-src": [CSP.SELF, "data:"],
     "object-src": [CSP.NONE],
-    "base-uri": [CSP.SELF],
+    "base-uri": [CSP.NONE],
     "form-action": [CSP.SELF],
     "frame-ancestors": [CSP.NONE],
 }

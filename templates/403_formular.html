@@ -1,0 +1,10 @@
+{% extends "konten/schlicht.html" %}
+
+{% block title %}Formular abgelehnt{% endblock %}
+
+{% block content %}
+<h1>Formular abgelehnt</h1>
+<p>Das Formular kam ohne gültigen Sicherheitsschlüssel an. Das passiert, wenn eine Seite sehr lange offen war, das Programm inzwischen neu gestartet ist oder eine fremde Seite das Formular abschicken wollte.</p>
+<p class="muted">Gespeichert wurde nichts. Laden Sie die Seite neu und versuchen Sie es noch einmal.</p>
+<p><a class="btn btn-primary btn-block" href="{% url 'core:start' %}">Zur Übersicht</a></p>
+{% endblock %}

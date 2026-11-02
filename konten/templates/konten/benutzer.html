@@ -47,7 +47,7 @@
   {% csrf_token %}
   <section class="form-section" aria-labelledby="t-neu">
     <h2 class="form-title" id="t-neu">Konto anlegen</h2>
-    <p class="form-hint small muted">Das erste Kennwort geben Sie persönlich weiter. Ändern lässt es sich danach unter „Mein Konto“.</p>
+    <p class="form-hint small muted">Das erste Kennwort geben Sie persönlich weiter. Bei der ersten Anmeldung wählt man damit ein eigenes.</p>
     <div class="form-grid">
       {% include "core/feld.html" with f=form.name %}
       {% include "core/feld.html" with f=form.email %}

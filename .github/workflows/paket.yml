@@ -111,6 +111,12 @@ jobs:
         with:
           path: pakete
           merge-multiple: true
+      - uses: astral-sh/setup-uv@v7
+      # Stückliste aller Bibliotheken im Paket, CycloneDX (OWASP ASVS 15.1.2).
+      - name: SBOM
+        run: >-
+          uv export --format cyclonedx1.5 --preview-features sbom-export --no-dev --locked
+          -o "pakete/Kontorfreund-${GITHUB_REF_NAME#v}-sbom.cdx.json" > /dev/null
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |

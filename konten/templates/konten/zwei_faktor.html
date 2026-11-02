@@ -29,8 +29,9 @@
   <form method="post" novalidate>
     {% csrf_token %}
     <section class="form-section" aria-labelledby="t-bestaetigen">
-      <h2 class="form-title" id="t-bestaetigen">2. Code bestätigen</h2>
+      <h2 class="form-title" id="t-bestaetigen">2. Mit Kennwort und Code bestätigen</h2>
       <div class="form-grid">
+        {% include "core/feld.html" with f=form.kennwort %}
         {% include "core/feld.html" with f=form.code %}
       </div>
     </section>

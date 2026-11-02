@@ -6,7 +6,8 @@ from django.db import models
 
 
 def neuer_code():
-    return secrets.token_urlsafe(12)
+    # 128 Bit, damit niemand den Code erraten und seinen Chat verbinden kann (ASVS 11.5.1).
+    return secrets.token_urlsafe(16)
 
 
 class Einstellung(models.Model):

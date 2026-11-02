@@ -5,7 +5,7 @@ import time
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib.auth.decorators import login_not_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,15 +15,16 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from core.models import Firmendaten
-from protokoll.erfassen import anmeldung
+from protokoll.erfassen import anmeldung, eintragen
 from protokoll.models import Eintrag
 
-from . import totp
+from . import sitzungen, totp
 from .forms import (
     AnmeldenForm,
     BenutzerForm,
     CodeForm,
     EinrichtenForm,
+    EinschaltenForm,
     KennwortAendernForm,
     KennwortBestaetigenForm,
     NeuesKennwortForm,
@@ -75,6 +76,26 @@ def _fehlversuch(benutzer, text, email, grund):
         return text
     benutzer.fehlversuch()
     return _gesperrt(benutzer) if benutzer.gesperrt else text
+
+
+def _bestaetigung_falsch(request, form, feld, grund):
+    """Ein falsches Kennwort zum Bestätigen zählt wie bei der Anmeldung (ASVS 6.3.1).
+    Nach dem letzten Fehlversuch ist man abgemeldet; dann die Weiterleitung, sonst None."""
+    if not form.data.get(form.add_prefix(feld)) or feld not in form.errors:
+        return None
+    benutzer = request.user
+    _fehlversuch(benutzer, "", benutzer.email, grund)
+    if not benutzer.gesperrt:
+        return None
+    sitzungen.abmelden(request, "nach Fehlversuchen gesperrt")
+    messages.error(request, _gesperrt(benutzer))
+    return redirect("konten:anmelden")
+
+
+def _zwei_faktor_vermerken(benutzer, vorher, nachher):
+    eintragen(
+        Eintrag.Aktion.GEAENDERT, benutzer, [["Zwei-Faktor-Anmeldung", vorher, nachher]]
+    )
 
 
 @login_not_required
@@ -166,7 +187,7 @@ def code(request):
 
 @require_POST
 def abmelden(request):
-    logout(request)
+    sitzungen.abmelden(request)
     messages.success(request, "Sie sind abgemeldet.")
     return redirect("konten:anmelden")
 
@@ -198,14 +219,29 @@ def _pflicht(benutzer):
     return settings.NETZWERK and benutzer.ist_inhaber
 
 
+def _kennwort_aendern(request, form):
+    """Neues Kennwort speichern; alle anderen Sitzungen enden, diese bleibt."""
+    benutzer = request.user
+    benutzer.set_password(form.cleaned_data["kennwort"])
+    benutzer.kennwort_vorlaeufig = False
+    benutzer.save()
+    update_session_auth_hash(request, benutzer)
+
+
 def konto(request):
     form = KennwortAendernForm(request.POST or None, benutzer=request.user)
-    if request.method == "POST" and form.is_valid():
-        request.user.set_password(form.cleaned_data["kennwort"])
-        request.user.save()
-        update_session_auth_hash(request, request.user)
-        messages.success(request, "Ihr Kennwort ist geändert.")
-        return redirect("konten:konto")
+    if request.method == "POST":
+        if form.is_valid():
+            _kennwort_aendern(request, form)
+            messages.success(
+                request,
+                "Ihr Kennwort ist geändert. Auf anderen Geräten sind Sie abgemeldet.",
+            )
+            return redirect("konten:konto")
+        if antwort := _bestaetigung_falsch(
+            request, form, "bisher", "Bisheriges Kennwort falsch"
+        ):
+            return antwort
     return render(
         request,
         "konten/konto.html",
@@ -213,9 +249,73 @@ def konto(request):
             "bereich": "konto",
             "form": form,
             "aus_form": KennwortBestaetigenForm(benutzer=request.user),
+            "geraete_form": KennwortBestaetigenForm(
+                benutzer=request.user, auto_id="geraete_%s"
+            ),
+            "geraete": sitzungen.liste(request.user, request.session.session_key),
+            "abmelden_nach": settings.SESSION_COOKIE_AGE // 3600,
+            "hoechstens": sitzungen.HOECHSTENS // 3600,
             "pflicht": _pflicht(request.user),
         },
     )
+
+
+def kennwort(request):
+    """Eigenes Kennwort statt des vom Inhaber vergebenen; für Prüfer der einzige Weg,
+    es zu ändern, weil sie „Mein Konto“ nicht sehen."""
+    benutzer = request.user
+    if not (benutzer.kennwort_vorlaeufig or benutzer.ist_pruefer):
+        return redirect("konten:konto")
+    vorlaeufig = benutzer.kennwort_vorlaeufig
+    form = KennwortAendernForm(request.POST or None, benutzer=benutzer)
+    if vorlaeufig:
+        form.fields["bisher"].label = "Kennwort, mit dem Sie sich eben angemeldet haben"
+    if request.method == "POST":
+        if form.is_valid():
+            _kennwort_aendern(request, form)
+            messages.success(
+                request,
+                "Ihr eigenes Kennwort ist gespeichert."
+                if vorlaeufig
+                else "Ihr Kennwort ist geändert.",
+            )
+            return redirect("core:start")
+        if antwort := _bestaetigung_falsch(
+            request, form, "bisher", "Bisheriges Kennwort falsch"
+        ):
+            return antwort
+    return render(
+        request, "konten/kennwort.html", {"form": form, "vorlaeufig": vorlaeufig}
+    )
+
+
+@require_POST
+def geraete_abmelden(request):
+    """Auf allen anderen Geräten abmelden, nach Bestätigung mit dem Kennwort (ASVS 7.5.2)."""
+    form = KennwortBestaetigenForm(
+        request.POST, benutzer=request.user, auto_id="geraete_%s"
+    )
+    if form.is_valid():
+        anzahl = sitzungen.beenden(request.user, ausser=request.session.session_key)
+        anmeldung(
+            Eintrag.Aktion.ABMELDUNG,
+            str(request.user),
+            request.user,
+            f"auf anderen Geräten ({anzahl})",
+        )
+        messages.success(
+            request,
+            "Sie sind auf allen anderen Geräten abgemeldet."
+            if anzahl
+            else "Sie waren auf keinem anderen Gerät angemeldet.",
+        )
+    elif antwort := _bestaetigung_falsch(
+        request, form, "kennwort", "Kennwort zum Abmelden der Geräte falsch"
+    ):
+        return antwort
+    else:
+        messages.error(request, form.errors["kennwort"][0])
+    return redirect(reverse("konten:konto") + "#geraete")
 
 
 def zwei_faktor(request):
@@ -223,14 +323,15 @@ def zwei_faktor(request):
     if benutzer.zwei_faktor:
         return redirect("konten:konto")
     geheimnis = request.session.setdefault(NEUES_GEHEIMNIS, totp.neues_geheimnis())
-    form = CodeForm(request.POST or None)
+    form = EinschaltenForm(request.POST or None, benutzer=benutzer)
     if request.method == "POST" and form.is_valid():
         if schritt := totp.pruefen(geheimnis, form.cleaned_data["code"]):
             benutzer.totp_geheimnis = geheimnis
             benutzer.totp_schritt = schritt
             benutzer.save(update_fields=["totp_geheimnis", "totp_schritt"])
+            update_session_auth_hash(request, benutzer)
             del request.session[NEUES_GEHEIMNIS]
-            logger.info("Zwei-Faktor-Anmeldung eingeschaltet: %s", benutzer.email)
+            _zwei_faktor_vermerken(benutzer, "aus", "ein")
             messages.success(
                 request,
                 "Die Zwei-Faktor-Anmeldung ist eingeschaltet. Ab jetzt fragt "
@@ -242,6 +343,15 @@ def zwei_faktor(request):
             "Der Code passt nicht. Nehmen Sie den aktuellen aus der App und prüfen "
             "Sie, ob die Uhrzeit auf dem Telefon stimmt.",
         )
+    elif request.method == "POST" and (
+        antwort := _bestaetigung_falsch(
+            request,
+            form,
+            "kennwort",
+            "Kennwort beim Einrichten der Zwei-Faktor-Anmeldung falsch",
+        )
+    ):
+        return antwort
     adresse = totp.einrichtungsadresse(geheimnis, benutzer.email, settings.PRODUCT_NAME)
     return render(
         request,
@@ -264,8 +374,16 @@ def zwei_faktor_aus(request):
     if form.is_valid():
         request.user.totp_geheimnis = ""
         request.user.save(update_fields=["totp_geheimnis"])
-        logger.info("Zwei-Faktor-Anmeldung ausgeschaltet: %s", request.user.email)
+        update_session_auth_hash(request, request.user)
+        _zwei_faktor_vermerken(request.user, "ein", "aus")
         messages.success(request, "Die Zwei-Faktor-Anmeldung ist ausgeschaltet.")
+    elif antwort := _bestaetigung_falsch(
+        request,
+        form,
+        "kennwort",
+        "Kennwort beim Ausschalten der Zwei-Faktor-Anmeldung falsch",
+    ):
+        return antwort
     else:
         messages.error(request, form.errors["kennwort"][0])
     return redirect("konten:konto")
@@ -285,24 +403,29 @@ def benutzer(request):
             konto["kennwort"],
             name=konto["name"],
             rolle=Benutzer.Rolle.PRUEFER,
+            kennwort_vorlaeufig=True,
             **pruefung_form.cleaned_data,
         )
         messages.success(
             request,
             f"Der Zugang für {neu.name} ist angelegt und gilt bis zum "
             f"{neu.zugang_bis:%d.%m.%Y}. Geben Sie E-Mail-Adresse und Kennwort "
-            "persönlich weiter.",
+            "persönlich weiter; bei der ersten Anmeldung wählt der Prüfer ein eigenes.",
         )
         return redirect("konten:benutzer")
     if not pruefer and request.method == "POST" and form.is_valid():
         daten = form.cleaned_data
         neu = Benutzer.objects.create_user(
-            daten["email"], daten["kennwort"], name=daten["name"], rolle=daten["rolle"]
+            daten["email"],
+            daten["kennwort"],
+            name=daten["name"],
+            rolle=daten["rolle"],
+            kennwort_vorlaeufig=True,
         )
         messages.success(
             request,
             f"Das Konto für {neu.name} ist angelegt. Geben Sie das erste Kennwort "
-            "persönlich weiter; ändern lässt es sich unter „Mein Konto“.",
+            f"persönlich weiter; bei der ersten Anmeldung wählt {neu.name} ein eigenes.",
         )
         return redirect("konten:benutzer")
     return render(
@@ -335,9 +458,18 @@ def benutzer_bearbeiten(request, pk):
     if request.method == "POST":
         if aktion == "kennwort" and kennwort_form.is_valid():
             konto.set_password(kennwort_form.cleaned_data["kennwort"])
+            konto.kennwort_vorlaeufig = not selbst
             konto.save()
             konto.entsperren()
-            meldung = f"Das Kennwort von {konto.name} ist neu gesetzt."
+            if selbst:
+                update_session_auth_hash(request, konto)
+                meldung = "Ihr Kennwort ist neu gesetzt."
+            else:
+                meldung = (
+                    f"Das Kennwort von {konto.name} ist neu gesetzt und alle Geräte "
+                    f"sind abgemeldet. Bei der nächsten Anmeldung wählt {konto.name} "
+                    "ein eigenes."
+                )
         elif aktion == "pruefung" and pruefung_form and pruefung_form.is_valid():
             pruefung_form.save()
             meldung = (
@@ -363,10 +495,22 @@ def benutzer_bearbeiten(request, pk):
         elif aktion == "entsperren":
             konto.entsperren()
             meldung = f"Die Sperre für {konto.name} ist aufgehoben."
-        elif aktion == "zwei_faktor":
+        elif aktion == "zwei_faktor" and konto.zwei_faktor:
             konto.totp_geheimnis = ""
             konto.save(update_fields=["totp_geheimnis"])
+            if selbst:
+                update_session_auth_hash(request, konto)
+            _zwei_faktor_vermerken(konto, "ein", "zurückgesetzt")
             meldung = f"Die Zwei-Faktor-Anmeldung von {konto.name} ist zurückgesetzt."
+        elif aktion == "abmelden" and not selbst:
+            anzahl = sitzungen.beenden(konto)
+            anmeldung(
+                Eintrag.Aktion.ABMELDUNG,
+                str(konto),
+                konto,
+                f"vom Inhaber auf allen Geräten ({anzahl})",
+            )
+            meldung = f"{konto.name} ist auf allen Geräten abgemeldet."
         else:
             meldung = None
         if meldung:
@@ -388,5 +532,6 @@ def benutzer_bearbeiten(request, pk):
             "kennwort_form": kennwort_form,
             "pruefung_form": pruefung_form,
             "rollen": [(r, Benutzer.Rolle(r).label) for r in ROLLEN],
+            "geraete": [] if selbst else sitzungen.liste(konto),
         },
     )

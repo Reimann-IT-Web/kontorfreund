@@ -16,6 +16,16 @@ ADRESSE = "https://api.telegram.org/bot{schluessel}/{methode}"
 SCHLUESSEL = re.compile(r"\d{5,}:[A-Za-z0-9_-]{30,}")
 
 
+class _OhneUmleitung(urllib.request.HTTPRedirectHandler):
+    """Eine Umleitung wäre eine Antwort von woanders; sie gilt als Fehler (ASVS 15.3.2)."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_oeffnen = urllib.request.build_opener(_OhneUmleitung).open
+
+
 class Fehler(Exception):
     pass
 
@@ -45,7 +55,7 @@ def _aufrufen(schluessel, methode, **werte):
         data=urllib.parse.urlencode(werte).encode(),
     )
     try:
-        with urllib.request.urlopen(anfrage, timeout=20) as antwort:  # noqa: S310 – feste https-Adresse
+        with _oeffnen(anfrage, timeout=20) as antwort:
             daten = json.load(antwort)
     except urllib.error.HTTPError as fehler:
         try:

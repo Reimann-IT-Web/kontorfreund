@@ -304,7 +304,7 @@ def xml(request, pk):
         raise Http404("Die Datei fehlt im Archiv.")
     return FileResponse(
         pfad.open("rb"),
-        content_type="application/xml",
+        content_type="application/xml; charset=utf-8",
         filename=f"{rechnung.bezeichnung}-{rechnung.nummer}.xml",
         as_attachment=True,
     )

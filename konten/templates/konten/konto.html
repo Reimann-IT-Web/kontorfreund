@@ -36,6 +36,24 @@
   {% endif %}
 </section>
 
+<section class="form-section form" id="geraete" aria-labelledby="t-geraete">
+  <h2 class="form-title" id="t-geraete">Angemeldete Geräte</h2>
+  <ul class="geraete">
+    {% for g in geraete %}<li><strong>{{ g.geraet }}</strong> <span class="small muted">· angemeldet {{ g.seit|date:"d.m.Y, H:i" }}{% if g.aktuell %} · dieses Gerät{% else %} · zuletzt {{ g.zuletzt|date:"d.m.Y, H:i" }}{% endif %}</span></li>{% endfor %}
+  </ul>
+  <p class="small muted">Ohne Eingabe meldet {{ marke }} Sie nach {{ abmelden_nach }} Stunden ab, sonst spätestens {{ hoechstens }} Stunden nach der Anmeldung.</p>
+  {% if geraete|length > 1 %}
+  <form method="post" action="{% url 'konten:geraete_abmelden' %}" novalidate>
+    {% csrf_token %}
+    <p class="small">Kennen Sie ein Gerät nicht, melden Sie es ab und ändern Sie danach Ihr Kennwort.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=geraete_form.kennwort %}
+    </div>
+    <button class="btn" type="submit">{% icon "log-out" %}Auf allen anderen Geräten abmelden</button>
+  </form>
+  {% endif %}
+</section>
+
 <form class="form" method="post" novalidate>
   {% csrf_token %}
   <section class="form-section" aria-labelledby="t-kennwort">

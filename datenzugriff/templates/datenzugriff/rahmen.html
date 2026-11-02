@@ -12,6 +12,7 @@
     <div class="topbar-end pruefer-konto">
       {% if user.ist_pruefer %}
       <span class="small muted">{{ user.name }} · nur lesen, bis {{ user.zugang_bis|date:"d.m.Y" }}</span>
+      <a class="btn btn-ghost" href="{% url 'konten:kennwort' %}">{% icon "lock" %}Kennwort ändern</a>
       <form method="post" action="{% url 'konten:abmelden' %}">
         {% csrf_token %}
         <button class="btn btn-ghost" type="submit">{% icon "log-out" %}Abmelden</button>

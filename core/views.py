@@ -195,4 +195,4 @@ def neu_starten():
 @login_not_required
 def firma_offen(request):
     """Welche Firma der Server geöffnet hat; die Seite zum Wechseln wartet darauf."""
-    return HttpResponse(settings.FIRMA or "1", content_type="text/plain")
+    return HttpResponse(settings.FIRMA or "1", content_type="text/plain; charset=utf-8")

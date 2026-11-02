@@ -3050,3 +3050,12 @@ input[type="file"]::file-selector-button {
 .pruefer-zugang {
   margin-top: var(--s6);
 }
+
+/* Angemeldete Geräte (Mein Konto, Benutzer) */
+.geraete {
+  display: grid;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  padding: 0;
+  list-style: none;
+}

@@ -1,0 +1,29 @@
+{% extends "konten/schlicht.html" %}
+
+{% block title %}{% if vorlaeufig %}Eigenes Kennwort wählen{% else %}Kennwort ändern{% endif %}{% endblock %}
+
+{% block content %}
+{% if vorlaeufig %}
+<h1>Eigenes Kennwort wählen</h1>
+<p class="muted">Das erste Kennwort hat der Inhaber vergeben. Wählen Sie jetzt ein eigenes, das nur Sie kennen.</p>
+{% else %}
+<h1>Kennwort ändern</h1>
+<p class="muted">{{ user.name }} · {{ user.email }}</p>
+{% endif %}
+<form class="stack" method="post" novalidate>
+  {% csrf_token %}
+  {% include "konten/formfehler.html" %}
+  {% include "core/feld.html" with f=form.bisher %}
+  {% include "core/feld.html" with f=form.kennwort %}
+  {% include "core/feld.html" with f=form.wiederholung %}
+  <button class="btn btn-primary btn-block" type="submit">Kennwort speichern</button>
+</form>
+{% if vorlaeufig %}
+<form method="post" action="{% url 'konten:abmelden' %}">
+  {% csrf_token %}
+  <button class="btn btn-ghost btn-block" type="submit">Abmelden</button>
+</form>
+{% else %}
+<p><a class="btn btn-ghost btn-block" href="{% url 'datenzugriff:start' %}">Zurück</a></p>
+{% endif %}
+{% endblock %}

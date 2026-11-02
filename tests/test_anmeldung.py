@@ -50,7 +50,7 @@ def test_erster_start_legt_den_inhaber_an(anonym):
         reverse("konten:einrichten"),
         {**daten, "kennwort": "passwort1234", "wiederholung": "passwort1234"},
     )
-    assert "zu verbreitet" in schwach.content.decode()
+    assert "Datenleck" in schwach.content.decode()
     assert not Benutzer.objects.exists()
 
     anonym.post(
@@ -172,7 +172,10 @@ def test_zwei_faktor_einrichten_und_anmelden(client, anonym, mitarbeiterin):
     client.get(reverse("konten:zwei_faktor"))
     geheimnis = client.session["zwei_faktor_geheimnis"]
     schritt = int(time.time() // totp.SCHRITT)
-    client.post(reverse("konten:zwei_faktor"), {"code": totp.code(geheimnis, schritt)})
+    client.post(
+        reverse("konten:zwei_faktor"),
+        {"kennwort": KENNWORT, "code": totp.code(geheimnis, schritt)},
+    )
     mitarbeiterin.refresh_from_db()
     assert mitarbeiterin.totp_geheimnis == geheimnis
 

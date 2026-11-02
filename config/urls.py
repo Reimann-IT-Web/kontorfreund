@@ -2,6 +2,9 @@ from django.templatetags.static import static
 from django.urls import include, path
 from django.views.generic import RedirectView
 
+# Fehlende Rechte: verständliche Seite und Eintrag im Protokoll.
+handler403 = "core.sicherheit.kein_zugriff"
+
 urlpatterns = [
     # Browser fragen /favicon.ico direkt ab, auch wenn die Seite ein anderes Symbol nennt.
     path(

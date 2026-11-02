@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 
 FEHLVERSUCHE = 5
 SPERRE = timedelta(minutes=15)
@@ -45,6 +46,8 @@ class Benutzer(AbstractBaseUser):
     totp_schritt = models.BigIntegerField(default=0, editable=False)
     fehlversuche = models.PositiveSmallIntegerField(default=0, editable=False)
     gesperrt_bis = models.DateTimeField(null=True, blank=True, editable=False)
+    # Das Kennwort hat der Inhaber vergeben; nach der Anmeldung wählt man ein eigenes.
+    kennwort_vorlaeufig = models.BooleanField(default=False, editable=False)
     erstellt = models.DateTimeField(auto_now_add=True)
     zugang_bis = models.DateField("Zugang bis", null=True, blank=True)
     pruefung_von = models.PositiveSmallIntegerField(
@@ -71,6 +74,16 @@ class Benutzer(AbstractBaseUser):
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+    def _get_session_auth_hash(self, secret=None):
+        """Wie bei Django aus dem Kennwort, dazu aus dem Geheimnis der Zwei-Faktor-
+        Anmeldung: Wer eins davon ändert, beendet alle übrigen Sitzungen (ASVS 7.4.3)."""
+        return salted_hmac(
+            "django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash",
+            self.password + self.totp_geheimnis,
+            secret=secret,
+            algorithm="sha256",
+        ).hexdigest()
 
     @property
     def ist_inhaber(self):

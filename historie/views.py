@@ -155,12 +155,14 @@ def datei(request, pk):
     zugriff(request, datei.kontakt)
     if not datei.pfad.is_file():
         raise Http404("Die Datei fehlt im Archiv.")
-    ansehen = datei.vorschau and "herunterladen" not in request.GET
+    ansehen = (
+        datei.vorschau and "herunterladen" not in request.GET and datei.inhalt_passt()
+    )
     antwort = FileResponse(
         datei.pfad.open("rb"),
         as_attachment=not ansehen,
         filename=datei.name,
-        content_type=VORSCHAU.get(datei.endung, "application/octet-stream"),
+        content_type=VORSCHAU[datei.endung] if ansehen else "application/octet-stream",
     )
     if datei.endung != ".pdf":
         # Zeigt ein Browser doch einmal etwas an, läuft darin nichts (HTML, SVG).

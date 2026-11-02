@@ -247,7 +247,7 @@ def api(monkeypatch):
             raise antwort
         return io.BytesIO(json.dumps(antwort).encode())
 
-    monkeypatch.setattr(telegram.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(telegram, "_oeffnen", urlopen)
     return antworten, anfragen
 
 
