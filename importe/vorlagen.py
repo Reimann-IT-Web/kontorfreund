@@ -17,7 +17,7 @@ FELDER = {
     "kontakte": [
         ("nummer", "Kundennummer"),
         ("art", "Art (Firma oder Person)"),
-        ("kategorie", "Kategorie"),
+        ("kategorie", "Kategorien"),
         ("firmenname", "Firmenname"),
         ("zusatz", "Namenszusatz"),
         ("anrede", "Anrede"),
@@ -58,7 +58,7 @@ VORLAGEN = {
             {
                 "nummer": ["Kundennummer"],
                 "art": ["Art"],
-                "kategorie": ["Kategorie"],
+                "kategorie": ["Kategorien", "Kategorie"],
                 "firmenname": ["Firmenname", "Name"],
                 "zusatz": ["Namenszusatz"],
                 "anrede": ["Anrede"],
@@ -143,7 +143,7 @@ UEBLICH = {
             "Lieferantennummer",
         ],
         "art": ["Art", "Kontaktart"],
-        "kategorie": ["Kategorie"],
+        "kategorie": ["Kategorien", "Kategorie", "Categories"],
         "firmenname": [
             "Firmenname",
             "Firma",

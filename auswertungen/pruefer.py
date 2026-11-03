@@ -332,11 +332,11 @@ def tabellen(von, bis):
             ("Ort", TEXT, ""),
             ("Land", TEXT, ""),
             ("USt-IdNr", TEXT, "USt-IdNr."),
-            ("Kategorie", TEXT, "Kunde, Interessent oder Lieferant"),
+            ("Kategorien", TEXT, "z. B. Kunde, Interessent, Lieferant"),
         ],
         [
             [k.kundennummer, k.anzeigename, k.zusatz, k.strasse, k.plz, k.ort]
-            + [k.land, k.ust_id, k.get_kategorie_display()]
+            + [k.land, k.ust_id, k.kategorien_text]
             for k in sorted(kontakte, key=lambda k: k.nummer)
         ],
         schluessel=1,

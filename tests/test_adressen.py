@@ -5,7 +5,7 @@ import pytest
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from contacts.models import Kontakt
+from contacts.models import Kategorie, Kontakt
 
 pytestmark = pytest.mark.django_db
 
@@ -15,7 +15,6 @@ def test_adresse_nur_mit_namen(client):
         reverse("contacts:neu"),
         {
             "art": "firma",
-            "kategorie": "kunde",
             "firmenname": "Bäckerei Krume",
             "land": "Deutschland",
         },
@@ -37,7 +36,7 @@ def test_nummern_fortlaufend():
 def test_firma_braucht_firmennamen(client):
     response = client.post(
         reverse("contacts:neu"),
-        {"art": "firma", "kategorie": "kunde", "nachname": "Krume"},
+        {"art": "firma", "nachname": "Krume"},
     )
 
     assert "Bitte geben Sie den Firmennamen an." in response.text
@@ -47,7 +46,7 @@ def test_firma_braucht_firmennamen(client):
 def test_person_braucht_nachnamen(client):
     response = client.post(
         reverse("contacts:neu"),
-        {"art": "person", "kategorie": "kunde", "vorname": "Anna"},
+        {"art": "person", "vorname": "Anna"},
     )
 
     assert "Bitte geben Sie den Nachnamen an." in response.text
@@ -60,7 +59,6 @@ def test_dublettenwarnung_bei_gleicher_email(client):
     )
     daten = {
         "art": "person",
-        "kategorie": "kunde",
         "nachname": "Lindner-Berg",
         "email": "ANNA@post.example",
     }
@@ -78,7 +76,6 @@ def test_ust_id_format(client):
         reverse("contacts:neu"),
         {
             "art": "firma",
-            "kategorie": "kunde",
             "firmenname": "X GmbH",
             "ust_id": "DE12345",
         },
@@ -114,6 +111,7 @@ def test_archivieren_und_wiederherstellen(client):
 
 def test_export_der_liste(client):
     """Spezifikation M-5: die angezeigte Liste als XLSX, ODS und CSV."""
+    lieferant = Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT)
     Kontakt.objects.create(
         firmenname="Bäckerei Krume",
         vorname="Lea",
@@ -122,10 +120,10 @@ def test_export_der_liste(client):
         ort="Dresden",
         telefon="+49 351 123456",
         xrechnung=False,
-    )
+    ).kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.KUNDE), lieferant)
     Kontakt.objects.create(
-        art="person", kategorie="lieferant", vorname="Erika", nachname="Beispiel"
-    )
+        art="person", vorname="Erika", nachname="Beispiel"
+    ).kategorien.add(lieferant)
     Kontakt.objects.create(firmenname="Alt GmbH", archiviert=True)
 
     seite = client.get(reverse("contacts:liste")).text
@@ -139,11 +137,11 @@ def test_export_der_liste(client):
     assert "Adressen" in antwort["Content-Disposition"]
     blatt = load_workbook(BytesIO(antwort.content)).active
     zeilen = list(blatt.values)
-    assert zeilen[0][:4] == ("Kundennummer", "Art", "Kategorie", "Name")
+    assert zeilen[0][:4] == ("Kundennummer", "Art", "Kategorien", "Name")
     assert [z[3] for z in zeilen[1:]] == ["Bäckerei Krume", "Erika Beispiel"]
     krume = dict(zip(zeilen[0], zeilen[1], strict=True))
     assert krume["Kundennummer"] == "K-0001"
-    assert krume["Kategorie"] == "Kunde"
+    assert krume["Kategorien"] == "Kunde, Lieferant"
     assert (krume["Vorname"], krume["Nachname"]) == ("Lea", "Sommer")
     # Als Text, sonst fiele die führende Null weg
     assert krume["PLZ"] == "01067"
@@ -151,12 +149,12 @@ def test_export_der_liste(client):
     assert krume["XRechnung"] is None
 
     lieferanten = client.get(
-        reverse("contacts:liste"), {"kategorie": "lieferant", "format": "csv"}
+        reverse("contacts:liste"), {"kategorie": lieferant.pk, "format": "csv"}
     )
-    assert "Lieferanten" in lieferanten["Content-Disposition"]
+    assert "Adressen Lieferant" in lieferanten["Content-Disposition"]
     zeilen = lieferanten.content.decode("utf-8-sig").splitlines()
-    assert len(zeilen) == 2
-    assert zeilen[1].startswith("K-0002;Person;Lieferant;Erika Beispiel;")
+    assert len(zeilen) == 3
+    assert zeilen[2].startswith("K-0002;Person;Lieferant;Erika Beispiel;")
 
     archiv = client.get(reverse("contacts:liste"), {"archiv": "1", "format": "ods"})
     assert "Archiv Adressen" in archiv["Content-Disposition"]

@@ -18,7 +18,6 @@ pytestmark = pytest.mark.django_db
 
 PERSON = {
     "art": "person",
-    "kategorie": "kunde",
     "vorname": "Lea",
     "nachname": "Sommer",
     "land": "Deutschland",
@@ -119,7 +118,7 @@ def test_fehler_bleiben_zum_verbessern_stehen(client):
 
 
 def test_dublette_auch_ueber_weitere_email(client, korn):
-    neu = {"art": "firma", "kategorie": "kunde", "firmenname": "Hof Ahorn"}
+    neu = {"art": "firma", "firmenname": "Hof Ahorn"}
 
     antwort = client.post(
         reverse("contacts:neu"), {**neu, "email": "Rechnung@korn.test"}
@@ -253,7 +252,7 @@ def test_rundreise_mit_der_adressliste(client, korn):
     daten = {f"spalte_{feld}": spalte for feld, spalte in imp.zuordnung.items()}
     client.post(
         reverse("importe:zuordnen", args=[imp.pk]),
-        {"kategorie": "kunde", "dubletten_anlegen": "", **daten},
+        {"kategorie": "", "dubletten_anlegen": "", **daten},
     )
     client.post(reverse("importe:uebernehmen", args=[imp.pk]))
 

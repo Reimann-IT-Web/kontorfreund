@@ -12,7 +12,7 @@ from openpyxl import Workbook
 
 from artikel.models import Artikel
 from auswertungen import tabelle
-from contacts.models import Kontakt
+from contacts.models import Kategorie, Kontakt
 from importe import lesen, uebernahme, vorlagen
 from importe.models import Import, Zuordnung
 from konten.models import Benutzer
@@ -51,7 +51,12 @@ def bestaetigen(client, imp, **mehr):
     daten = {f"spalte_{feld}": spalte for feld, spalte in imp.zuordnung.items()}
     return client.post(
         reverse("importe:zuordnen", args=[imp.pk]),
-        {"kategorie": "kunde", "dubletten_anlegen": "", **daten, **mehr},
+        {
+            "kategorie": Kategorie.vorgabe(Kategorie.Kennung.KUNDE).pk,
+            "dubletten_anlegen": "",
+            **daten,
+            **mehr,
+        },
     )
 
 
@@ -279,40 +284,54 @@ def test_probelauf_adressen(inhaber):
         ";bäckerei korn;;;;;;dresden;;\n"
         "K-0001;Studio Hell;Dr.;;;;;Wien;AT;\n"
         "500;Hof Ahorn;;;;Lieferant;;;;\n"
-        ";Kiosk;;;;Partner;;;;\n"
+        ";Kiosk;;;;Partner, Kunden;;;;\n"
     ).encode()
 
-    bericht = uebernahme.pruefen(_import(inhaber, "kontakte", inhalt))
+    bericht = uebernahme.pruefen(
+        _import(
+            inhaber,
+            "kontakte",
+            inhalt,
+            kategorie=Kategorie.vorgabe(Kategorie.Kennung.KUNDE),
+        )
+    )
 
-    korn, sommer, hell, ahorn = bericht.neu
+    korn, sommer, hell, ahorn, kiosk = bericht.neu
     assert (korn.art, korn.plz, korn.land, korn.anrede) == (
         "firma",
         "01067",
         "Deutschland",
         "",
     )
-    assert (sommer.art, sommer.anrede, sommer.kategorie) == (
+    assert (sommer.art, sommer.anrede, sommer.kategorien_wahl) == (
         "person",
         "Frau",
-        "interessent",
+        [Kategorie.vorgabe(Kategorie.Kennung.INTERESSENT)],
     )
-    assert (hell.land, ahorn.kategorie) == ("Österreich", "lieferant")
-    assert [k.nummer for k in bericht.neu] == [501, 502, 503, 500]
+    assert (hell.land, [str(k) for k in hell.kategorien_wahl]) == (
+        "Österreich",
+        ["Kunde"],
+    ), "ohne Angabe die Vorgabe des Imports"
+    assert [str(k) for k in ahorn.kategorien_wahl] == ["Lieferant"]
+    assert [str(k) for k in kiosk.kategorien_wahl] == ["Partner", "Kunde"]
+    assert kiosk.kategorien_wahl[0].pk is None, "neu, erst bei der Übernahme"
+    assert [k.nummer for k in bericht.neu] == [501, 502, 503, 500, 504]
     assert bericht.dubletten == [
         (5, "Lind & Söhne", "K-0001 Gärtnerei Lind"),
         (6, "bäckerei korn", "Zeile 2"),
     ]
-    (nr, meldungen), (nr_kiosk, meldungen_kiosk) = bericht.fehler
+    ((nr, meldungen),) = bericht.fehler
     assert nr == 4 and len(meldungen) == 2
     assert any("Nachname" in m for m in meldungen) and any(
         "E-Mail" in m for m in meldungen
     )
-    assert nr_kiosk == 9 and "Partner" in meldungen_kiosk[0]
     assert bericht.hinweise == [
         (7, "Die Anrede „Dr.“ kennt Kontorfreund nicht; sie bleibt leer."),
         (7, "Die Nummer K-0001 ist schon vergeben; es gibt eine neue."),
+        (9, "Die Kategorie „Partner“ legt Kontorfreund neu an."),
     ]
     assert Kontakt.objects.count() == 1, "der Probelauf legt nichts an"
+    assert not Kategorie.objects.filter(name="Partner").exists()
 
 
 def test_dubletten_trotzdem_anlegen(inhaber):
@@ -459,8 +478,7 @@ def test_rundreise_mit_der_adressliste(client):
         plz="01067",
         ort="Dresden",
         email="info@korn.test",
-        kategorie="lieferant",
-    )
+    ).kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT))
     Kontakt.objects.create(
         art="person", anrede="Herr", vorname="Tom", nachname="Lind", ort="Bonn"
     )
@@ -474,12 +492,12 @@ def test_rundreise_mit_der_adressliste(client):
     client.post(reverse("importe:uebernehmen", args=[imp.pk]))
 
     korn, lind = Kontakt.objects.order_by("nummer")
-    assert (korn.kundennummer, korn.art, korn.kategorie, korn.ansprechpartner) == (
+    assert (korn.kundennummer, korn.art, korn.kategorien_text) == (
         "K-0001",
         "firma",
-        "lieferant",
-        "Lea Sommer",
+        "Lieferant",
     )
+    assert korn.ansprechpartner == "Lea Sommer"
     assert (korn.strasse, korn.plz, korn.email) == (
         "Hauptstr. 1",
         "01067",

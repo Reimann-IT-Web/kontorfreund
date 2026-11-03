@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Kategorien{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'contacts:liste' %}">Adressen</a></li>
+    <li aria-current="page">Kategorien</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Kategorien</h1>
+    <p class="muted">Eine Adresse kann mehrere Kategorien haben. Sie wählen sie beim Bearbeiten der Adresse und filtern danach die Liste.</p>
+  </div>
+</div>
+
+<form class="form-section" method="post" action="{% url 'contacts:kategorien' %}" novalidate>
+  {% csrf_token %}
+  <div class="field{% if not bearbeitet and form.errors %} has-error{% endif %}">
+    <label for="kategorie-neu">Neue Kategorie</label>
+    <div class="kategorie-name">
+      <input type="text" id="kategorie-neu" name="name" maxlength="50" placeholder="z. B. Wartungsvertrag" value="{% if not bearbeitet %}{{ form.name.value|default:'' }}{% endif %}"{% if not bearbeitet and form.errors %} aria-invalid="true" aria-describedby="kategorie-neu-fehler"{% endif %}>
+      <button class="btn btn-primary" type="submit">{% icon "plus" %}Anlegen</button>
+    </div>
+    {% if not bearbeitet %}{% for fehler in form.name.errors %}<p class="field-error" id="kategorie-neu-fehler">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}{% endif %}
+  </div>
+</form>
+
+<ul class="kategorien">
+  {% for k in kategorien %}
+  <li class="kategorie-zeile">
+    <form method="post" action="{% url 'contacts:kategorie' k.pk %}" novalidate>
+      {% csrf_token %}
+      <label class="visually-hidden" for="kategorie-{{ k.pk }}">Name der Kategorie {{ k }}</label>
+      <div class="kategorie-name">
+        <input type="text" id="kategorie-{{ k.pk }}" name="name" maxlength="50" value="{% if bearbeitet == k %}{{ form.name.value }}{% else %}{{ k.name }}{% endif %}"{% if bearbeitet == k and form.errors %} aria-invalid="true" aria-describedby="kategorie-{{ k.pk }}-fehler"{% endif %}>
+        <button class="btn" type="submit">Umbenennen</button>
+      </div>
+      {% if bearbeitet == k %}{% for fehler in form.name.errors %}<p class="field-error" id="kategorie-{{ k.pk }}-fehler">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}{% endif %}
+    </form>
+    <a class="link" href="{% url 'contacts:liste' %}?kategorie={{ k.pk }}">{{ k.anzahl }} Adresse{{ k.anzahl|pluralize:"n" }}</a>
+    {% if k.kennung %}
+    <span class="small muted">vorgegeben</span>
+    {% else %}
+    <form method="post" action="{% url 'contacts:kategorie_loeschen' k.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-ghost btn-sm" type="submit" data-confirm="Kategorie „{{ k }}“ löschen? Die Adressen selbst bleiben erhalten.">{% icon "trash" %}Löschen</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+<p class="hint">Kunde, Interessent und Lieferant sind vorgegeben. Sie lassen sich umbenennen, aber nicht löschen, denn Kontorfreund braucht sie, etwa für die Lieferanten bei Eingangsrechnungen.</p>
+{% endblock %}

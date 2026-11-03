@@ -100,7 +100,7 @@
   <div class="table-wrap">
     {% if imp.ziel == "kontakte" %}
     <table class="table">
-      <thead><tr><th scope="col">Nr.</th><th scope="col">Name</th><th scope="col">Anschrift</th><th scope="col">E-Mail und Telefon</th><th scope="col">Kategorie</th></tr></thead>
+      <thead><tr><th scope="col">Nr.</th><th scope="col">Name</th><th scope="col">Anschrift</th><th scope="col">E-Mail und Telefon</th><th scope="col">Kategorien</th></tr></thead>
       <tbody>
         {% for k in bericht.neu|slice:":50" %}
         <tr>
@@ -108,7 +108,7 @@
           <td>{{ k.anzeigename }}{% if k.ansprechpartner %}<span class="cell-sub">{{ k.ansprechpartner }}</span>{% endif %}</td>
           <td>{{ k.strasse }}{% if k.plz or k.ort %}<span class="cell-sub">{{ k.plz }} {{ k.ort }}{% if k.land != "Deutschland" %}, {{ k.land }}{% endif %}</span>{% endif %}</td>
           <td>{{ k.email }}{% if k.telefon %}<span class="cell-sub">{{ k.telefon }}</span>{% endif %}{% for w in k.weitere %}<span class="cell-sub">{{ w }}</span>{% endfor %}</td>
-          <td>{{ k.get_kategorie_display }}</td>
+          <td>{{ k.kategorien_wahl|join:", " }}</td>
         </tr>
         {% endfor %}
       </tbody>

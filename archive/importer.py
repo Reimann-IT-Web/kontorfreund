@@ -18,7 +18,8 @@ from django.conf import settings
 from django.db import transaction
 from pypdf import PdfReader
 
-from contacts.models import Kontakt
+from contacts.forms import kategorien_protokollieren
+from contacts.models import Kategorie, Kontakt
 
 from .models import Altbeleg
 
@@ -239,7 +240,6 @@ def _kontakt_fuer(beleg, cache):
     felder = {k: v for k, v in beleg.anschrift.items() if k != "sicher"}
     entwurf = Kontakt(
         **felder,
-        kategorie=Kontakt.Kategorie.KUNDE,
         notiz=f"Aus {beleg.absender or 'dem Altprogramm'} übernommen.",
     )
     name = entwurf.name_berechnen().casefold()
@@ -272,6 +272,8 @@ def _kontakt_fuer(beleg, cache):
             if nummer_frei:
                 kontakt.nummer = beleg.kundennummer
             kontakt.save()
+            kontakt.kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.KUNDE))
+            kategorien_protokollieren(kontakt, "")
         treffer = (kontakt, neu)
     cache[name] = treffer
     if beleg.kundennummer:

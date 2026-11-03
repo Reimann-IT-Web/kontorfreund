@@ -8,15 +8,17 @@ oder gleicher Name am selben Ort, bei Artikeln gleiche Bezeichnung, jeweils
 gegen den Bestand und die Zeilen davor. Dubletten werden übersprungen, außer
 der Nutzer will sie trotzdem anlegen.
 
-Werte, die Kontorfreund anders schreibt, werden umgesetzt: Art und Kategorie
-auch im Plural oder englisch, Anrede (unbekannte fallen mit Hinweis weg), Land
-als Ländercode, vierstellige deutsche PLZ, bei denen Excel die Null vorn
-verloren hat, Hausnummer aus eigener Spalte, Einheit („Stk“, „h“) und Preis
-in deutscher oder englischer Schreibweise. Eine Nummer aus der Datei gilt, wenn
-sie frei ist; die übrigen Zeilen bekommen die Nummern danach. Mobiltelefon und
-Fax werden weitere Telefonnummern mit der Bezeichnung „Mobil“ bzw. „Fax“; die
-Spalte mit weiteren Nummern und Adressen hat je Zeile „Bezeichnung: Wert“ wie im
-Export der Adressliste, E-Mail-Adressen erkennt der Import am „@“.
+Werte, die Kontorfreund anders schreibt, werden umgesetzt: Art sowie Kunde,
+Interessent und Lieferant auch im Plural oder englisch, Anrede (unbekannte
+fallen mit Hinweis weg), Land als Ländercode, vierstellige deutsche PLZ, bei
+denen Excel die Null vorn verloren hat, Hausnummer aus eigener Spalte, Einheit
+(„Stk“, „h“) und Preis in deutscher oder englischer Schreibweise. Eine Nummer
+aus der Datei gilt, wenn sie frei ist; die übrigen Zeilen bekommen die Nummern
+danach. Mobiltelefon und Fax werden weitere Telefonnummern mit der Bezeichnung
+„Mobil“ bzw. „Fax“; die Spalte mit weiteren Nummern und Adressen hat je Zeile
+„Bezeichnung: Wert“ wie im Export der Adressliste, E-Mail-Adressen erkennt der
+Import am „@“. Mehrere Kategorien trennt ein Komma oder Semikolon; unbekannte
+legt die Übernahme an.
 
 `uebernehmen` speichert in einer Transaktion, was der Probelauf dann ergibt.
 Das Protokoll verzeichnet jede Anlage wie eine Eingabe von Hand.
@@ -31,8 +33,14 @@ from django.db import transaction
 from artikel.forms import ArtikelForm
 from artikel.models import Artikel
 from artikel.views import _nummer as artikelnummer
-from contacts.forms import KontaktForm, kontaktwege_lesen, kontaktwege_speichern
-from contacts.models import Kontakt, Kontaktweg
+from contacts.forms import (
+    HOECHSTENS_KATEGORIEN,
+    KontaktForm,
+    kategorien_protokollieren,
+    kontaktwege_lesen,
+    kontaktwege_speichern,
+)
+from contacts.models import Kategorie, Kontakt, Kontaktweg
 from contacts.views import _nummer as kundennummer
 from core.templatetags.kf import zahl
 from invoicing.beleg import EINHEIT_CODE, LAND_CODE
@@ -145,6 +153,12 @@ def uebernehmen(imp):
             objekt.save()
             if getattr(objekt, "weitere", None):
                 kontaktwege_speichern(objekt, objekt.weitere)
+            if getattr(objekt, "kategorien_wahl", None):
+                for kategorie in objekt.kategorien_wahl:
+                    if kategorie.pk is None:
+                        kategorie.save()
+                objekt.kategorien.set(objekt.kategorien_wahl)
+                kategorien_protokollieren(objekt, "")
     return bericht
 
 
@@ -198,18 +212,24 @@ def _kontakte(imp, zeilen, bericht):
     ).select_related("kontakt"):
         emails.setdefault(w.wert.casefold(), f"{w.kontakt.kundennummer} {w.kontakt}")
     vergeben = set(Kontakt.objects.values_list("nummer", flat=True))
+    kategorien = {k.name.casefold(): k for k in Kategorie.objects.all()}
+    for wort, kennung in KATEGORIEN.items():
+        kategorien.setdefault(wort, Kategorie.vorgabe(kennung))
+    angekuendigt = set()
     for nr, roh in zeilen:
         meldungen, hinweise = [], []
-        daten = _kontakt_daten(roh, imp.kategorie, meldungen, hinweise)
+        daten = _kontakt_daten(roh, meldungen, hinweise)
         form = KontaktForm(data=daten)
         meldungen += [] if form.is_valid() else _fehler(form)
         weitere, fehler = kontaktwege_lesen(*_kontaktwege(roh))
         meldungen += fehler
+        wahl = _kategorien(roh.get("kategorie", ""), kategorien, meldungen)
         if meldungen:
             bericht.fehler.append((nr, meldungen))
             continue
         kontakt = form.instance
         kontakt.weitere = weitere
+        kontakt.kategorien_wahl = wahl or [k for k in [imp.kategorie] if k]
         kontakt.anzeigename = kontakt.name_berechnen()
         name = (kontakt.anzeigename.casefold(), kontakt.ort.casefold())
         adressen = [kontakt.email] + [
@@ -232,24 +252,49 @@ def _kontakte(imp, zeilen, bericht):
         for adresse in adressen:
             emails.setdefault(adresse, f"Zeile {nr}")
         bericht.neu.append(kontakt)
+        for kategorie in kontakt.kategorien_wahl:
+            if kategorie.pk is None and kategorie.name not in angekuendigt:
+                angekuendigt.add(kategorie.name)
+                hinweise.append(
+                    f"Die Kategorie „{kategorie}“ legt Kontorfreund neu an."
+                )
         # Hinweise nur zu Zeilen, die übernommen werden.
         bericht.hinweise += [(nr, h) for h in hinweise]
     _nummern_vergeben(bericht, vergeben)
 
 
-def _kontakt_daten(roh, kategorie, meldungen, hinweise):
+def _kategorien(text, kategorien, meldungen):
+    """Kategorien einer Zeile, getrennt durch Komma oder Semikolon.
+
+    `kategorien` hat die vorhandenen nach Namen (auch Plural und englisch für die
+    vorgegebenen); unbekannte kommen ungespeichert dazu, für alle Zeilen dieselbe.
+    """
+    wahl = []
+    for name in re.split(r"[,;\n]", text):
+        name = " ".join(name.split())[:50].strip()
+        if not name:
+            continue
+        kategorie = kategorien.get(name.casefold())
+        if kategorie is None:
+            neu = sum(k.pk is None for k in kategorien.values())
+            if Kategorie.objects.count() + neu >= HOECHSTENS_KATEGORIEN:
+                meldungen.append(
+                    f"Kategorie „{name}“: höchstens {HOECHSTENS_KATEGORIEN} Kategorien."
+                )
+                continue
+            kategorie = kategorien[name.casefold()] = Kategorie(name=name)
+        if kategorie not in wahl:
+            wahl.append(kategorie)
+    return wahl
+
+
+def _kontakt_daten(roh, meldungen, hinweise):
     """Formulardaten für KontaktForm aus den Werten einer Zeile."""
     daten = {feld: roh.get(feld, "") for feld in KontaktForm._meta.fields}
     art = daten["art"].casefold()
     if art and art not in ARTEN:
         meldungen.append(f"Art: „{daten['art']}“ ist weder Firma noch Person.")
     daten["art"] = ARTEN.get(art) or ("firma" if daten["firmenname"] else "person")
-    wert = daten["kategorie"].casefold()
-    if wert and wert not in KATEGORIEN:
-        meldungen.append(
-            f"Kategorie: „{daten['kategorie']}“ ist weder Kunde, Interessent noch Lieferant."
-        )
-    daten["kategorie"] = KATEGORIEN.get(wert, kategorie)
     anrede = daten["anrede"]
     daten["anrede"] = ANREDEN.get(anrede.casefold(), "")
     if anrede and not daten["anrede"] and anrede.casefold() not in OHNE_ANREDE:

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.23.0 – 03.11.2026
+
+- Eigene Kategorien: Neben Kunde, Interessent und Lieferant legen Sie eigene an, etwa „Wartungsvertrag“ oder „Webdesign“, und eine Adresse kann mehrere davon haben. Sie wählen sie beim Bearbeiten der Adresse; eine neue tragen Sie dort direkt unter „Neue Kategorie“ ein. Jede Adresse behält ihre bisherige Kategorie.
+- Auf der neuen Seite Adressen › Kategorien benennen Sie Kategorien um, löschen eigene und sehen, wie viele Adressen jede hat. Kunde, Interessent und Lieferant lassen sich umbenennen, aber nicht löschen.
+- Die Adressliste filtert nach jeder Kategorie und zeigt alle Kategorien einer Adresse, auf dem Handy unter dem Namen.
+- Der Import liest mehrere Kategorien je Zeile, getrennt durch Komma oder Semikolon, und legt unbekannte neu an; der Probelauf nennt sie vorher. Steht in der Datei keine, gilt die gewählte Kategorie oder „keine“.
+- Export der Liste, Auskunft nach Art. 15 DSGVO, Gesamtexport (neue Tabelle `kategorien.csv`) und Datenpaket für die Betriebsprüfung enthalten alle Kategorien, und das Änderungsprotokoll verzeichnet Änderungen daran.
+
 ## 0.22.0 – 03.11.2026
 
 - Mehrere Telefonnummern und E-Mail-Adressen je Adresse: Unter Telefon und E-Mail fügen Sie mit „Weitere Telefonnummer“ und „Weitere E-Mail-Adresse“ weitere hinzu, jeweils mit einer Bezeichnung wie „Mobil“, „Fax“ oder „Buchhaltung“, bis zu 20 je Adresse. Sie stehen in der Adressliste, auf der Seite der Adresse und im Export der Liste. Für Rechnungen und die XRechnung gilt weiter die Adresse im Feld „E-Mail“.

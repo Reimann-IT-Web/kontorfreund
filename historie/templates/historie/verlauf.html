@@ -14,7 +14,7 @@
 <div class="page-head">
   <div>
     <h1>{{ kontakt }}</h1>
-    <p class="muted">{{ kontakt.kundennummer }} · {{ kontakt.get_kategorie_display }}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if firma %} · {{ kontakt.position|default:"Ansprechpartner" }} bei <a href="{% url 'historie:verlauf' firma.pk %}">{{ firma }}</a>{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
+    <p class="muted">{{ kontakt.kundennummer }}{% if kontakt.kategorien_text %} · {{ kontakt.kategorien_text }}{% endif %}{% if kontakt.ort %} · {{ kontakt.ort }}{% endif %}{% if firma %} · {{ kontakt.position|default:"Ansprechpartner" }} bei <a href="{% url 'historie:verlauf' firma.pk %}">{{ firma }}</a>{% endif %}{% if kontakt.archiviert %} · archiviert{% endif %}</p>
   </div>
   <div class="actions">
     {% if kontakt.gesperrt_am %}

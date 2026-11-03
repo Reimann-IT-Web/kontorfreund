@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from protokoll.erfassen import eintragen
 from protokoll.models import Eintrag
 
-from .models import Kontakt, Kontaktweg
+from .models import Kategorie, Kontakt, Kontaktweg
 
 # Die PLZ füllt den Ort aus (static/js/app.js); dazu gehört ein Feld mit data-ort.
 PLZ_ATTRS = {
@@ -17,12 +17,70 @@ PLZ_ATTRS = {
 }
 
 
+HOECHSTENS_KATEGORIEN = 100
+
+
+def kategorie_finden(name):
+    """Die Kategorie dieses Namens, ohne Groß- und Kleinschreibung, sonst None."""
+    name = name.casefold()
+    return next((k for k in Kategorie.objects.all() if k.name.casefold() == name), None)
+
+
+def kategorie_name(name):
+    """Name einer neuen oder umbenannten Kategorie, bereinigt; sonst ValidationError."""
+    name = " ".join(name.split())
+    if "," in name or ";" in name:
+        raise ValidationError(
+            "Bitte ohne Komma und Semikolon, die trennen mehrere Kategorien."
+        )
+    return name
+
+
+def kategorie_neu(name):
+    """Vorhandene oder neue, noch nicht gespeicherte Kategorie; sonst ValidationError."""
+    name = kategorie_name(name)
+    if kategorie := kategorie_finden(name):
+        return kategorie
+    if Kategorie.objects.count() >= HOECHSTENS_KATEGORIEN:
+        raise ValidationError(f"Höchstens {HOECHSTENS_KATEGORIEN} Kategorien.")
+    return Kategorie(name=name)
+
+
+def kategorien_protokollieren(kontakt, vorher):
+    """Geänderte Kategorien als Ganzes, denn sie hängen nicht an einem Feld."""
+    nachher = kontakt.kategorien_text
+    if nachher != vorher:
+        eintragen(Eintrag.Aktion.GEAENDERT, kontakt, [["Kategorien", vorher, nachher]])
+
+
+class KategorieForm(forms.ModelForm):
+    class Meta:
+        model = Kategorie
+        fields = ["name"]
+
+    def clean_name(self):
+        name = kategorie_name(self.cleaned_data["name"])
+        gleich = kategorie_finden(name)
+        if gleich and gleich.pk != self.instance.pk:
+            raise ValidationError(f"Die Kategorie „{gleich}“ gibt es schon.")
+        if not self.instance.pk and Kategorie.objects.count() >= HOECHSTENS_KATEGORIEN:
+            raise ValidationError(f"Höchstens {HOECHSTENS_KATEGORIEN} Kategorien.")
+        return name
+
+
 class KontaktForm(forms.ModelForm):
+    neue_kategorie = forms.CharField(
+        label="Neue Kategorie",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "z. B. Wartungsvertrag"}),
+    )
+
     class Meta:
         model = Kontakt
         fields = [
             "art",
-            "kategorie",
+            "kategorien",
             "firmenname",
             "zusatz",
             "anrede",
@@ -45,7 +103,7 @@ class KontaktForm(forms.ModelForm):
         ]
         widgets = {
             "art": forms.RadioSelect,
-            "kategorie": forms.RadioSelect,
+            "kategorien": forms.CheckboxSelectMultiple,
             "telefon": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
             "email": forms.EmailInput(attrs={"autocomplete": "email"}),
             "plz": forms.TextInput(attrs=PLZ_ATTRS),
@@ -74,6 +132,21 @@ class KontaktForm(forms.ModelForm):
             firmen = firmen.exclude(pk=self.instance.pk)
         self.fields["firma"].queryset = firmen
         self.fields["firma"].empty_label = "– keiner Firma –"
+
+    def clean_neue_kategorie(self):
+        name = self.cleaned_data["neue_kategorie"]
+        return kategorie_neu(name) if name.strip() else None
+
+    def save(self):
+        """Mit der neuen Kategorie, wenn eine eingetragen ist."""
+        vorher = self.instance.kategorien_text if self.instance.pk else ""
+        kontakt = super().save()
+        if neu := self.cleaned_data["neue_kategorie"]:
+            if neu.pk is None:
+                neu.save()
+            kontakt.kategorien.add(neu)
+        kategorien_protokollieren(kontakt, vorher)
+        return kontakt
 
 
 HOECHSTENS_KONTAKTWEGE = 20

@@ -1,5 +1,7 @@
 """Ansprechpartner einer Firma (Spezifikation K-1 und K-2) – mit erfundenen Daten."""
 
+import re
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -7,7 +9,7 @@ from django.utils import timezone
 
 from backups import gesamtexport
 from contacts import datenschutz
-from contacts.models import Kontakt
+from contacts.models import Kategorie, Kontakt
 from historie.models import Vorgang
 
 pytestmark = pytest.mark.django_db
@@ -15,13 +17,14 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def firma():
-    return Kontakt.objects.create(
+    firma = Kontakt.objects.create(
         firmenname="Bäckerei Korn",
         strasse="Markt 3",
         plz="55116",
         ort="Mainz",
-        kategorie="lieferant",
     )
+    firma.kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT))
+    return firma
 
 
 @pytest.fixture
@@ -48,18 +51,18 @@ def eintrag(kontakt, betreff, inhaber, stunde):
 def test_ansprechpartner_bei_der_firma_anlegen(client, firma):
     url = f"{reverse('contacts:neu')}?firma={firma.pk}"
     antwort = client.get(url)
-    assert antwort.context["form"].initial == {
-        "art": "person",
-        "firma": firma.pk,
-        "kategorie": "lieferant",
-    }
+    initial = antwort.context["form"].initial
+    assert (initial["art"], initial["firma"]) == ("person", firma.pk)
+    assert [str(k) for k in initial["kategorien"]] == ["Lieferant"]
+    pk = firma.kategorien.get().pk
+    assert re.search(f'value="{pk}" id="[^"]+" checked', antwort.text)
     assert f'<option value="{firma.pk}" selected>Bäckerei Korn</option>' in antwort.text
 
     antwort = client.post(
         url,
         {
             "art": "person",
-            "kategorie": "lieferant",
+            "kategorien": [firma.kategorien.get().pk],
             "vorname": "Lea",
             "nachname": "Sommer",
             "firma": firma.pk,
@@ -69,7 +72,7 @@ def test_ansprechpartner_bei_der_firma_anlegen(client, firma):
 
     assert antwort.url == reverse("historie:verlauf", args=[firma.pk])
     lea = Kontakt.objects.get(nachname="Sommer")
-    assert (lea.art, lea.firma, lea.kategorie) == ("person", firma, "lieferant")
+    assert (lea.art, lea.firma, lea.kategorien_text) == ("person", firma, "Lieferant")
     bei_firma = client.get(antwort.url).text
     assert (
         reverse("historie:verlauf", args=[lea.pk]) in bei_firma

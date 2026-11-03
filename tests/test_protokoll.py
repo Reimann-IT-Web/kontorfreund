@@ -18,7 +18,6 @@ KENNWORT = "Tannenbaum Fahrrad Wolke"
 def adresse(client, **mehr):
     return {
         "art": "firma",
-        "kategorie": "kunde",
         "firmenname": "Bäckerei Krume",
         "strasse": "Lindenweg 4",
         "plz": "55116",

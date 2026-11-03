@@ -315,11 +315,7 @@ def test_xrechnung_cii_einlesen(client, firma, settings):
 
 
 def test_lieferant_ueber_ust_id(client):
-    kontakt = Kontakt.objects.create(
-        firmenname="Serverhaus",
-        kategorie=Kontakt.Kategorie.LIEFERANT,
-        ust_id="DE987654321",
-    )
+    kontakt = Kontakt.objects.create(firmenname="Serverhaus", ust_id="DE987654321")
     seite = hochladen(client, ("re.xml", UBL)).content.decode()
     assert Eingangsrechnung.objects.get().kontakt == kontakt
     assert "und der Adresse Serverhaus zugeordnet" in seite
@@ -428,7 +424,7 @@ def test_zuordnen_und_als_adresse_anlegen(client):
     client.post(adresse, {"kontakt": "", "neu": "1"})
     r.refresh_from_db()
     k = r.kontakt
-    assert k.kategorie == Kontakt.Kategorie.LIEFERANT
+    assert k.kategorien_text == "Lieferant"
     assert (k.firmenname, k.strasse, k.plz, k.ort, k.land) == (
         "Serverhaus Nord GmbH",
         "Hafenstraße 7",

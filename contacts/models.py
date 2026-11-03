@@ -36,6 +36,46 @@ def kaeuferreferenz_pruefen(wert):
         )
 
 
+class Kategorie(models.Model):
+    """Kategorie von Adressen, frei anzulegen, mehrere je Adresse (Spezifikation K-1).
+
+    Kunde, Interessent und Lieferant gibt es von Anfang an. Das Programm findet sie
+    über `kennung` (Lieferanten etwa bei Eingangsrechnungen); deshalb lassen sie sich
+    umbenennen, aber nicht löschen.
+    """
+
+    class Kennung(models.TextChoices):
+        KUNDE = "kunde", "Kunde"
+        INTERESSENT = "interessent", "Interessent"
+        LIEFERANT = "lieferant", "Lieferant"
+
+    name = models.CharField("Name", max_length=50, unique=True)
+    kennung = models.CharField(
+        max_length=12, choices=Kennung.choices, blank=True, editable=False
+    )
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["kennung"],
+                condition=~models.Q(kennung=""),
+                name="kategorie_kennung_eindeutig",
+            )
+        ]
+        verbose_name = "Kategorie"
+        verbose_name_plural = "Kategorien"
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def vorgabe(cls, kennung):
+        return cls.objects.get_or_create(
+            kennung=kennung, defaults={"name": cls.Kennung(kennung).label}
+        )[0]
+
+
 class Kontakt(models.Model):
     """Eine Adresse: Firma (mit optionalem Ansprechpartner) oder Person."""
 
@@ -43,15 +83,10 @@ class Kontakt(models.Model):
         FIRMA = "firma", "Firma"
         PERSON = "person", "Person"
 
-    class Kategorie(models.TextChoices):
-        KUNDE = "kunde", "Kunde"
-        INTERESSENT = "interessent", "Interessent"
-        LIEFERANT = "lieferant", "Lieferant"
-
     nummer = models.PositiveIntegerField("Nummer", unique=True, editable=False)
     art = models.CharField("Art", max_length=10, choices=Art.choices, default=Art.FIRMA)
-    kategorie = models.CharField(
-        "Kategorie", max_length=12, choices=Kategorie.choices, default=Kategorie.KUNDE
+    kategorien = models.ManyToManyField(
+        Kategorie, verbose_name="Kategorien", blank=True, related_name="kontakte"
     )
     firmenname = models.CharField("Firmenname", max_length=200, blank=True)
     zusatz = models.CharField("Namenszusatz", max_length=200, blank=True)
@@ -167,6 +202,10 @@ class Kontakt(models.Model):
         if self.art != self.Art.FIRMA:
             return ""
         return " ".join(t for t in [self.titel, self.vorname, self.nachname] if t)
+
+    @property
+    def kategorien_text(self):
+        return ", ".join(k.name for k in self.kategorien.all())
 
     @property
     def weitere_telefon(self):

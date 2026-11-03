@@ -91,7 +91,6 @@ def test_leitweg_id_mit_falscher_pruefziffer():
 def test_adresse_mit_xrechnung_braucht_referenz_und_adresse(client):
     daten = {
         "art": "firma",
-        "kategorie": "kunde",
         "firmenname": "Stadtverwaltung Musterstadt",
         "land": "Deutschland",
         "xrechnung": "on",

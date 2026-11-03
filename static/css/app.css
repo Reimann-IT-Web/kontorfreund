@@ -2112,6 +2112,65 @@ select {
   column-gap: var(--s2);
 }
 
+/* Kategorien: neue im Formular der Adresse, eigene Seite zum Umbenennen und Löschen. */
+.kategorie-neu {
+  max-width: 20rem;
+  margin-top: var(--s3);
+}
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+
+.kategorie-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.kategorie-name input {
+  flex: 1 1 12rem;
+  max-width: 20rem;
+}
+
+.kategorien {
+  margin: 0 0 var(--s3);
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+
+.kategorie-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 7rem;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+}
+
+.kategorie-zeile + .kategorie-zeile {
+  border-top: 1px solid var(--line);
+}
+
+.kategorie-zeile .field-error {
+  margin-top: var(--s2);
+}
+
+@media (max-width: 40rem) {
+  .kategorie-zeile {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .kategorie-zeile > form:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .form-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2908,10 +2967,11 @@ input[type="file"]::file-selector-button {
 
   .addresses tr.data-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "nr kat act"
-      "name name act";
+      "nr act"
+      "name act"
+      "kat act";
     column-gap: var(--s3);
     padding: var(--s3);
     border-bottom: 1px solid var(--line);
@@ -2935,7 +2995,10 @@ input[type="file"]::file-selector-button {
   .addresses td.col-kat {
     display: block;
     grid-area: kat;
-    justify-self: end;
+  }
+
+  .addresses td.col-kat .tags:not(:empty) {
+    margin-top: var(--s2);
   }
 
   .addresses td.docnr {

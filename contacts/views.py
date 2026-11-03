@@ -16,23 +16,18 @@ from . import datenschutz as ds
 from . import plz
 from .forms import (
     BEZEICHNUNGEN,
+    KategorieForm,
     KontaktForm,
     kontaktwege_lesen,
     kontaktwege_speichern,
 )
-from .models import Kontakt, Kontaktweg
-
-KATEGORIEN_PLURAL = {
-    Kontakt.Kategorie.KUNDE: "Kunden",
-    Kontakt.Kategorie.INTERESSENT: "Interessenten",
-    Kontakt.Kategorie.LIEFERANT: "Lieferanten",
-}
+from .models import Kategorie, Kontakt, Kontaktweg
 
 # Export der Liste (Spezifikation M-5): Spalte und Feld oder Eigenschaft von Kontakt.
 EXPORT = [
     ("Kundennummer", "kundennummer"),
     ("Art", "get_art_display"),
-    ("Kategorie", "get_kategorie_display"),
+    ("Kategorien", "kategorien_text"),
     ("Name", "anzeigename"),
     ("Namenszusatz", "zusatz"),
     ("Anrede", "anrede"),
@@ -77,7 +72,8 @@ def _nummer(text):
 
 def liste(request):
     q = request.GET.get("q", "").strip()
-    kategorie = request.GET.get("kategorie", "")
+    wahl = request.GET.get("kategorie", "")
+    kategorie = Kategorie.objects.filter(pk=wahl).first() if wahl.isdigit() else None
     archiv = request.GET.get("archiv") == "1"
     # Gesperrte Adressen (Art. 18 DSGVO) stehen nur in dieser Liste, nur für den Inhaber.
     gesperrt = request.GET.get("gesperrt") == "1" and request.user.ist_inhaber
@@ -87,14 +83,14 @@ def liste(request):
         kontakte = Kontakt.objects.filter(archiviert=archiv, gesperrt_am__isnull=True)
     kontakte = (
         kontakte.select_related("firma")
-        .prefetch_related("kontaktwege")
+        .prefetch_related("kontaktwege", "kategorien")
         .annotate(
             anzahl_belege=Count("altbelege", distinct=True),
             anzahl_eingang=Count("eingangsrechnungen", distinct=True),
         )
     )
-    if kategorie in Kontakt.Kategorie.values:
-        kontakte = kontakte.filter(kategorie=kategorie)
+    if kategorie:
+        kontakte = kontakte.filter(kategorien=kategorie)
     if q:
         bedingung = (
             Q(anzeigename__icontains=q)
@@ -113,7 +109,7 @@ def liste(request):
         kontakte = kontakte.filter(bedingung)
     endung = request.GET.get("format", "")
     if endung in tabelle.TYPEN and not gesperrt:
-        titel = KATEGORIEN_PLURAL.get(kategorie, "Adressen")
+        titel = f"Adressen {kategorie}" if kategorie else "Adressen"
         if archiv:
             titel = f"Archiv {titel}"
         return tabelle.antwort(
@@ -127,7 +123,7 @@ def liste(request):
             "kontakte": kontakte,
             "q": q,
             "kategorie": kategorie,
-            "kategorien": KATEGORIEN_PLURAL.items(),
+            "kategorien": Kategorie.objects.all(),
             "archiv": archiv,
             "gesperrt": gesperrt,
             "anzahl": Kontakt.objects.filter(archiviert=False).count(),
@@ -167,17 +163,21 @@ def bearbeiten(request, pk=None):
     if kontakt and kontakt.gesperrt_am:
         ds.zugriff(request, kontakt)
         return redirect("contacts:datenschutz", kontakt.pk)
-    # „Ansprechpartner anlegen“ bei einer Firma: Person dieser Firma, gleiche Kategorie.
+    # „Ansprechpartner anlegen“ bei einer Firma: Person dieser Firma, gleiche Kategorien.
     firma = None
     if not kontakt and request.GET.get("firma", "").isdigit():
         firma = Kontakt.objects.filter(
             pk=request.GET["firma"], art=Kontakt.Art.FIRMA, gesperrt_am__isnull=True
         ).first()
-    initial = (
-        {"art": Kontakt.Art.PERSON, "firma": firma.pk, "kategorie": firma.kategorie}
-        if firma
-        else None
-    )
+    initial = None
+    if firma:
+        initial = {
+            "art": Kontakt.Art.PERSON,
+            "firma": firma.pk,
+            "kategorien": firma.kategorien.all(),
+        }
+    elif not kontakt:
+        initial = {"kategorien": [Kategorie.vorgabe(Kategorie.Kennung.KUNDE)]}
     form = KontaktForm(request.POST or None, instance=kontakt, initial=initial)
     if request.method == "POST":
         wege, fehler = kontaktwege_lesen(
@@ -225,6 +225,43 @@ def archivieren(request, pk):
     else:
         messages.success(request, f"{kontakt} ist wieder aktiv.")
     return redirect("contacts:liste")
+
+
+# ---------- Kategorien (Spezifikation K-1) ----------
+
+
+def kategorien(request, pk=None):
+    """Kategorien anlegen und umbenennen, mit der Zahl ihrer aktiven Adressen."""
+    kategorie = get_object_or_404(Kategorie, pk=pk) if pk else None
+    form = KategorieForm(request.POST or None, instance=kategorie)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        aktion = "umbenannt" if kategorie else "angelegt"
+        messages.success(request, f"Kategorie „{form.instance}“ {aktion}.")
+        return redirect("contacts:kategorien")
+    aktiv = Q(kontakte__archiviert=False, kontakte__gesperrt_am__isnull=True)
+    return render(
+        request,
+        "contacts/kategorien.html",
+        {
+            "bereich": "adressen",
+            "kategorien": Kategorie.objects.annotate(
+                anzahl=Count("kontakte", filter=aktiv)
+            ),
+            "form": form,
+            "bearbeitet": kategorie,
+        },
+    )
+
+
+@require_POST
+def kategorie_loeschen(request, pk):
+    kategorie = get_object_or_404(Kategorie, pk=pk, kennung="")
+    kategorie.delete()
+    messages.success(
+        request, f"Kategorie „{kategorie}“ gelöscht. Die Adressen bleiben erhalten."
+    )
+    return redirect("contacts:kategorien")
 
 
 # ---------- Datenschutz (Spezifikation D-1) ----------

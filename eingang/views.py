@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csp import csp_override
 from django.views.decorators.http import require_POST
 
-from contacts.models import Kontakt
+from contacts.forms import kategorien_protokollieren
+from contacts.models import Kategorie, Kontakt
 
 from . import lesen
 from .models import Doppelt, Eingangsrechnung
@@ -124,6 +125,7 @@ def anzeigen(request, pk):
             "Die Datei fehlt im Archiv. Spielen Sie bitte eine Datensicherung zurück."
         )
     adressen = Kontakt.objects.filter(archiviert=False)
+    lieferant = Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT)
     return render(
         request,
         "eingang/anzeigen.html",
@@ -132,8 +134,8 @@ def anzeigen(request, pk):
             "r": rechnung,
             "d": d,
             "fehler": fehler,
-            "lieferanten": adressen.filter(kategorie=Kontakt.Kategorie.LIEFERANT),
-            "weitere": adressen.exclude(kategorie=Kontakt.Kategorie.LIEFERANT),
+            "lieferanten": adressen.filter(kategorien=lieferant),
+            "weitere": adressen.exclude(kategorien=lieferant),
         },
     )
 
@@ -167,8 +169,7 @@ def _adresse_anlegen(v):
         validate_email(email)
     except ValidationError:
         email = ""
-    return Kontakt.objects.create(
-        kategorie=Kontakt.Kategorie.LIEFERANT,
+    kontakt = Kontakt.objects.create(
         firmenname=v["name"][:200],
         strasse=(v["zeilen"] or [""])[0][:200],
         plz=v["plz"][:10],
@@ -178,6 +179,9 @@ def _adresse_anlegen(v):
         telefon=v["telefon"][:50],
         ust_id=v["ust_id"].replace(" ", "")[:20],
     )
+    kontakt.kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT))
+    kategorien_protokollieren(kontakt, "")
+    return kontakt
 
 
 # Der eingebaute PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.

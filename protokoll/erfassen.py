@@ -22,6 +22,7 @@ ANFRAGE = ContextVar("anfrage", default=None)
 
 ERFASST = [
     "contacts.Kontakt",
+    "contacts.Kategorie",
     "invoicing.Rechnung",
     "angebote.Angebot",
     "auftraege.Auftragsbestaetigung",

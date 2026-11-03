@@ -29,8 +29,10 @@ class Import(models.Model):
     # Feld → Spaltentitel
     zuordnung = models.JSONField(default=dict)
     vorlage = models.CharField(max_length=100, blank=True)
-    # Kategorie für Adressen, wenn keine Spalte sie angibt.
-    kategorie = models.CharField(max_length=12, default="kunde")
+    # Kategorie für Adressen, wenn keine Spalte sie angibt; leer für keine.
+    kategorie = models.ForeignKey(
+        "contacts.Kategorie", null=True, on_delete=models.SET_NULL
+    )
     dubletten_anlegen = models.BooleanField(default=False)
     # Der Nutzer hat die Zuordnung bestätigt; erst dann gibt es Probelauf und Übernahme.
     bestaetigt = models.BooleanField(default=False)

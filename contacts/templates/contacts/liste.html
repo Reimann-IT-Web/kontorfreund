@@ -14,6 +14,7 @@
     </p>
   </div>
   <div class="actions">
+    <a class="btn" href="{% url 'contacts:kategorien' %}">{% icon "tag" %}Kategorien</a>
     <a class="btn" href="{% url 'importe:adressen' %}">{% icon "upload" %}Importieren</a>
     <a class="btn btn-primary" href="{% url 'contacts:neu' %}">{% icon "user-plus" %}Neue Adresse</a>
   </div>
@@ -26,14 +27,15 @@
     <span class="visually-hidden">Adressen durchsuchen</span>
     <input type="search" name="q" value="{{ q }}" placeholder="Name, Ort, E-Mail oder Nummer">
   </label>
-  {% if kategorie %}<input type="hidden" name="kategorie" value="{{ kategorie }}">{% endif %}
+  <label class="field field-inline">
+    <span class="visually-hidden">Kategorie</span>
+    <select name="kategorie" data-auto-submit>
+      <option value="">Alle Kategorien</option>
+      {% for kat in kategorien %}<option value="{{ kat.pk }}"{% if kat == kategorie %} selected{% endif %}>{{ kat }}</option>{% endfor %}
+    </select>
+  </label>
   {% if archiv %}<input type="hidden" name="archiv" value="1">{% endif %}
-  <div class="segmented" role="group" aria-label="Kategorie">
-    <a href="?{% if q %}q={{ q|urlencode }}{% endif %}{% if archiv %}&amp;archiv=1{% endif %}"{% if not kategorie %} aria-current="true"{% endif %}>Alle</a>
-    {% for wert, label in kategorien %}
-      <a href="?kategorie={{ wert }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if archiv %}&amp;archiv=1{% endif %}"{% if kategorie == wert %} aria-current="true"{% endif %}>{{ label }}</a>
-    {% endfor %}
-  </div>
+  <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
 </form>
 {% endif %}{% endif %}
 
@@ -45,7 +47,7 @@
         <th scope="col">Nr.</th>
         <th scope="col">Name</th>
         <th scope="col" class="col-ort">Ort</th>
-        <th scope="col" class="col-kat">Kategorie</th>
+        <th scope="col" class="col-kat">Kategorien</th>
         <th scope="col" class="col-kontakt">Telefon</th>
         <th scope="col"><span class="visually-hidden">Details</span></th>
       </tr>
@@ -62,7 +64,7 @@
           {% elif not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
         </td>
         <td class="col-ort">{{ k.ort|default:"–" }}</td>
-        <td class="col-kat"><span class="tag">{{ k.get_kategorie_display }}</span></td>
+        <td class="col-kat"><span class="tags">{% for kat in k.kategorien.all %}<span class="tag">{{ kat }}</span>{% endfor %}</span></td>
         <td class="col-kontakt">{% firstof k.telefon k.weitere_telefon.0.wert "–" %}</td>
         <td class="cell-action">
           <button class="btn btn-ghost btn-icon" type="button" data-expand aria-controls="details-{{ k.pk }}" aria-expanded="{% if offen == auf %}true{% else %}false{% endif %}">
@@ -117,7 +119,7 @@
 {% elif q or kategorie %}
 <div class="empty">
   <h2>Keine Adresse gefunden</h2>
-  <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer. {% endif %}Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.</p>
+  <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer{% if kategorie %} in der Kategorie „{{ kategorie }}“{% endif %}. Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.{% else %}Keine {% if archiv %}archivierte {% endif %}Adresse hat die Kategorie „{{ kategorie }}“.{% endif %}</p>
   <p class="actions"><a class="btn" href="{% url 'contacts:liste' %}">Filter zurücksetzen</a></p>
 </div>
 

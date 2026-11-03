@@ -39,8 +39,9 @@
       <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
     </fieldset>
     <fieldset class="field">
-      <legend>Kategorie</legend>
-      <div class="pills">{% for r in form.kategorie %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+      <legend>Kategorien</legend>
+      <div class="pills">{% for r in form.kategorien %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+      <div class="kategorie-neu">{% include "core/feld.html" with f=form.neue_kategorie optional=True %}</div>
     </fieldset>
   </div>
 

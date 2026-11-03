@@ -298,7 +298,7 @@ def test_sperren_solange_belege_aufbewahrt_werden(client, firma, kunde, mitarbei
     assert "Sommer anrufen" not in erledigt.text
     neu = client.post(
         reverse("contacts:neu"),
-        {"art": "person", "kategorie": "kunde", "nachname": "Sommer", "vorname": "Lea"}
+        {"art": "person", "nachname": "Sommer", "vorname": "Lea"}
         | {"ort": "Mainz", "land": "Deutschland"},
     )
     assert neu.status_code == 302, "keine Dublettenwarnung mit der gesperrten Adresse"

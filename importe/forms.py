@@ -2,7 +2,7 @@ from itertools import islice
 
 from django import forms
 
-from contacts.models import Kontakt
+from contacts.models import Kategorie
 
 from .vorlagen import FELDER
 
@@ -17,9 +17,12 @@ class HochladenForm(forms.Form):
 class ZuordnungForm(forms.Form):
     """Je Feld die Spalte der Datei (Feldname mit Vorsatz „spalte_“) und die Optionen."""
 
-    kategorie = forms.ChoiceField(
+    kategorie = forms.ModelChoiceField(
         label="Kategorie, wenn die Datei keine angibt",
-        choices=Kontakt.Kategorie.choices,
+        queryset=Kategorie.objects.all(),
+        required=False,
+        blank=True,
+        empty_label="keine",
         widget=forms.RadioSelect,
     )
     dubletten_anlegen = forms.TypedChoiceField(
@@ -40,7 +43,7 @@ class ZuordnungForm(forms.Form):
     def __init__(self, imp, *args, **kwargs):
         initial = {f"spalte_{feld}": spalte for feld, spalte in imp.zuordnung.items()}
         initial |= {
-            "kategorie": imp.kategorie,
+            "kategorie": imp.kategorie_id,
             "dubletten_anlegen": "1" if imp.dubletten_anlegen else "",
         }
         super().__init__(*args, initial=initial, **kwargs)

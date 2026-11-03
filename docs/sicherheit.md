@@ -45,6 +45,7 @@ Grenzen für alle:
 - Dateigrößen siehe „Dateien“,
 - Import höchstens 10.000 Zeilen und 100 Spalten,
 - höchstens 20 weitere Telefonnummern und E-Mail-Adressen je Adresse,
+- höchstens 100 Kategorien,
 - eine Sicherung zur Zeit,
 - Warnung vor den Umsatzgrenzen nach § 19 UStG.
 

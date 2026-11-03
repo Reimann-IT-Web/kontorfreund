@@ -15,7 +15,7 @@ from lxml import etree
 
 from archive.models import Altbeleg
 from auswertungen import pruefer
-from contacts.models import Kontakt
+from contacts.models import Kategorie, Kontakt
 from core.models import Firmendaten
 from eingang.models import Eingangsrechnung
 from invoicing.models import Rechnung
@@ -107,9 +107,8 @@ def daten(client, firma, kunde):
     storno = Rechnung.objects.get(storno_zu=storniert)
     vorjahr = schreiben(client, kunde, f"{JAHR - 1}-12-30")
 
-    lieferant = Kontakt.objects.create(
-        kategorie=Kontakt.Kategorie.LIEFERANT, firmenname="Druckerei Blatt"
-    )
+    lieferant = Kontakt.objects.create(firmenname="Druckerei Blatt")
+    lieferant.kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT))
     Eingangsrechnung.objects.create(
         format=Eingangsrechnung.Format.XML,
         syntax="UBL",

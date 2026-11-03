@@ -25,7 +25,7 @@ from artikel.models import Artikel
 from auftraege.models import Auftragsbestaetigung
 from auftraege.models import Position as Auftragsposition
 from auswertungen import tabelle
-from contacts.models import Kontakt, Kontaktweg
+from contacts.models import Kategorie, Kontakt, Kontaktweg
 from core.models import Firmendaten
 from core.templatetags.kf import zahl
 from dokumentation.models import Angaben, Fassung
@@ -56,15 +56,23 @@ TABELLEN = [
     (
         "adressen.csv",
         "Adressen",
-        Kontakt.objects.select_related("firma"),
+        Kontakt.objects.select_related("firma").prefetch_related("kategorien"),
         ID + [("Kundennummer", lambda k: k.kundennummer)],
         [
+            ("Kategorien", lambda k: k.kategorien_text),
             (
                 "Kundennummer der Firma",
                 lambda k: k.firma.kundennummer if k.firma else "",
             ),
             ("Angelegt am", lambda k: _zeit(k.erstellt)),
         ],
+    ),
+    (
+        "kategorien.csv",
+        "Kategorien der Adressen",
+        Kategorie.objects.all(),
+        ID,
+        [],
     ),
     (
         "telefon-email.csv",

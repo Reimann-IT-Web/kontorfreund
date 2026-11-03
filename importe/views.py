@@ -3,6 +3,8 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from contacts.models import Kategorie
+
 from . import lesen, uebernahme, vorlagen
 from .forms import HochladenForm, ZuordnungForm
 from .models import Import, Zuordnung
@@ -65,6 +67,7 @@ def hochladen(request, ziel):
                     zeilen=zeilen,
                     zuordnung=zuordnung,
                     vorlage=vorlage,
+                    kategorie=Kategorie.vorgabe(Kategorie.Kennung.KUNDE),
                     benutzer=request.user,
                 )
                 return redirect("importe:zuordnen", imp.pk)
