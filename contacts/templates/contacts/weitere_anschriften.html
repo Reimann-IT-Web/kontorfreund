@@ -1,0 +1,2 @@
+{% for a in anschriften %}<address class="plain anschrift-weitere"><span class="small muted">{{ a.bezeichnung }}</span><br>{% if a.zusatz %}{{ a.zusatz }}<br>{% endif %}{{ a.strasse }}<br>{{ a.plz }} {{ a.ort }}{% if a.land and a.land != "Deutschland" %}<br>{{ a.land }}{% endif %}</address>
+{% endfor %}

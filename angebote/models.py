@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models import Q
 
 from archive.models import Altbeleg
-from contacts.models import Kontakt
+from contacts.models import Anschrift, Kontakt
 from invoicing.models import Rechnung, runden, summen
 
 
@@ -47,7 +47,16 @@ class Angebot(models.Model):
         "geaendert",
     }
     # Angaben, die eine Kopie vom Original übernimmt.
-    KOPIERT = ("kontakt", "bindefrist", "steuerfall", "betreff", "kopftext", "fusstext")
+    KOPIERT = (
+        "kontakt",
+        "anschrift",
+        "lieferanschrift",
+        "bindefrist",
+        "steuerfall",
+        "betreff",
+        "kopftext",
+        "fusstext",
+    )
 
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.ENTWURF
@@ -58,6 +67,23 @@ class Angebot(models.Model):
         verbose_name="Empfänger",
         on_delete=models.PROTECT,
         related_name="angebote",
+        null=True,
+        blank=True,
+    )
+    # Weitere Anschriften des Empfängers (K-1); leer heißt Standardanschrift bzw. keine.
+    anschrift = models.ForeignKey(
+        Anschrift,
+        verbose_name="Anschrift",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    lieferanschrift = models.ForeignKey(
+        Anschrift,
+        verbose_name="Lieferanschrift",
+        on_delete=models.SET_NULL,
+        related_name="+",
         null=True,
         blank=True,
     )
@@ -175,7 +201,9 @@ class Angebot(models.Model):
     def fehlende_angaben(self, firma):
         """Was dem Angebot für ein ordentliches PDF noch fehlt."""
         fehlt = []
-        if not (self.kontakt and self.kontakt.anschrift_vollstaendig):
+        if not (
+            self.kontakt and (self.anschrift or self.kontakt).anschrift_vollstaendig
+        ):
             fehlt.append("Empfänger mit Anschrift")
         if not firma.vollstaendig:
             fehlt.append("Ihre Firmendaten")

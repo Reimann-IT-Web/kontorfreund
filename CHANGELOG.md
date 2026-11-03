@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.27.0 – 03.11.2026
+
+- Mehrere Anschriften je Adresse: Unter der Anschrift im Formular der Adresse fügen Sie mit „Weitere Anschrift“ beliebig viele hinzu, jede mit der Art Rechnung, Lieferung oder Sonstige und auf Wunsch einer Zusatzzeile wie „Buchhaltung“ oder „Lager Nord“. Den Ort trägt Kontorfreund auch dort zur PLZ ein. Die Anschrift oben bleibt die Standardanschrift.
+- Neue Rechnungen gehen an die Rechnungsanschrift, wenn es eine gibt; Angebote und Auftragsbestätigungen an die Standardanschrift. Gibt es eine Lieferanschrift, ist sie auf allen dreien vorgewählt und steht im PDF unter dem Betreff, in der E-Rechnung als Lieferanschrift. Beides wählen Sie im Beleg unter „Anschrift“ und „Lieferanschrift“ um. Die Zusatzzeile steht im Anschriftfeld anstelle des Ansprechpartners.
+- Aus einem Angebot oder einer Auftragsbestätigung übernimmt die Rechnung die Lieferanschrift. Stornorechnung, Rechnungskorrektur und Mahnung gehen an dieselbe Anschrift wie die Rechnung.
+- Eine Anschrift, die auf einem festgeschriebenen oder fertigen Beleg steht, lässt sich nicht entfernen, nur ändern. Entfernen Sie eine, die nur ein Entwurf nutzt, nimmt er wieder die Standardanschrift.
+- Weitere Anschriften stehen im Verlauf und in der Adressliste, im Export der Liste, in der Auskunft nach der DSGVO und im Gesamtexport (`anschriften.csv`). Das Änderungsprotokoll verzeichnet jede Änderung mit altem und neuem Stand.
+
 ## 0.26.0 – 03.11.2026
 
 - Die Kundennummer lässt sich ändern, solange es zu der Adresse noch keinen Beleg gibt: im Formular der Adresse unter „Kundennummer“, als „K-0012“ oder einfach „12“. Bei einer neuen Adresse können Sie sie gleich selbst wählen; leer gelassen vergibt Kontorfreund wie bisher die nächste Nummer. Jede Nummer gibt es nur einmal.

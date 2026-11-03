@@ -10,7 +10,7 @@ from archive import fristen
 from protokoll.erfassen import eintragen
 from protokoll.models import Eintrag
 
-from .models import Kategorie, Kontakt, Kontaktweg
+from .models import Anschrift, Kategorie, Kontakt, Kontaktweg
 
 # Die PLZ füllt den Ort aus (static/js/app.js); dazu gehört ein Feld mit data-ort.
 PLZ_ATTRS = {
@@ -255,4 +255,78 @@ def kontaktwege_speichern(kontakt, wege):
             Eintrag.Aktion.GEAENDERT,
             kontakt,
             [["Weitere Telefonnummern und E-Mail-Adressen", vorher, nachher]],
+        )
+
+
+HOECHSTENS_ANSCHRIFTEN = 20
+
+
+def anschriften_lesen(kontakt, ids, arten, zusaetze, strassen, plzs, orte, laender):
+    """Weitere Anschriften aus den Zeilen des Formulars, vorhandene mit ihrer ID.
+
+    Wie `kontaktwege_lesen`: Leere Zeilen fallen weg, fehlerhafte behalten ihre
+    Meldung in `fehler`. Eine Anschrift, die auf einem festgeschriebenen oder
+    fertigen Beleg steht, lässt sich nicht entfernen, nur ändern, denn Storno und
+    Korrektur übernehmen sie; entfernt kommt sie mit einer Meldung zurück.
+    """
+    vorhanden = (
+        {a.pk: a for a in Anschrift.objects.filter(kontakt=kontakt)} if kontakt else {}
+    )
+    anschriften = []
+    zeilen = zip(ids, arten, zusaetze, strassen, plzs, orte, laender, strict=False)
+    for nr, art, *werte in zeilen:
+        zusatz, strasse, plz, ort, land = (t.strip() for t in werte)
+        if not (zusatz or strasse or plz or ort):
+            continue
+        anschrift = (
+            vorhanden.pop(int(nr), None) if nr.isdigit() else None
+        ) or Anschrift()
+        anschrift.art = art if art in Anschrift.Art.values else Anschrift.Art.SONSTIGE
+        anschrift.zusatz = zusatz[:200]
+        anschrift.strasse = strasse[:200]
+        anschrift.plz = plz[:10]
+        anschrift.ort = ort[:100]
+        anschrift.land = land[:100]
+        anschrift.fehler = (
+            ""
+            if anschrift.anschrift_vollstaendig
+            else "Bitte Straße, PLZ und Ort angeben."
+        )
+        anschriften.append(anschrift)
+    if vorhanden:
+        auf_belegen = {}
+        for beleg in fristen.belege(kontakt):
+            for feld in ("anschrift_id", "lieferanschrift_id"):
+                auf_belegen.setdefault(getattr(beleg.objekt, feld, None), beleg)
+        for pk, anschrift in vorhanden.items():
+            if beleg := auf_belegen.get(pk):
+                anschrift.fehler = (
+                    f"Steht auf {beleg.art} {beleg.nummer} und bleibt deshalb. "
+                    "Ändern können Sie sie."
+                )
+                anschriften.append(anschrift)
+    if len(anschriften) > HOECHSTENS_ANSCHRIFTEN and not anschriften[-1].fehler:
+        anschriften[
+            -1
+        ].fehler = f"Höchstens {HOECHSTENS_ANSCHRIFTEN} weitere Anschriften je Adresse."
+    return anschriften, [a.fehler for a in anschriften if a.fehler]
+
+
+def anschriften_speichern(kontakt, anschriften):
+    """Ändert, ergänzt und entfernt die weiteren Anschriften.
+
+    Als Ganzes ins Protokoll wie die weiteren Telefonnummern. Entwürfe mit einer
+    entfernten Anschrift nehmen wieder die Standardanschrift bzw. keine Lieferanschrift.
+    """
+    vorher = kontakt.anschriften_text
+    kontakt.anschriften.exclude(pk__in=[a.pk for a in anschriften if a.pk]).delete()
+    for anschrift in anschriften:
+        anschrift.kontakt = kontakt
+        anschrift.save()
+    nachher = kontakt.anschriften_text
+    if nachher != vorher:
+        eintragen(
+            Eintrag.Aktion.GEAENDERT,
+            kontakt,
+            [["Weitere Anschriften", vorher, nachher]],
         )

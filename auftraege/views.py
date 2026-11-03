@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from angebote.models import Angebot
 from artikel.models import Artikel
-from contacts.models import Kontakt
+from contacts.models import Anschrift, Kontakt
 from core.models import Firmendaten
 from invoicing import beleg as rechnungsbeleg
 from invoicing import versand
@@ -53,6 +53,9 @@ def neu(request):
     )
     auftrag = Auftragsbestaetigung(
         kontakt=kontakt,
+        lieferanschrift=kontakt.anschrift_fuer(Anschrift.Art.LIEFERUNG)
+        if kontakt
+        else None,
         steuerfall=Rechnung.Steuerfall.KLEINUNTERNEHMER
         if firma.kleinunternehmer
         else Rechnung.Steuerfall.REGEL,
@@ -97,6 +100,7 @@ def _editor(request, auftrag, firma):
     kontakte = list(form.fields["kontakt"].queryset)
     for kontakt in kontakte:
         kontakt.briefanrede = rechnungsbeleg.briefanrede(kontakt)
+        kontakt.weitere = rechnungsbeleg.anschriften_wahl(kontakt)
     return render(
         request,
         "auftraege/auftrag.html",

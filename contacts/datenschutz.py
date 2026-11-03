@@ -111,6 +111,7 @@ def stammdaten(kontakt):
             wert = f"{wert.kundennummer} {wert}" if wert else ""
         daten[str(feld.verbose_name)] = wert
     daten["Weitere Telefonnummern und E-Mail-Adressen"] = kontakt.kontaktwege_text
+    daten["Weitere Anschriften"] = kontakt.anschriften_text
     daten["Angelegt am"] = kontakt.erstellt
     daten["Zuletzt geändert am"] = kontakt.geaendert
     daten["Archiviert"] = kontakt.archiviert

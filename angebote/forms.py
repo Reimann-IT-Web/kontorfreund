@@ -1,6 +1,7 @@
 from django import forms
 
 from contacts.models import Kontakt
+from invoicing.forms import anschriften_pruefen
 
 from .models import Angebot
 
@@ -16,6 +17,8 @@ class AngebotForm(forms.ModelForm):
         model = Angebot
         fields = [
             "kontakt",
+            "anschrift",
+            "lieferanschrift",
             "datum",
             "bindefrist",
             "steuerfall",
@@ -35,4 +38,11 @@ class AngebotForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
-        self.fields["kontakt"].queryset = Kontakt.objects.filter(archiviert=False)
+        self.fields["kontakt"].queryset = Kontakt.objects.filter(
+            archiviert=False
+        ).prefetch_related("anschriften")
+
+    def clean(self):
+        daten = super().clean()
+        anschriften_pruefen(self, daten)
+        return daten

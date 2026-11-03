@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from archive.models import Altbeleg
 from artikel.models import Artikel
-from contacts.models import Kontakt
+from contacts.models import Anschrift, Kontakt
 from core import umsatz
 from core.models import Firmendaten
 from core.templatetags.kf import euro
@@ -53,6 +53,10 @@ def neu(request):
     )
     rechnung = Rechnung(
         kontakt=kontakt,
+        anschrift=kontakt.anschrift_fuer(Anschrift.Art.RECHNUNG) if kontakt else None,
+        lieferanschrift=kontakt.anschrift_fuer(Anschrift.Art.LIEFERUNG)
+        if kontakt
+        else None,
         steuerfall=Rechnung.Steuerfall.KLEINUNTERNEHMER
         if firma.kleinunternehmer
         else Rechnung.Steuerfall.REGEL,
@@ -102,6 +106,7 @@ def _editor(request, rechnung, firma):
     kontakte = list(form.fields["kontakt"].queryset)
     for kontakt in kontakte:
         kontakt.briefanrede = beleg.briefanrede(kontakt)
+        kontakt.weitere = beleg.anschriften_wahl(kontakt)
     return render(
         request,
         "invoicing/rechnung.html",

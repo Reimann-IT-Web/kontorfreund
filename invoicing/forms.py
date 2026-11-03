@@ -52,6 +52,8 @@ class RechnungForm(forms.ModelForm):
         model = Rechnung
         fields = [
             "kontakt",
+            "anschrift",
+            "lieferanschrift",
             "datum",
             "leistung_von",
             "leistung_bis",
@@ -87,7 +89,9 @@ class RechnungForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
-        self.fields["kontakt"].queryset = Kontakt.objects.filter(archiviert=False)
+        self.fields["kontakt"].queryset = Kontakt.objects.filter(
+            archiviert=False
+        ).prefetch_related("anschriften")
         if not self.instance.skonto_prozent:
             # Leere Felder statt „0“, sonst wird aus einer eingetippten 2 eine 20.
             self.initial["skonto_prozent"] = self.initial["skonto_tage"] = None
@@ -95,6 +99,8 @@ class RechnungForm(forms.ModelForm):
             # Die Korrektur gilt für Empfänger und Steuerfall des Originals; zu zahlen ist nichts.
             for name in (
                 "kontakt",
+                "anschrift",
+                "lieferanschrift",
                 "steuerfall",
                 "zahlungsziel",
                 "skonto_prozent",
@@ -105,6 +111,7 @@ class RechnungForm(forms.ModelForm):
 
     def clean(self):
         daten = super().clean()
+        anschriften_pruefen(self, daten)
         prozent = daten.get("skonto_prozent") or Decimal("0")
         tage = daten.get("skonto_tage") or 0
         ziel = daten.get("zahlungsziel")
@@ -120,6 +127,15 @@ class RechnungForm(forms.ModelForm):
             )
         daten["skonto_prozent"], daten["skonto_tage"] = prozent, tage
         return daten
+
+
+def anschriften_pruefen(form, daten):
+    """Anschrift und Lieferanschrift müssen weitere des Empfängers sein (K-1)."""
+    kontakt = daten.get("kontakt")
+    for name in ("anschrift", "lieferanschrift"):
+        anschrift = daten.get(name)
+        if anschrift and (not kontakt or anschrift.kontakt_id != kontakt.pk):
+            form.add_error(name, "Diese Anschrift gehört zu einer anderen Adresse.")
 
 
 def positionen_lesen(post, korrektur=False, modell=Position):

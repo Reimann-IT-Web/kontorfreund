@@ -252,10 +252,14 @@ if (kontaktwege) {
 
 // Bei einer deutschen PLZ trägt Kontorfreund den Ort ein, solange er nicht von Hand
 // geändert wurde. Teilen sich mehrere Orte die PLZ, stehen sie im Feld Ort zur Auswahl.
-document.querySelectorAll("[data-plz]").forEach((plz) => {
-  const ort = plz.form.querySelector("[data-ort]");
-  const land = plz.form.querySelector("[data-land]");
+// Mit mehreren Anschriften im Formular gilt das Feld Ort im selben [data-plz-bereich].
+let ortNr = 0;
+const plzVerbinden = (plz) => {
+  const bereich = plz.closest("[data-plz-bereich]") ?? plz.form;
+  const ort = bereich.querySelector("[data-ort]");
+  const land = bereich.querySelector("[data-land]");
   if (!ort) return;
+  ort.id ||= `ort-${++ortNr}`;
   const vorschlaege = document.createElement("datalist");
   vorschlaege.id = `${ort.id}-vorschlaege`;
   ort.setAttribute("list", vorschlaege.id);
@@ -292,7 +296,30 @@ document.querySelectorAll("[data-plz]").forEach((plz) => {
       hinweis.hidden = false;
     }
   });
-});
+};
+document.querySelectorAll("[data-plz]").forEach(plzVerbinden);
+
+// Weitere Anschriften im Adressformular: Zeilen hinzufügen und entfernen.
+const anschriften = document.querySelector("[data-anschriften]");
+if (anschriften) {
+  const liste = anschriften.querySelector("[data-anschriften-liste]");
+  const neu = anschriften.querySelector("[data-anschrift-neu]");
+  anschriften.addEventListener("click", (e) => {
+    if (e.target.closest("[data-anschrift-neu]")) {
+      liste.append(document.getElementById("anschrift-vorlage").content.cloneNode(true));
+      const zeile = liste.lastElementChild;
+      plzVerbinden(zeile.querySelector("[data-plz]"));
+      zeile.querySelector("[name=anschrift_art]").focus();
+      return;
+    }
+    const entfernen = e.target.closest("[data-anschrift-entfernen]");
+    if (entfernen) {
+      entfernen.closest("[data-anschrift]").remove();
+      neu.focus();
+      ansage("Entfernt. Wirksam, sobald Sie die Adresse speichern.");
+    }
+  });
+}
 
 // ---------- Rechnung, Angebot und Auftragsbestätigung: rechnen und Pflichtangaben prüfen ----------
 
@@ -370,14 +397,36 @@ if (rechnung) {
   const karte = rechnung.querySelector("[data-address-card]");
   const anschriftFehlt = rechnung.querySelector("[data-address-missing]");
 
+  // Weitere Anschriften (Anschrift, Lieferanschrift) zeigen nur die des Empfängers.
+  // Wechselt er, gilt die erste seiner Art aus data-vorgabe, sonst die Standardanschrift.
+  const anschriftWahlen = [...rechnung.querySelectorAll("[data-anschrift-wahl]")].map((wahl) => {
+    const liste = wahl.querySelector("select");
+    const [leer, ...alle] = liste.options;
+    return { wahl, liste, leer, alle };
+  });
+  const anschriftenFiltern = (vorwaehlen) => {
+    anschriftWahlen.forEach(({ wahl, liste, leer, alle }) => {
+      const eigene = alle.filter((o) => o.dataset.kontakt === auswahl.value);
+      const bisher = liste.value;
+      liste.replaceChildren(leer, ...eigene);
+      const vorgabe = eigene.find((o) => o.dataset.art === wahl.dataset.vorgabe);
+      liste.value = vorwaehlen ? (vorgabe?.value ?? "") : eigene.some((o) => o.value === bisher) ? bisher : "";
+      wahl.hidden = eigene.length === 0 && !wahl.querySelector(".field-error");
+    });
+  };
+  auswahl.addEventListener("change", () => anschriftenFiltern(true));
+  anschriftenFiltern(false);
+
   // Anschrift des gewählten Empfängers zeigen; liefert, ob sie für eine Rechnung reicht.
   const anschriftZeigen = () => {
     const option = auswahl.selectedOptions[0];
     const gewaehlt = Boolean(option && option.value);
-    const zeilen = gewaehlt ? option.dataset.anschrift.split("|") : [];
+    const weitere = feld("anschrift").selectedOptions[0];
+    const quelle = weitere?.value ? weitere : option;
+    const zeilen = gewaehlt ? quelle.dataset.anschrift.split("|") : [];
     karte.replaceChildren(...zeilen.flatMap((zeile, i) => (i ? [document.createElement("br"), zeile] : [zeile])));
     karte.hidden = !gewaehlt;
-    const vollstaendig = gewaehlt && option.dataset.vollstaendig === "1";
+    const vollstaendig = gewaehlt && quelle.dataset.vollstaendig === "1";
     anschriftFehlt.hidden = !gewaehlt || vollstaendig;
     if (gewaehlt) anschriftFehlt.querySelector("a").href = `${rechnung.dataset.adressen}${option.value}/`;
     return vollstaendig;

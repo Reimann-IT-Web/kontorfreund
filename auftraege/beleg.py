@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from angebote.models import Angebot
+from contacts.models import Anschrift
 from core.templatetags.kf import euro
 from invoicing.beleg import (
     absaetze,
@@ -21,6 +22,8 @@ from invoicing.beleg import (
     empfaenger_daten,
     grussformel,
     leistungszeit,
+    lieferanschrift_daten,
+    lieferzeile,
     positionen_daten,
     setzen,
 )
@@ -66,7 +69,10 @@ def beleg_daten(auftrag, firma, nummer):
         "kopftext": auftrag.kopftext,
         "fusstext": auftrag.fusstext,
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(auftrag.kontakt),
+        "empfaenger": empfaenger_daten(auftrag.kontakt, auftrag.anschrift),
+        "lieferanschrift": lieferanschrift_daten(
+            auftrag.kontakt, auftrag.lieferanschrift
+        ),
         "positionen": positionen_daten(auftrag.positionen.all()),
         "netto": str(netto),
         "ust": str(ust),
@@ -97,6 +103,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "empfaenger": e["zeilen"],
         "info": info,
         "betreff": b["betreff"],
+        "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
         "summen": druck_summen(b),
@@ -148,6 +155,8 @@ def aus_angebot(angebot, firma):
     with transaction.atomic():
         auftrag = Auftragsbestaetigung.objects.create(
             kontakt=angebot.kontakt,
+            anschrift=angebot.anschrift,
+            lieferanschrift=angebot.lieferanschrift,
             steuerfall=angebot.steuerfall,
             betreff=angebot.betreff,
             kopftext=kopftext(angebot.kontakt, angebot),
@@ -179,6 +188,10 @@ def rechnung_erstellen(auftrag, firma):
     with transaction.atomic():
         rechnung = Rechnung.objects.create(
             kontakt=auftrag.kontakt,
+            # Rechnungen gehen an die Rechnungsanschrift, wenn es eine gibt.
+            anschrift=auftrag.kontakt.anschrift_fuer(Anschrift.Art.RECHNUNG)
+            or auftrag.anschrift,
+            lieferanschrift=auftrag.lieferanschrift,
             steuerfall=auftrag.steuerfall,
             leistung_von=auftrag.leistung_von,
             leistung_bis=auftrag.leistung_bis,

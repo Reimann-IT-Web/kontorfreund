@@ -225,24 +225,89 @@ class Kontakt(models.Model):
         return bool(self.strasse and self.plz and self.ort)
 
     @property
+    def anschriften_text(self):
+        """Weitere Anschriften, je eine Zeile."""
+        return "\n".join(str(a) for a in self.anschriften.all())
+
+    def anschrift_fuer(self, art):
+        """Die erste weitere Anschrift dieser Art, sonst None."""
+        return next((a for a in self.anschriften.all() if a.art == art), None)
+
+    @property
     def ist_verbraucher(self):
         """Personen gelten beim Verzug als Verbraucher (§ 288 Abs. 1 und 2 BGB)."""
         return self.art == self.Art.PERSON
 
-    def anschrift_zeilen(self):
-        """Anschrift für Belege, Zeile für Zeile."""
+    def anschrift_zeilen(self, anschrift=None):
+        """Anschrift für Belege, Zeile für Zeile; ohne `anschrift` die Standardanschrift.
+
+        Die Zusatzzeile einer weiteren Anschrift steht anstelle des Ansprechpartners.
+        """
+        quelle = anschrift or self
         zeilen = [self.anzeigename]
         if self.art == self.Art.FIRMA and self.zusatz:
             zeilen.append(self.zusatz)
-        if self.art == self.Art.FIRMA and self.ansprechpartner:
+        if anschrift and anschrift.zusatz:
+            zeilen.append(anschrift.zusatz)
+        elif self.art == self.Art.FIRMA and self.ansprechpartner:
             zeilen.append(" ".join(t for t in [self.anrede, self.ansprechpartner] if t))
-        if self.strasse:
-            zeilen.append(self.strasse)
-        if self.plz or self.ort:
-            zeilen.append(f"{self.plz} {self.ort}".strip())
-        if self.land and self.land != "Deutschland":
-            zeilen.append(self.land)
+        if quelle.strasse:
+            zeilen.append(quelle.strasse)
+        if quelle.plz or quelle.ort:
+            zeilen.append(f"{quelle.plz} {quelle.ort}".strip())
+        if quelle.land and quelle.land != "Deutschland":
+            zeilen.append(quelle.land)
         return zeilen
+
+
+class Anschrift(models.Model):
+    """Weitere Anschrift einer Adresse, z. B. für Rechnungen oder Lieferungen (K-1).
+
+    Die Standardanschrift steht in `Kontakt` selbst. Belege wählen eine weitere über
+    `anschrift` (Empfänger) und `lieferanschrift`; auf festgeschriebenen und fertigen
+    Belegen bleibt sie erhalten (`contacts.forms.anschriften_lesen`).
+    """
+
+    class Art(models.TextChoices):
+        RECHNUNG = "rechnung", "Rechnung"
+        LIEFERUNG = "lieferung", "Lieferung"
+        SONSTIGE = "sonstige", "Sonstige"
+
+    kontakt = models.ForeignKey(
+        Kontakt,
+        verbose_name="Adresse",
+        on_delete=models.CASCADE,
+        related_name="anschriften",
+    )
+    art = models.CharField("Art", max_length=10, choices=Art.choices)
+    zusatz = models.CharField("Zusatz", max_length=200, blank=True)
+    strasse = models.CharField("Straße und Hausnummer", max_length=200)
+    plz = models.CharField("PLZ", max_length=10)
+    ort = models.CharField("Ort", max_length=100)
+    land = models.CharField("Land", max_length=100, blank=True, default="Deutschland")
+
+    class Meta:
+        ordering = ["pk"]
+        verbose_name = "Anschrift"
+        verbose_name_plural = "Anschriften"
+
+    def __str__(self):
+        teile = [self.zusatz, self.strasse, f"{self.plz} {self.ort}".strip()]
+        if self.land and self.land != "Deutschland":
+            teile.append(self.land)
+        return f"{self.get_art_display()}: {', '.join(t for t in teile if t)}"
+
+    @property
+    def bezeichnung(self):
+        """Überschrift in der Anzeige, z. B. „Lieferanschrift“."""
+        return {
+            self.Art.RECHNUNG: "Rechnungsanschrift",
+            self.Art.LIEFERUNG: "Lieferanschrift",
+        }.get(self.art, "Weitere Anschrift")
+
+    @property
+    def anschrift_vollstaendig(self):
+        return bool(self.strasse and self.plz and self.ort)
 
 
 class Kontaktweg(models.Model):

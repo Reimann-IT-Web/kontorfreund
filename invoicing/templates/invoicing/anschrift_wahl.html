@@ -1,0 +1,9 @@
+{% load kf %}<div class="field{% if f.errors %} has-error{% endif %}" data-anschrift-wahl data-vorgabe="{{ vorgabe }}"{% if not f.errors %} hidden{% endif %}>
+  <label for="{{ f.name }}">{{ f.label }}</label>
+  <select id="{{ f.name }}" name="{{ f.name }}"{% if gesperrt %} disabled{% endif %}>
+    <option value="">{{ leer }}</option>
+    {% for k in kontakte %}{% for a, zeilen in k.weitere %}<option value="{{ a.pk }}" data-kontakt="{{ k.pk }}" data-art="{{ a.art }}" data-anschrift="{{ zeilen }}" data-vollstaendig="{{ a.anschrift_vollstaendig|yesno:'1,0' }}"{% if a.pk|stringformat:'s' == f.value|stringformat:'s' %} selected{% endif %}>{{ a }}</option>{% endfor %}{% endfor %}
+  </select>
+  {% for fehler in f.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+  {% if hinweis %}<p class="hint">{{ hinweis }}</p>{% endif %}
+</div>

@@ -95,6 +95,11 @@
   #v(-2mm)
   #text(size: 11pt, d.betreff)
 ]
+// Fehlt bei Mahnungen und älteren Belegen.
+#if d.at("lieferanschrift", default: none) != none [
+  #v(-2mm)
+  #text(size: 9pt, fill: leise, "Lieferanschrift: " + d.lieferanschrift)
+]
 #v(2mm)
 
 #for absatz in d.kopftext { par(zeilen(absatz)) }

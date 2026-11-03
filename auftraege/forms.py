@@ -1,6 +1,7 @@
 from django import forms
 
 from contacts.models import Kontakt
+from invoicing.forms import anschriften_pruefen
 
 from .models import Auftragsbestaetigung
 
@@ -10,6 +11,8 @@ class AuftragForm(forms.ModelForm):
         model = Auftragsbestaetigung
         fields = [
             "kontakt",
+            "anschrift",
+            "lieferanschrift",
             "datum",
             "leistung_von",
             "leistung_bis",
@@ -38,4 +41,11 @@ class AuftragForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
-        self.fields["kontakt"].queryset = Kontakt.objects.filter(archiviert=False)
+        self.fields["kontakt"].queryset = Kontakt.objects.filter(
+            archiviert=False
+        ).prefetch_related("anschriften")
+
+    def clean(self):
+        daten = super().clean()
+        anschriften_pruefen(self, daten)
+        return daten

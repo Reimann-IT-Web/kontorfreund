@@ -186,7 +186,7 @@ def beleg_daten(rechnung, firma, stufe, datum, frist, text, aufstellung):
             "faellig": rechnung.faellig.isoformat(),
         },
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(rechnung.kontakt),
+        "empfaenger": empfaenger_daten(rechnung.kontakt, rechnung.anschrift),
         "zeilen": [[t, str(b)] for t, b in aufstellung["zeilen"]],
         "gesamt": str(aufstellung["gesamt"]),
         "grussformel": grussformel(firma),

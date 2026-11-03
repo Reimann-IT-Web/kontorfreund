@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from contacts.models import Anschrift
 from core.templatetags.kf import euro
 from invoicing.beleg import (
     absaetze,
@@ -19,6 +20,8 @@ from invoicing.beleg import (
     druck_summen,
     empfaenger_daten,
     grussformel,
+    lieferanschrift_daten,
+    lieferzeile,
     positionen_daten,
     setzen,
 )
@@ -52,7 +55,10 @@ def beleg_daten(angebot, firma, nummer):
         "kopftext": angebot.kopftext,
         "fusstext": angebot.fusstext,
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(angebot.kontakt),
+        "empfaenger": empfaenger_daten(angebot.kontakt, angebot.anschrift),
+        "lieferanschrift": lieferanschrift_daten(
+            angebot.kontakt, angebot.lieferanschrift
+        ),
         "positionen": positionen_daten(angebot.positionen.all()),
         "netto": str(netto),
         "ust": str(ust),
@@ -78,6 +84,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "empfaenger": e["zeilen"],
         "info": info,
         "betreff": b["betreff"],
+        "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
         "summen": druck_summen(b),
@@ -129,6 +136,10 @@ def rechnung_erstellen(angebot, firma):
     with transaction.atomic():
         rechnung = Rechnung.objects.create(
             kontakt=angebot.kontakt,
+            # Rechnungen gehen an die Rechnungsanschrift, wenn es eine gibt.
+            anschrift=angebot.kontakt.anschrift_fuer(Anschrift.Art.RECHNUNG)
+            or angebot.anschrift,
+            lieferanschrift=angebot.lieferanschrift,
             steuerfall=angebot.steuerfall,
             betreff=angebot.betreff,
             kopftext=f"{briefanrede(angebot.kontakt)}\n\n"

@@ -43,8 +43,10 @@
             </select>
             {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
           </div>
+          {% include "invoicing/anschrift_wahl.html" with f=form.anschrift leer="Standardanschrift" vorgabe="" %}
           <address class="address-card" data-address-card hidden></address>
           <p class="hint is-warn-text" data-address-missing hidden>Für das Angebot fehlen Straße, PLZ oder Ort. <a href="#" data-address-edit>Adresse ergänzen</a></p>
+          {% include "invoicing/anschrift_wahl.html" with f=form.lieferanschrift leer="Keine eigene Lieferanschrift" vorgabe="lieferung" hinweis="Steht auf dem Beleg unter dem Betreff." %}
         </div>
 
         <div class="stack">

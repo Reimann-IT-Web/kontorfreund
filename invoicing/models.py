@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import Q
 
 from archive.models import Altbeleg
-from contacts.models import Kontakt, ist_leitweg_id
+from contacts.models import Anschrift, Kontakt, ist_leitweg_id
 from core.templatetags.kf import euro
 
 CENT = Decimal("0.01")
@@ -62,6 +62,8 @@ class Rechnung(models.Model):
     # Angaben, die eine Kopie oder Stornorechnung vom Original übernimmt.
     KOPIERT = (
         "kontakt",
+        "anschrift",
+        "lieferanschrift",
         "leistung_von",
         "leistung_bis",
         "zahlungsziel",
@@ -85,6 +87,23 @@ class Rechnung(models.Model):
         verbose_name="Empfänger",
         on_delete=models.PROTECT,
         related_name="rechnungen",
+        null=True,
+        blank=True,
+    )
+    # Weitere Anschriften des Empfängers (K-1); leer heißt Standardanschrift bzw. keine.
+    anschrift = models.ForeignKey(
+        Anschrift,
+        verbose_name="Anschrift",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    lieferanschrift = models.ForeignKey(
+        Anschrift,
+        verbose_name="Lieferanschrift",
+        on_delete=models.SET_NULL,
+        related_name="+",
         null=True,
         blank=True,
     )
@@ -322,7 +341,9 @@ class Rechnung(models.Model):
     def fehlende_angaben(self, firma):
         """Pflichtangaben nach § 14 Abs. 4 UStG, die noch fehlen."""
         fehlt = []
-        if not (self.kontakt and self.kontakt.anschrift_vollstaendig):
+        if not (
+            self.kontakt and (self.anschrift or self.kontakt).anschrift_vollstaendig
+        ):
             fehlt.append("Empfänger mit Anschrift")
         if not firma.vollstaendig:
             fehlt.append("Ihre Firmendaten")

@@ -141,6 +141,7 @@
     <section class="side-section" aria-labelledby="t-anschrift">
       <h2 id="t-anschrift" class="panel-title">Anschrift</h2>
       <address class="plain">{% for zeile in kontakt.anschrift_zeilen %}{{ zeile }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</address>
+      {% include "contacts/weitere_anschriften.html" with anschriften=kontakt.anschriften.all %}
     </section>
     {% if kontakt.art == "firma" %}
     <section class="side-section" aria-labelledby="t-personen">

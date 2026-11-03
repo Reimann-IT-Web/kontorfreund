@@ -139,18 +139,48 @@ def absender_daten(firma):
     }
 
 
-def empfaenger_daten(k):
+def empfaenger_daten(k, anschrift=None):
+    """Empfänger mit einer weiteren Anschrift (K-1) oder der Standardanschrift."""
+    a = anschrift or k
     return {
-        "zeilen": k.anschrift_zeilen() if k else [],
+        "zeilen": k.anschrift_zeilen(anschrift) if k else [],
         "name": k.anzeigename if k else "",
         "kundennummer": k.kundennummer if k else "",
-        "strasse": k.strasse if k else "",
-        "plz": k.plz if k else "",
-        "ort": k.ort if k else "",
-        "land": k.land if k else "",
+        "strasse": a.strasse if k else "",
+        "plz": a.plz if k else "",
+        "ort": a.ort if k else "",
+        "land": a.land if k else "",
         "ust_id": k.ust_id if k else "",
         "email": k.email if k else "",
     }
+
+
+def lieferanschrift_daten(k, anschrift):
+    """Lieferanschrift (BG-13, BG-15), None ohne eigene."""
+    if not (k and anschrift):
+        return None
+    return {
+        "zeilen": k.anschrift_zeilen(anschrift),
+        "name": k.anzeigename,
+        "zusatz": anschrift.zusatz,
+        "strasse": anschrift.strasse,
+        "plz": anschrift.plz,
+        "ort": anschrift.ort,
+        "land": anschrift.land,
+    }
+
+
+def anschriften_wahl(kontakt):
+    """Weitere Anschriften für die Auswahl im Editor: (Anschrift, Zeilen mit „|“)."""
+    return [
+        (a, "|".join(kontakt.anschrift_zeilen(a))) for a in kontakt.anschriften.all()
+    ]
+
+
+def lieferzeile(b):
+    """Lieferanschrift für das PDF in einer Zeile; ältere Belege kennen sie nicht."""
+    lieferung = b.get("lieferanschrift")
+    return ", ".join(lieferung["zeilen"]) if lieferung else None
 
 
 def positionen_daten(positionen):
@@ -217,7 +247,8 @@ def beleg_daten(rechnung, firma, nummer):
         "fusstext": rechnung.fusstext,
         "girocode": bool(rechnung.girocode and firma.iban),
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(k),
+        "empfaenger": empfaenger_daten(k, rechnung.anschrift),
+        "lieferanschrift": lieferanschrift_daten(k, rechnung.lieferanschrift),
         "positionen": positionen_daten(rechnung.positionen.all()),
         "netto": str(netto),
         "ust": str(ust),
@@ -305,6 +336,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "empfaenger": e["zeilen"],
         "info": info,
         "betreff": b["betreff"],
+        "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
         "summen": druck_summen(b),
@@ -444,10 +476,11 @@ def seitenbilder(inhalt):
 def zugferd(b):
     """Rechnungsdaten als CII-XML nach EN 16931, auf Wunsch als XRechnung.
 
-    None, wenn das Land des Empfängers unbekannt ist.
+    None, wenn das Land des Empfängers oder der Lieferanschrift unbekannt ist.
     """
     a, e = b["absender"], b["empfaenger"]
-    if e["land"] not in LAND_CODE:
+    lieferung = b.get("lieferanschrift")
+    if e["land"] not in LAND_CODE or (lieferung and lieferung["land"] not in LAND_CODE):
         return None
     kategorie, satz, grund, grund_code = KATEGORIE[b["steuerfall"]]
     xrechnung = b.get("xrechnung", False)
@@ -506,6 +539,17 @@ def zugferd(b):
         bezug = doc.trade.settlement.invoice_referenced_document
         bezug.issuer_assigned_id = original["nummer"]
         bezug.issue_date_time = date.fromisoformat(original["datum"])
+
+    if lieferung:
+        # Lieferanschrift (BT-70, BG-15); die Zusatzzeile wird Zeile 2 der Anschrift.
+        an = doc.trade.delivery.ship_to
+        an.name = lieferung["name"]
+        an.address.line_one = lieferung["strasse"]
+        if lieferung["zusatz"]:
+            an.address.line_two = lieferung["zusatz"]
+        an.address.postcode = lieferung["plz"]
+        an.address.city_name = lieferung["ort"]
+        an.address.country_id = LAND_CODE[lieferung["land"]]
 
     von, bis = b["leistung_von"], b["leistung_bis"] or b["leistung_von"]
     if von == bis:
@@ -579,7 +623,8 @@ def endgueltiges_pdf(b, logo=b""):
     xml = zugferd(b)
     if b["xrechnung"] and not xml:
         raise ValueError(
-            "Für eine XRechnung muss das Land des Empfängers bekannt sein."
+            "Für eine XRechnung muss das Land des Empfängers und der "
+            "Lieferanschrift bekannt sein."
         )
     inhalt = pdf(b, logo=logo)
     return (attach_xml(inhalt, xml, lang="de-DE") if xml else inhalt), xml

@@ -2172,6 +2172,38 @@ input:disabled {
   }
 }
 
+/* Weitere Anschriften im Adressformular, je eine umrandet unter der Standardanschrift */
+.anschrift-zeile {
+  margin: 0 0 var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.anschrift-zeile .form-grid {
+  margin-bottom: 0;
+}
+
+.anschrift-zeile .field > span {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.anschrift-entfernen {
+  display: flex;
+  align-items: end;
+  justify-content: end;
+}
+
+.anschrift-zeile > .field-error {
+  margin-top: var(--s3);
+}
+
+/* Angezeigt unter der Standardanschrift */
+.anschrift-weitere {
+  margin-top: var(--s3);
+}
+
 /* Angezeigte Nummer mit ihrer Bezeichnung daneben */
 .kontaktweg-zeile {
   display: flex;

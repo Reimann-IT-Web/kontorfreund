@@ -64,12 +64,20 @@
 
   <section class="form-section" aria-labelledby="t-anschrift">
     <h2 class="form-title" id="t-anschrift">Anschrift</h2>
-    <p class="hint form-hint">Für Rechnungen brauchen Sie Straße, PLZ und Ort.</p>
-    <div class="form-grid">
+    <p class="hint form-hint">Für Rechnungen brauchen Sie Straße, PLZ und Ort. Das ist die Standardanschrift; sie steht auf Belegen, wenn Sie dort keine weitere wählen.</p>
+    <div class="form-grid" data-plz-bereich>
       {% include "core/feld.html" with f=form.strasse breit=True %}
       {% include "core/feld.html" with f=form.plz %}
       {% include "core/feld.html" with f=form.ort %}
       {% include "core/feld.html" with f=form.land %}
+    </div>
+    <div data-anschriften>
+      <div data-anschriften-liste>{% for a in anschriften %}{% include "contacts/anschrift.html" %}{% endfor %}</div>
+      <p class="hint form-hint">Eine Rechnungsanschrift nimmt Kontorfreund für jede neue Rechnung, eine Lieferanschrift steht auf Angeboten, Auftragsbestätigungen und Rechnungen. Beides lässt sich auf dem Beleg ändern.</p>
+      <div class="actions">
+        <button class="btn btn-sm" type="button" data-anschrift-neu>{% icon "plus" %}Weitere Anschrift</button>
+      </div>
+      <template id="anschrift-vorlage">{% include "contacts/anschrift.html" with a=None %}</template>
     </div>
   </section>
 

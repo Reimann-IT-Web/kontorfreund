@@ -19,11 +19,13 @@ from .forms import (
     BEZEICHNUNGEN,
     KategorieForm,
     KontaktForm,
+    anschriften_lesen,
+    anschriften_speichern,
     kontaktwege_lesen,
     kontaktwege_speichern,
     nummer_lesen,
 )
-from .models import Kategorie, Kontakt, Kontaktweg
+from .models import Anschrift, Kategorie, Kontakt, Kontaktweg
 
 # Export der Liste (Spezifikation M-5): Spalte und Feld oder Eigenschaft von Kontakt.
 EXPORT = [
@@ -41,6 +43,7 @@ EXPORT = [
     ("PLZ", "plz"),
     ("Ort", "ort"),
     ("Land", "land"),
+    ("Weitere Anschriften", "anschriften_text"),
     ("E-Mail", "email"),
     ("Telefon", "telefon"),
     ("Weitere Telefonnummern und E-Mail-Adressen", "kontaktwege_text"),
@@ -136,7 +139,7 @@ def liste(request):
     orte = _orte(kontakte)
     kontakte = (
         kontakte.select_related("firma")
-        .prefetch_related("kontaktwege", "kategorien")
+        .prefetch_related("kontaktwege", "kategorien", "anschriften")
         .annotate(
             anzahl_belege=Count("altbelege", distinct=True),
             anzahl_eingang=Count("eingangsrechnungen", distinct=True),
@@ -293,8 +296,17 @@ def bearbeiten(request, pk=None):
         wege, fehler = kontaktwege_lesen(
             *(request.POST.getlist(f"weg_{n}") for n in ("art", "bezeichnung", "wert"))
         )
+        anschriften, falsch = anschriften_lesen(
+            kontakt,
+            *(
+                request.POST.getlist(f"anschrift_{n}")
+                for n in ("id", "art", "zusatz", "strasse", "plz", "ort", "land")
+            ),
+        )
+        fehler += falsch
     else:
         wege, fehler = list(kontakt.kontaktwege.all()) if kontakt else [], []
+        anschriften = list(kontakt.anschriften.all()) if kontakt else []
     dubletten = []
     if request.method == "POST" and form.is_valid() and not fehler:
         dubletten = moegliche_dubletten(form.instance, wege)
@@ -302,6 +314,7 @@ def bearbeiten(request, pk=None):
             with transaction.atomic():
                 kontakt = form.save()
                 kontaktwege_speichern(kontakt, wege)
+                anschriften_speichern(kontakt, anschriften)
             aktion = "gespeichert" if pk else "angelegt"
             messages.success(request, f"Adresse {kontakt.kundennummer} {aktion}.")
             if firma and kontakt.firma_id == firma.pk:
@@ -317,6 +330,8 @@ def bearbeiten(request, pk=None):
             "dubletten": dubletten,
             "wege": wege,
             "bezeichnungen": BEZEICHNUNGEN,
+            "anschriften": anschriften,
+            "anschrift_arten": Anschrift.Art.choices,
         },
     )
 

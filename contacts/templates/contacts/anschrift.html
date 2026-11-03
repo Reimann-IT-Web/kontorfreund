@@ -1,0 +1,34 @@
+{% load kf %}<fieldset class="anschrift-zeile" data-anschrift data-plz-bereich>
+  <legend class="visually-hidden">Weitere Anschrift</legend>
+  <input type="hidden" name="anschrift_id" value="{{ a.pk|default:'' }}">
+  <div class="form-grid">
+    <label class="field">
+      <span>Art</span>
+      <select name="anschrift_art">{% for wert, name in anschrift_arten %}<option value="{{ wert }}"{% if a.art == wert %} selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+    </label>
+    <label class="field">
+      <span>Zusatz <span class="optional">optional</span></span>
+      <input name="anschrift_zusatz" type="text" value="{{ a.zusatz }}" maxlength="200" placeholder="z. B. Buchhaltung oder Lager Nord">
+    </label>
+    <label class="field field-wide{% if a.fehler %} has-error{% endif %}">
+      <span>Straße und Hausnummer</span>
+      <input name="anschrift_strasse" type="text" value="{{ a.strasse }}" maxlength="200" autocomplete="off"{% if a.fehler %} aria-invalid="true"{% endif %}>
+    </label>
+    <label class="field">
+      <span>PLZ</span>
+      <input name="anschrift_plz" type="text" value="{{ a.plz }}" maxlength="10" inputmode="numeric" autocomplete="off" data-plz="{% url 'contacts:orte' %}">
+    </label>
+    <label class="field">
+      <span>Ort</span>
+      <input name="anschrift_ort" type="text" value="{{ a.ort }}" maxlength="100" autocomplete="off" data-ort>
+    </label>
+    <label class="field">
+      <span>Land</span>
+      <input name="anschrift_land" type="text" value="{% if a %}{{ a.land }}{% else %}Deutschland{% endif %}" maxlength="100" data-land>
+    </label>
+    <div class="anschrift-entfernen">
+      <button class="btn btn-ghost btn-sm" type="button" data-anschrift-entfernen>{% icon "x" %}Anschrift entfernen</button>
+    </div>
+  </div>
+  {% if a.fehler %}<p class="field-error">{% icon "alert" %}<span>{{ a.fehler }}</span></p>{% endif %}
+</fieldset>

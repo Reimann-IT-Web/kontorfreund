@@ -17,7 +17,7 @@ import pytest
 from django.urls import reverse
 from pypdf import PdfReader
 
-from contacts.models import Kontakt
+from contacts.models import Anschrift, Kontakt
 from core.models import Firmendaten
 from invoicing.models import Rechnung
 
@@ -54,7 +54,35 @@ FAELLE = [
         {"kaeuferreferenz": "Kostenstelle 4711", "xrechnung": True},
         SKONTO,
     ),
+    # An die Rechnungsanschrift, mit Lieferanschrift (K-1); siehe weitere_anschriften.
+    (
+        "xrechnung-anschriften",
+        "regel",
+        {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
+        {},
+    ),
 ]
+
+
+def weitere_anschriften(kunde):
+    """Rechnung an die Buchhaltung, Lieferung ins Lager: Felder des Formulars."""
+    rechnung = Anschrift.objects.create(
+        kontakt=kunde,
+        art="rechnung",
+        zusatz="Buchhaltung",
+        strasse="Postfach 12 34",
+        plz="55001",
+        ort="Mainz",
+    )
+    lager = Anschrift.objects.create(
+        kontakt=kunde,
+        art="lieferung",
+        zusatz="Lager Nord",
+        strasse="Hafenstraße 9",
+        plz="55120",
+        ort="Mainz",
+    )
+    return {"anschrift": rechnung.pk, "lieferanschrift": lager.pk}
 
 
 def java(*argumente):
@@ -119,6 +147,8 @@ def rechnungen(client, settings):
             email="buchhaltung@kunde.test",
             **adresse,
         )
+        if name.endswith("anschriften"):
+            mehr = {**mehr, **weitere_anschriften(kunde)}
 
         neu = reverse("invoicing:neu")
         original = festschreiben(client, neu, kunde, steuerfall, "29,5", "12", **mehr)
