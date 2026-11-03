@@ -1,15 +1,19 @@
 import hashlib
+import tempfile
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connections, transaction
 from django.templatetags.static import static
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 
 from auswertungen import pruefer, tabelle
+from backups import sicherung
 from contacts import datenschutz, plz
 from contacts.models import Kontakt
 from core.models import Firmendaten
@@ -24,8 +28,10 @@ from invoicing.models import Rechnung
 class Command(BaseCommand):
     help = (
         "Prüft, ob alle Teile des Programms vorhanden sind und arbeiten: Seiten, "
-        "Kennwörter, PDF, E-Rechnung und Tabellen. Für das Installationspaket; alles, was "
-        "dabei in der Datenbank entsteht, wird zurückgenommen."
+        "Kennwörter, PDF, E-Rechnung, Tabellen und Datensicherung. Für das "
+        "Installationspaket; alles, was dabei in der Datenbank entsteht, wird "
+        "zurückgenommen, die Datensicherung läuft mit eigener Datenbank in einem "
+        "Wegwerf-Ordner."
     )
 
     def handle(self, **optionen):
@@ -114,7 +120,40 @@ class Command(BaseCommand):
             ),
             "Tabellen aus Excel und LibreOffice lesen",
         )
+        self.pruefen(
+            self.sichern_und_wiederherstellen(),
+            "Datensicherung verschlüsseln und wiederherstellen",
+        )
         self.stdout.write(self.style.SUCCESS("Selbsttest bestanden."))
+
+    def sichern_und_wiederherstellen(self):
+        """Wie auf einem frischen Rechner (Abnahme Phase 4): neue Datenbank, ein Beleg,
+        sichern, beides löschen, wiederherstellen. Die Datenbank dieser Installation
+        bleibt dabei unberührt."""
+        echt = connections["default"]
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as ordner:
+            ordner = Path(ordner)
+            probe = type(echt)({**echt.settings_dict, "NAME": ordner / "db.sqlite3"})
+            connections["default"] = probe
+            try:
+                with override_settings(DATA_DIR=ordner):
+                    call_command("migrate", interactive=False, verbosity=0)
+                    Kontakt.objects.create(firmenname="Kunde", ort="Teststadt")
+                    beleg = ordner / "archiv" / "selbsttest" / "beleg.pdf"
+                    beleg.parent.mkdir(parents=True)
+                    beleg.write_bytes(b"%PDF-1.7 Selbsttest")
+                    sicherung.einrichten("Selbsttest der Datensicherung")
+                    datei, _ = sicherung.sichern()
+                    Kontakt.objects.all().delete()
+                    beleg.unlink()
+                    sicherung.wiederherstellen(datei, "Selbsttest der Datensicherung")
+                    return (
+                        Kontakt.objects.filter(firmenname="Kunde").exists()
+                        and beleg.read_bytes() == b"%PDF-1.7 Selbsttest"
+                    )
+            finally:
+                probe.close()
+                connections["default"] = echt
 
     def pruefen(self, bedingung, was):
         if not bedingung:

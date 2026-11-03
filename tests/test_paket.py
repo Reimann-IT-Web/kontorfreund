@@ -52,9 +52,14 @@ def test_selbsttest_laesst_keine_daten_zurueck(capsys):
     from invoicing.models import Rechnung
 
     call_command("selbsttest")
-    assert "Selbsttest bestanden." in capsys.readouterr().out
+    ausgabe = capsys.readouterr().out
+    assert "in Ordnung: Datensicherung verschlüsseln und wiederherstellen" in ausgabe
+    assert "Selbsttest bestanden." in ausgabe
     assert not Kontakt.objects.exists()
     assert not Rechnung.objects.exists()
+    # Die Probe der Datensicherung lief in einem eigenen Ordner.
+    assert not (settings.DATA_DIR / "datensicherung.json").exists()
+    assert not (settings.DATA_DIR / "sicherung").exists()
 
 
 @pytest.mark.skipif(

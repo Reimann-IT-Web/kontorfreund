@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.27.1 – 03.11.2026
+
+- Der Selbsttest des Installationspakets prüft jetzt auch die Datensicherung: Er legt in einem Wegwerf-Ordner eine eigene Datenbank mit einer Adresse und einem Beleg an, sichert sie verschlüsselt, löscht beides und stellt es wieder her. Das läuft bei jeder neuen Version auf frischen Rechnern mit Windows, macOS und Linux. Ihre Daten und Ihre Sicherungen fasst der Selbsttest nicht an.
+
 ## 0.27.0 – 03.11.2026
 
 - Mehrere Anschriften je Adresse: Unter der Anschrift im Formular der Adresse fügen Sie mit „Weitere Anschrift“ beliebig viele hinzu, jede mit der Art Rechnung, Lieferung oder Sonstige und auf Wunsch einer Zusatzzeile wie „Buchhaltung“ oder „Lager Nord“. Den Ort trägt Kontorfreund auch dort zur PLZ ein. Die Anschrift oben bleibt die Standardanschrift.
