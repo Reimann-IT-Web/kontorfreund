@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.26.0 – 03.11.2026
+
+- Die Kundennummer lässt sich ändern, solange es zu der Adresse noch keinen Beleg gibt: im Formular der Adresse unter „Kundennummer“, als „K-0012“ oder einfach „12“. Bei einer neuen Adresse können Sie sie gleich selbst wählen; leer gelassen vergibt Kontorfreund wie bisher die nächste Nummer. Jede Nummer gibt es nur einmal.
+- Gibt es schon eine Rechnung, ein Angebot, eine Auftragsbestätigung, eine Mahnung, einen Altbeleg oder eine Eingangsrechnung zu der Adresse, bleibt die Nummer fest: Sie steht auf diesen Belegen, und beim DATEV-Export mit eigenem Konto je Kunde ergibt sie das Debitorenkonto. Entwürfe zählen nicht.
+- Das Änderungsprotokoll verzeichnet jede geänderte Kundennummer mit alter und neuer Nummer. Dateien, die schon an der Adresse liegen, bleiben im Ordner der alten Nummer und werden weiter gefunden. Die Verfahrensdokumentation sagt das; beim nächsten Herunterladen entsteht eine neue Fassung.
+
 ## 0.25.0 – 03.11.2026
 
 - Spalten wählen: Mit „Spalten“ rechts über der Adressliste legen Sie fest, was die Liste neben Nummer und Name zeigt: Straße, PLZ, Ort, Land, Kategorien, Telefon, E-Mail, Website und USt-IdNr. „Wie vorgegeben“ stellt Ort, Kategorien und Telefon wieder her. Die Wahl gilt für Ihr Benutzerkonto, auf jedem Gerät. Nach der PLZ lässt sich wie nach dem Ort sortieren.

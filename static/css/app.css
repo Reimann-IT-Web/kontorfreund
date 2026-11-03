@@ -1263,6 +1263,13 @@ select {
   opacity: 1;
 }
 
+input:disabled {
+  border-color: var(--line);
+  background: var(--bg-sunken);
+  color: var(--ink-2);
+  cursor: not-allowed;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -2122,6 +2129,13 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s4);
   margin-bottom: var(--s5);
+}
+
+/* Mehrere Felder untereinander in einer Spalte des Rasters. */
+.form-stapel {
+  display: grid;
+  align-content: start;
+  gap: var(--s4);
 }
 
 .field-wide {

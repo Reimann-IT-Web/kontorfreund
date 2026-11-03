@@ -40,8 +40,8 @@ from contacts.forms import (
     kontaktwege_lesen,
     kontaktwege_speichern,
 )
+from contacts.forms import nummer_lesen as kundennummer
 from contacts.models import Kategorie, Kontakt, Kontaktweg
-from contacts.views import _nummer as kundennummer
 from core.templatetags.kf import zahl
 from invoicing.beleg import EINHEIT_CODE, LAND_CODE
 

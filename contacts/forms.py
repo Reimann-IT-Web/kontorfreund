@@ -1,9 +1,12 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Q
 from django.urls import reverse_lazy
 
+from archive import fristen
 from protokoll.erfassen import eintragen
 from protokoll.models import Eintrag
 
@@ -15,6 +18,15 @@ PLZ_ATTRS = {
     "autocomplete": "postal-code",
     "data-plz": reverse_lazy("contacts:orte"),
 }
+
+# Wie HOECHSTE_NUMMER beim Import.
+HOECHSTE_KUNDENNUMMER = 999_999_999
+
+
+def nummer_lesen(text):
+    """„K-0012“ oder „12“ → 12, sonst None."""
+    treffer = re.fullmatch(r"(?:K-?)?0*(\d+)", text.strip(), flags=re.IGNORECASE)
+    return int(treffer.group(1)) if treffer else None
 
 
 HOECHSTENS_KATEGORIEN = 100
@@ -69,6 +81,14 @@ class KategorieForm(forms.ModelForm):
 
 
 class KontaktForm(forms.ModelForm):
+    # Änderbar, solange es keinen Beleg gibt (Spezifikation K-1): Belege nennen sie,
+    # und bei DATEV ist sie das Debitorenkonto.
+    kundennummer = forms.CharField(
+        label="Kundennummer",
+        max_length=20,
+        required=False,
+        help_text="Leer lassen, dann vergibt Kontorfreund die nächste Nummer.",
+    )
     neue_kategorie = forms.CharField(
         label="Neue Kategorie",
         max_length=50,
@@ -132,6 +152,30 @@ class KontaktForm(forms.ModelForm):
             firmen = firmen.exclude(pk=self.instance.pk)
         self.fields["firma"].queryset = firmen
         self.fields["firma"].empty_label = "– keiner Firma –"
+        nummer = self.fields["kundennummer"]
+        if self.instance.pk:
+            nummer.initial = self.instance.kundennummer
+            if fristen.belege(self.instance):
+                nummer.disabled = True
+                nummer.help_text = (
+                    "Steht schon auf Belegen und lässt sich deshalb nicht mehr ändern."
+                )
+            else:
+                nummer.help_text = (
+                    "Änderbar, solange es keinen Beleg an diese Adresse gibt."
+                )
+
+    def clean_kundennummer(self):
+        """None für die nächste Nummer, bei einer Adresse für ihre bisherige."""
+        text = self.cleaned_data["kundennummer"].strip()
+        if not text:
+            return None
+        nummer = nummer_lesen(text)
+        if not nummer or nummer > HOECHSTE_KUNDENNUMMER:
+            raise ValidationError("Bitte eine Nummer wie K-0012 oder 12.")
+        if Kontakt.objects.filter(nummer=nummer).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(f"K-{nummer:04d} ist schon vergeben.")
+        return nummer
 
     def clean_neue_kategorie(self):
         name = self.cleaned_data["neue_kategorie"]
@@ -140,7 +184,17 @@ class KontaktForm(forms.ModelForm):
     def save(self):
         """Mit der neuen Kategorie, wenn eine eingetragen ist."""
         vorher = self.instance.kategorien_text if self.instance.pk else ""
+        alt = self.instance.kundennummer if self.instance.pk else ""
+        if (nummer := self.cleaned_data["kundennummer"]) is not None:
+            self.instance.nummer = nummer
         kontakt = super().save()
+        # Die Nummer ist kein Feld, das das Protokoll von selbst erfasst.
+        if alt and kontakt.kundennummer != alt:
+            eintragen(
+                Eintrag.Aktion.GEAENDERT,
+                kontakt,
+                [["Kundennummer", alt, kontakt.kundennummer]],
+            )
         if neu := self.cleaned_data["neue_kategorie"]:
             if neu.pk is None:
                 neu.save()

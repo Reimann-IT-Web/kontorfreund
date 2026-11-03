@@ -1,10 +1,12 @@
 import zipfile
+from datetime import date
 from io import BytesIO
 
 import pytest
 from django.urls import reverse
 from openpyxl import load_workbook
 
+from archive.models import Altbeleg
 from contacts.models import Kategorie, Kontakt
 from protokoll.models import Eintrag
 
@@ -323,3 +325,65 @@ def test_spalten_waehlen(client, inhaber):
     inhaber.refresh_from_db()
     assert inhaber.adressen_spalten is None
     assert ">Telefon</th>" in client.get(liste).text
+
+
+def test_kundennummer_aendern_solange_kein_beleg(client):
+    """Spezifikation K-1: änderbar, solange es keinen Beleg gibt, mit Protokoll."""
+    krume = Kontakt.objects.create(firmenname="Bäckerei Krume")
+    Kontakt.objects.create(firmenname="Hof Ahorn")
+    adresse = reverse("contacts:bearbeiten", args=[krume.pk])
+    daten = {"art": "firma", "firmenname": "Bäckerei Krume", "land": "Deutschland"}
+
+    seite = client.get(adresse).text
+    assert 'name="kundennummer" value="K-0001"' in seite
+    assert "Änderbar, solange es keinen Beleg an diese Adresse gibt." in seite
+
+    for eingabe, fehler in [
+        ("2", "K-0002 ist schon vergeben."),
+        ("K-0", "Bitte eine Nummer wie K-0012 oder 12."),
+        ("Kunde 7", "Bitte eine Nummer wie K-0012 oder 12."),
+    ]:
+        antwort = client.post(adresse, {**daten, "kundennummer": eingabe})
+        assert antwort.status_code == 200 and fehler in antwort.text
+
+    # Leer behält die bisherige Nummer.
+    client.post(adresse, {**daten, "kundennummer": ""})
+    krume.refresh_from_db()
+    assert krume.kundennummer == "K-0001"
+
+    antwort = client.post(adresse, {**daten, "kundennummer": "k-12"})
+    assert antwort.status_code == 302
+    krume.refresh_from_db()
+    assert krume.kundennummer == "K-0012"
+    eintrag = Eintrag.objects.filter(objekt_id=str(krume.pk)).latest("pk")
+    assert eintrag.aenderungen == [["Kundennummer", "K-0001", "K-0012"]]
+
+    # Neue Adressen: eigene Nummer, danach geht es von der höchsten aus weiter.
+    client.post(
+        reverse("contacts:neu"), {**daten, "firmenname": "A", "kundennummer": "500"}
+    )
+    client.post(
+        reverse("contacts:neu"), {**daten, "firmenname": "B", "kundennummer": ""}
+    )
+    assert list(
+        Kontakt.objects.filter(firmenname__in=["A", "B"]).values_list(
+            "nummer", flat=True
+        )
+    ) == [500, 501]
+
+    # Mit einem Beleg ist sie gesperrt; was trotzdem ankommt, zählt nicht.
+    Altbeleg.objects.create(
+        art=Altbeleg.Art.RECHNUNG,
+        nummer="260001",
+        datum=date(2026, 3, 1),
+        kontakt=krume,
+        datei="r/260001.pdf",
+        sha256="r" * 64,
+        originalname="260001.pdf",
+    )
+    seite = client.get(adresse).text
+    assert 'value="K-0012" maxlength="20" disabled' in seite
+    assert "Steht schon auf Belegen und lässt sich deshalb nicht mehr ändern." in seite
+    client.post(adresse, {**daten, "kundennummer": "99"})
+    krume.refresh_from_db()
+    assert krume.kundennummer == "K-0012"

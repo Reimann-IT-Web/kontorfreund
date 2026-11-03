@@ -431,7 +431,10 @@ def verfahren():
                             if alt["anzahl"]
                             else []
                         ),
-                        ["archiv/dateien/<Kundennummer>/", "Dateien an Adressen"],
+                        [
+                            "archiv/dateien/<Kundennummer>/",
+                            "Dateien an Adressen, unter der Kundennummer beim Ablegen",
+                        ],
                         ["archiv/dokumentation/", "Fassungen dieser Dokumentation"],
                         ["sicherung/", "Verschlüsselte Datensicherungen"],
                     ],

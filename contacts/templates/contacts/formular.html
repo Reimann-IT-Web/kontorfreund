@@ -34,10 +34,13 @@
   {% endif %}
 
   <div class="form-grid">
-    <fieldset class="field">
-      <legend>Art</legend>
-      <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
-    </fieldset>
+    <div class="form-stapel">
+      <fieldset class="field">
+        <legend>Art</legend>
+        <div class="pills">{% for r in form.art %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+      </fieldset>
+      {% if kontakt %}{% include "core/feld.html" with f=form.kundennummer %}{% else %}{% include "core/feld.html" with f=form.kundennummer optional=True %}{% endif %}
+    </div>
     <fieldset class="field">
       <legend>Kategorien</legend>
       <div class="pills">{% for r in form.kategorien %}<label class="pill">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>

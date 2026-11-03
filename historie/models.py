@@ -100,7 +100,8 @@ class Datei(models.Model):
     """Datei an einer Adresse oder einem Vorgang (Spezifikation K-3).
 
     Liegt unter <DATA_DIR>/archiv/dateien/<Kundennummer>/ und ist damit in jeder
-    Datensicherung. Gelöscht wird erst nur markiert; nach AUFBEWAHREN räumt
+    Datensicherung. Ändert sich die Kundennummer, bleiben ältere Dateien im Ordner
+    der alten; gefunden werden sie immer über `datei`. Gelöscht wird erst nur markiert; nach AUFBEWAHREN räumt
     `aufraeumen` Datei und Eintrag weg.
     """
 

@@ -1,4 +1,3 @@
-import re
 import unicodedata
 from datetime import date
 from urllib.parse import urlencode
@@ -22,6 +21,7 @@ from .forms import (
     KontaktForm,
     kontaktwege_lesen,
     kontaktwege_speichern,
+    nummer_lesen,
 )
 from .models import Kategorie, Kontakt, Kontaktweg
 
@@ -64,12 +64,6 @@ def _export(kontakte):
             zeile.append(wert or None)
         zeilen.append(zeile)
     return [(titel, "text") for titel, _ in EXPORT], zeilen
-
-
-def _nummer(text):
-    """„K-0012“ oder „12“ → 12, sonst None."""
-    treffer = re.fullmatch(r"(?:K-?)?0*(\d+)", text.strip(), flags=re.IGNORECASE)
-    return int(treffer.group(1)) if treffer else None
 
 
 def _alphabetisch(text):
@@ -163,7 +157,7 @@ def liste(request):
                 ).values("kontakt")
             )
         )
-        if (nummer := _nummer(q)) is not None:
+        if (nummer := nummer_lesen(q)) is not None:
             bedingung |= Q(nummer=nummer)
         kontakte = kontakte.filter(bedingung)
     # In Python statt in SQLite: dort stünden „Ärzte“ hinter „Zahnarzt“ und
