@@ -1,0 +1,26 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="starten">Starten und beenden</h2>
+<p>Sie starten Kontorfreund mit dem Symbol auf dem Desktop oder im Startmenü. Es öffnet sich ein kleines Fenster und kurz danach Ihr Browser mit Kontorfreund. Das Fenster muss offen bleiben, solange Sie arbeiten; minimiert ist es auch in Ordnung. Zum Beenden schließen Sie dieses Fenster.</p>
+<p>Kontorfreund läuft nur auf Ihrem Rechner. Ihre Daten gehen nicht ins Internet, außer Sie senden Belege per E-Mail oder haben Benachrichtigungen über Telegram eingerichtet.</p>
+
+<h2 id="anmelden">Konto und Anmeldung</h2>
+<p>Beim allerersten Start legen Sie das Konto des Inhabers an: Name, E-Mail-Adresse und ein Kennwort mit mindestens 12 Zeichen. Kennwörter, die aus Datenlecks bekannt sind, lehnt Kontorfreund ab. Danach melden Sie sich mit E-Mail-Adresse und Kennwort an.</p>
+<p>Nach 8 Stunden ohne Eingabe meldet Kontorfreund Sie ab, spätestens 12 Stunden nach der Anmeldung. Konten für Mitarbeiter legen Sie unter <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#benutzer">Einstellungen › Benutzer</a> an.</p>
+
+<h2 id="erste-rechnung">In drei Schritten zur ersten Rechnung</h2>
+<p>Die Übersicht zeigt diese Schritte, bis die erste Rechnung geschrieben ist.</p>
+<ol>
+  <li><strong>Firmendaten eintragen.</strong> Unter <a href="{% url 'core:einstellungen' %}">Einstellungen</a> stehen Name, Anschrift, Steuernummer und Bankverbindung. Sie erscheinen als Absender auf jeder Rechnung.</li>
+  <li><strong>Erste Adresse anlegen.</strong> Unter <a href="{% url 'contacts:neu' %}">Adressen › Neue Adresse</a>. Nur der Name ist Pflicht; für eine Rechnung braucht es noch Straße, PLZ und Ort.</li>
+  <li><strong>Erste Rechnung schreiben.</strong> Mit „Neue Rechnung“ auf der Übersicht. Kontorfreund prüft dabei die Pflichtangaben. <a href="{% url 'core:hilfe_thema' 'rechnungen' %}">Anleitung Rechnungen</a></li>
+</ol>
+
+<h2 id="sicherung">Gleich zu Beginn: die Datensicherung</h2>
+<p>Richten Sie unter <a href="{% url 'backups:uebersicht' %}">Datensicherung</a> einmal ein Kennwort ein. Danach sichert Kontorfreund an jedem Tag, an dem Sie es benutzen, alles verschlüsselt. Rechnungen müssen 8 Jahre erhalten bleiben; eine Kopie auf einer USB-Platte oder einem NAS schützt sie, wenn die Festplatte ausfällt. <a href="{% url 'core:hilfe_thema' 'datensicherung' %}">Anleitung Datensicherung</a></p>
+
+<h2 id="uebersicht">Die Übersicht</h2>
+<p>Nach der Anmeldung sehen Sie, was heute zu tun ist: fällige Wiedervorlagen, überfällige Rechnungen und Angebote, auf die noch eine Antwort fehlt. Rechts stehen die offenen Beträge, beim Kleinunternehmer der Umsatz im Vergleich zur Grenze, die zuletzt bearbeiteten Adressen und der Stand der Datensicherung. Die Knöpfe oben führen direkt zu einer neuen Rechnung, einem neuen Angebot, einer neuen Adresse und zum Buchen einer Zahlung.</p>
+<p>Die Seitenleiste links führt zu allen Bereichen. Einstellungen, Datensicherung und Protokoll sieht nur der Inhaber.</p>
+{% endblock %}

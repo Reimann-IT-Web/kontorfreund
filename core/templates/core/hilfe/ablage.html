@@ -1,0 +1,17 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="altbelege">Belege aus dem bisherigen Programm</h2>
+<p>Unter <a href="{% url 'archive:liste' %}">Ablage</a> stehen die Rechnungen, Stornos, Gutschriften und Angebote aus Ihrem bisherigen Programm, unverändert als PDF. Suchen Sie nach Nummer oder Kunde und filtern Sie nach Jahr und Art; ein Klick öffnet das PDF. Diese Belege stehen auch im Verlauf der Adressen, im Rechnungsausgangsbuch und im Datenpaket für die Betriebsprüfung.</p>
+
+<h2 id="pruefung">Die tägliche Prüfung</h2>
+<p>Einmal am Tag vergleicht Kontorfreund jede abgelegte Datei, also Rechnungen, Angebote, Auftragsbestätigungen, Mahnungen, Eingangsrechnungen und die alten Belege, mit der Prüfsumme, die beim Ablegen gespeichert wurde. So fällt auf, wenn eine Datei fehlt oder außerhalb des Programms verändert wurde, etwa von Hand im Datenordner oder durch einen Fehler der Festplatte. Das steht dann auf der Übersicht, an der Ablage in der Seitenleiste und im Protokoll. „Jetzt prüfen“ prüft sofort.</p>
+
+<h2 id="zurueckholen">Originale zurückholen</h2>
+<p>Findet die Prüfung eine Abweichung, holt der Inhaber mit „Originale zurückholen“ das Original aus den Datensicherungen zurück, ohne die übrigen Daten anzufassen. Kontorfreund nimmt eine Datei nur, wenn ihre Prüfsumme stimmt, und legt eine veränderte Fassung beiseite, statt sie zu löschen. Ohne eingerichtete <a href="{% url 'core:hilfe_thema' 'datensicherung' %}">Datensicherung</a> geht das nicht.</p>
+
+<h2 id="fristen">Aufbewahrungsfristen</h2>
+<p>Rechnungen und andere Buchungsbelege müssen Sie 8 Jahre aufbewahren, Angebote, Mahnungen und andere Geschäftsbriefe 6 Jahre, jeweils ab Ende des Jahres. Danach verlangt der Datenschutz, Daten über Personen nicht länger als nötig zu speichern.</p>
+<p>Einmal im Jahr zeigt die Übersicht dem Inhaber deshalb, für wie viele Belege die Frist abgelaufen ist. Die Seite „Aufbewahrungsfristen“ unter Ablage listet sie nach Jahren. Wählen Sie aus, was weg kann, und klicken Sie auf „Ausgewählte löschen“, oder behalten Sie mit „Alle behalten“ alles bis zum nächsten Jahr. Gelöscht wird endgültig, mit Dateien und Zahlungen.</p>
+<p>Behalten Sie Belege länger, solange das Finanzamt eine Steuer noch festsetzen oder ändern kann, etwa bei einer laufenden Betriebsprüfung, einem Einspruch oder einer noch nicht abgegebenen Steuererklärung, und wenn Sie sie für einen Rechtsstreit oder eine Gewährleistung brauchen.</p>
+{% endblock %}

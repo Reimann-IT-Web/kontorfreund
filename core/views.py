@@ -24,8 +24,8 @@ from zahlungen.models import Mahnstufe
 from . import firmen
 from . import umsatz as umsaetze
 from .forms import FirmendatenForm
+from .hilfe import THEMEN
 from .models import Firmendaten
-from .navigation import PLATZHALTER
 
 
 def start(request):
@@ -93,14 +93,23 @@ def einstellungen(request):
     )
 
 
-def platzhalter(request, slug):
-    if slug not in PLATZHALTER:
+def hilfe(request, thema=None):
+    if thema is None:
+        return render(
+            request, "core/hilfe/start.html", {"bereich": "hilfe", "themen": THEMEN}
+        )
+    nr = next((i for i, t in enumerate(THEMEN) if t["slug"] == thema), None)
+    if nr is None:
         raise Http404
-    titel, inhalt, phase = PLATZHALTER[slug]
     return render(
         request,
-        "core/platzhalter.html",
-        {"bereich": slug, "titel": titel, "inhalt": inhalt, "phase": phase},
+        f"core/hilfe/{thema}.html",
+        {
+            "bereich": "hilfe",
+            "thema": THEMEN[nr],
+            "zurueck": THEMEN[nr - 1] if nr else None,
+            "weiter": THEMEN[nr + 1] if nr + 1 < len(THEMEN) else None,
+        },
     )
 
 

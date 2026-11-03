@@ -43,12 +43,3 @@ NAVIGATION = [
         "gruppe": "weitere",
     },
 ]
-
-# Bereiche, die noch nicht gebaut sind: (Titel, was kommt, Phase).
-PLATZHALTER = {
-    "hilfe": (
-        "Hilfe",
-        "Kurze Anleitungen zu jedem Bereich und Antworten auf häufige Fragen.",
-        "Phase 4",
-    ),
-}

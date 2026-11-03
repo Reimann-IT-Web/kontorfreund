@@ -1,0 +1,50 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="anlegen">Eine Adresse anlegen</h2>
+<ol>
+  <li>Klicken Sie unter <a href="{% url 'contacts:liste' %}">Adressen</a> auf „Neue Adresse“.</li>
+  <li>Wählen Sie die Art: Firma oder Person. Nur der Name ist Pflicht, alles andere können Sie später ergänzen.</li>
+  <li>Für Rechnungen braucht es Straße, PLZ und Ort. Nach einer deutschen PLZ trägt Kontorfreund den Ort selbst ein; teilen sich mehrere Gemeinden eine PLZ, wählen Sie im Feld Ort.</li>
+  <li>Speichern Sie mit „Adresse anlegen“.</li>
+</ol>
+<p>Die Kundennummer (K-0001, K-0002 …) vergibt Kontorfreund selbst. Sie können sie auch selbst wählen oder ändern, solange es zu der Adresse noch keinen Beleg gibt.</p>
+<p>Gibt es schon eine Adresse mit derselben E-Mail-Adresse oder einem ähnlichen Namen am selben Ort, weist Kontorfreund darauf hin. Öffnen Sie dann die vorhandene oder speichern Sie mit „Trotzdem speichern“.</p>
+
+<h2 id="kategorien">Kategorien</h2>
+<p>Jede Adresse kann mehrere Kategorien haben: Kunde, Interessent, Lieferant und eigene wie „Wartungsvertrag“. Sie wählen sie im Formular der Adresse; eine neue tragen Sie dort unter „Neue Kategorie“ ein. Unter Adressen › „Kategorien“ benennen Sie Kategorien um oder löschen eigene.</p>
+
+<h2 id="mehr">Mehrere Anschriften, Telefonnummern und E-Mail-Adressen</h2>
+<p>Im Formular fügen Sie mit „Weitere Telefonnummer“, „Weitere E-Mail-Adresse“ und „Weitere Anschrift“ beliebig viele hinzu, jeweils mit einer Bezeichnung wie „Mobil“ oder „Buchhaltung“. Für Rechnungen gilt die Adresse im Feld „E-Mail“.</p>
+<p>Eine weitere Anschrift hat die Art Rechnung, Lieferung oder Sonstige. Eine Rechnungsanschrift nimmt Kontorfreund für jede neue Rechnung, eine Lieferanschrift steht auf Angeboten, Auftragsbestätigungen und Rechnungen unter dem Betreff. Im Beleg lässt sich beides unter „Anschrift“ und „Lieferanschrift“ umstellen. Die Anschrift oben im Formular bleibt die Standardanschrift.</p>
+
+<h2 id="ansprechpartner">Ansprechpartner</h2>
+<p>Legen Sie Personen einer Firma als eigene Adresse an und wählen Sie im Formular unter „Ansprechpartner bei“ die Firma. Schneller geht es auf der Seite der Firma mit „Ansprechpartner anlegen“. Die Firma zeigt dann ihre Ansprechpartner mit Telefon und E-Mail, und in ihrem Verlauf stehen auch deren Anrufe und Notizen.</p>
+
+<h2 id="finden">Finden, sortieren, herunterladen</h2>
+<ul>
+  <li>Die Suche über der Liste findet Name, Ort, E-Mail-Adresse und Kundennummer. Daneben filtern Sie nach Kategorie und Ort.</li>
+  <li>Ein Klick auf „Nr.“, „Name“, „PLZ“ oder „Ort“ sortiert die Liste, ein zweiter dreht die Reihenfolge um.</li>
+  <li>Mit „Spalten“ wählen Sie, was die Liste neben Nummer und Name zeigt.</li>
+  <li>„Details“ in einer Zeile klappt Kontaktdaten, Anschrift und Notiz auf, dazu „Rechnung schreiben“, „Angebot schreiben“ und „Bearbeiten“.</li>
+  <li>Unter der Liste laden Sie genau die Liste, die Sie sehen, als Excel, LibreOffice oder CSV herunter.</li>
+</ul>
+
+<h2 id="verlauf">Verlauf und Notizen</h2>
+<p>Ein Klick auf den Namen öffnet die Seite der Adresse mit ihrem Verlauf. Oben tragen Sie unter „Eintragen“ Anrufe, E-Mails, Termine und Notizen ein. Angebote, Rechnungen, Zahlungen, Mahnungen und erledigte Wiedervorlagen erscheinen dort von selbst. Mit „Nachfassen“ an einem Eintrag legen Sie gleich eine Wiedervorlage an.</p>
+
+<h2 id="dateien">Dateien</h2>
+<p>Im Bereich „Dateien“ auf der Seite der Adresse legen Sie Verträge, Fotos oder PDFs ab: mit „Hochladen“ oder indem Sie die Dateien hineinziehen, bis 50 MB je Datei. Eine gelöschte Datei holen Sie mit „Rückgängig“ zurück; endgültig weg ist sie nach 30 Tagen. An einen einzelnen Eintrag im Verlauf hängen Sie Dateien beim Eintragen an.</p>
+
+<h2 id="archiv">Archivieren statt löschen</h2>
+<p>Eine Adresse, die Sie nicht mehr brauchen, archivieren Sie mit „Archivieren“. Sie verschwindet aus Listen und Suche, ihre Belege bleiben erhalten. Über „im Archiv“ oben in der Liste finden Sie sie wieder und holen sie mit „Wiederherstellen“ zurück. Ganz löschen lässt sich eine Adresse nur über „Datenschutz“, wenn keine Belege mehr aufbewahrt werden müssen (<a href="{% url 'core:hilfe_thema' 'finanzamt-datenschutz' %}#loeschen">Löschen und Sperren</a>).</p>
+
+<h2 id="import">Adressen übernehmen</h2>
+<p>Haben Sie Ihre Adressen in Excel, LibreOffice oder einem anderen Programm, übernehmen Sie sie mit „Importieren“ über der Liste:</p>
+<ol>
+  <li>Laden Sie die Datei hoch (CSV, .xlsx oder .ods, Spaltenüberschriften in der ersten Zeile).</li>
+  <li>Ordnen Sie jeder Spalte ein Feld zu. Übliche Spaltennamen wie „PLZ“ oder „E-Mail“ erkennt Kontorfreund selbst.</li>
+  <li>Der Probelauf zeigt, was angelegt wird, welche Zeilen Fehler haben und welche Adressen es vermutlich schon gibt. Mögliche Dubletten überspringt Kontorfreund, wenn Sie nichts anderes wählen.</li>
+</ol>
+<p>Eine Zuordnung können Sie unter einem Namen speichern. Bei der nächsten Datei mit denselben Spalten wählt Kontorfreund sie selbst.</p>
+{% endblock %}

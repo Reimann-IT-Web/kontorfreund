@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ thema.titel }} · Hilfe{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:hilfe' %}">Hilfe</a></li>
+    <li aria-current="page">{{ thema.titel }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ thema.titel }}</h1>
+    <p class="muted">{{ thema.kurz }}</p>
+  </div>
+</div>
+
+<article class="hilfe">
+{% block anleitung %}{% endblock %}
+</article>
+
+<nav class="hilfe-blaettern" aria-label="Weitere Themen">
+  {% if zurueck %}<a href="{% url 'core:hilfe_thema' zurueck.slug %}"><span class="small muted">Vorheriges Thema</span>{{ zurueck.titel }}</a>{% endif %}
+  {% if weiter %}<a class="hilfe-weiter" href="{% url 'core:hilfe_thema' weiter.slug %}"><span class="small muted">Nächstes Thema</span>{{ weiter.titel }}</a>{% endif %}
+</nav>
+{% endblock %}

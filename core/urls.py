@@ -12,5 +12,6 @@ urlpatterns = [
     path("firmen/neu/", views.firma_anlegen, name="firma_anlegen"),
     path("firmen/entfernen/", views.firma_entfernen, name="firma_entfernen"),
     path("firmen/offen/", views.firma_offen, name="firma_offen"),
-    path("<slug:slug>/", views.platzhalter, name="platzhalter"),
+    path("hilfe/", views.hilfe, name="hilfe"),
+    path("hilfe/<slug:thema>/", views.hilfe, name="hilfe_thema"),
 ]

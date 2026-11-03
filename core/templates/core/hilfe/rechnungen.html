@@ -1,0 +1,37 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="schreiben">Eine Rechnung schreiben</h2>
+<p>Sie beginnen mit „Neue Rechnung“ auf der Übersicht oder unter <a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a>, oder mit „Rechnung schreiben“ an einer Adresse; dann ist der Empfänger schon gewählt. Die Rechnung entsteht in drei Schritten.</p>
+<ol>
+  <li><strong>Empfänger &amp; Bedingungen.</strong> Wählen Sie den Empfänger und tragen Sie den Leistungszeitraum ein; er ist Pflicht. Wurde die Leistung an einem Tag erbracht, genügt „von“. Unter „Zahlungsziel“ steht, bis wann der Kunde zahlen soll, unter „Skonto“ auf Wunsch Prozent und Frist. Bei „Umsatzsteuer“ wählen Sie den Steuerfall: Kleinunternehmer nach § 19, 19 % Umsatzsteuer oder § 13b, wenn der Kunde die Steuer schuldet. Betreff und ein Text vor den Positionen sind freiwillig.</li>
+  <li><strong>Positionen.</strong> Tippen Sie die Bezeichnung ein: Kontorfreund schlägt passende <a href="{% url 'core:hilfe_thema' 'artikel' %}">Artikel</a> mit Preis vor und übernimmt Beschreibung, Einheit und Preis. Dazu Menge und Einzelpreis; „Position hinzufügen“ legt die nächste an.</li>
+  <li><strong>Prüfen &amp; festschreiben.</strong> Ein Text nach den Positionen ist freiwillig; Zahlungsfrist und Bankverbindung druckt Kontorfreund selbst. „GiroCode drucken“ setzt einen Code auf die Rechnung, mit dem der Kunde per Banking-App überweist. „Hinweis auf Zahlungsverzug drucken“ ist für Privatkunden: Mit dem Hinweis sind sie 30 Tage nach Fälligkeit von selbst in Verzug.</li>
+</ol>
+<p>Rechts zeigt die Prüfung, welche Pflichtangaben noch fehlen, etwa die Anschrift des Empfängers oder Ihre Steuernummer. Mit „Entwurf speichern“ machen Sie später weiter, „Vorschau als PDF“ zeigt die Rechnung, wie der Kunde sie bekommt. Einen Entwurf, den Sie nicht mehr brauchen, entfernen Sie mit „Entwurf löschen“.</p>
+
+<h2 id="festschreiben">Festschreiben</h2>
+<p>Stimmt alles, klicken Sie auf „Festschreiben“ und bestätigen. Erst jetzt erhält die Rechnung ihre Nummer. Kontorfreund legt sie als ZUGFeRD-PDF unveränderbar ab und bewahrt sie 8 Jahre auf. Danach lässt sie sich nicht mehr ändern, nur noch korrigieren oder stornieren. Sehen Sie sie deshalb vorher in der Vorschau an.</p>
+<p>Von nun an steht die Rechnung unter <a href="{% url 'zahlungen:liste' %}">Offene Posten</a>, bis sie bezahlt ist.</p>
+
+<h2 id="senden">Senden</h2>
+<p>Auf der Seite der festgeschriebenen Rechnung laden Sie das PDF mit „Herunterladen“ herunter und hängen es in Ihrem E-Mail-Programm an, oder Sie drucken es aus. Ist der <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#e-mail">E-Mail-Versand</a> eingerichtet, schickt Kontorfreund sie auch selbst: Unter „Per E-Mail senden“ stehen Empfänger, Betreff und Nachricht schon da; ändern Sie, was Sie möchten. Mit „Kopie an mich“ bekommen Sie die E-Mail selbst auch. „Jetzt senden“ verschickt sie, und die Rechnung gilt als versendet.</p>
+
+<h2 id="xrechnung">XRechnung für Behörden und große Kunden</h2>
+<p>Jede Rechnung ist ein ZUGFeRD-PDF und damit schon eine E-Rechnung. Verlangt ein Kunde eine XRechnung, etwa eine Behörde, kreuzen Sie bei seiner Adresse unter „E-Rechnung“ „Rechnungen zusätzlich als XRechnung“ an. Dazu braucht es eine Käuferreferenz, bei Behörden die Leitweg-ID, oder seine E-Mail-Adresse. Ihre eigene Telefonnummer, E-Mail-Adresse und IBAN müssen in den Einstellungen stehen.</p>
+<p>Beim Festschreiben entsteht dann zusätzlich die XML-Datei. Sie laden sie mit „XRechnung (XML)“ herunter; beim Senden aus Kontorfreund hängt sie mit an. Die XML-Datei ist das maßgebliche Original.</p>
+
+<h2 id="korrigieren">Fehler korrigieren: Korrektur oder Storno</h2>
+<p>Auf der Seite einer festgeschriebenen Rechnung steht „Fehler in der Rechnung?“.</p>
+<ul>
+  <li><strong>Betrag mindern</strong>, wenn der Kunde zu viel berechnet bekommen hat. Kontorfreund legt den Entwurf einer Rechnungskorrektur an. Tragen Sie ein, um wie viel sich jede Position mindert, mit Minus vor der Menge, etwa −2 Std. Positionen, die bleiben, wie sie waren, entfernen Sie. Für einen Nachlass fügen Sie eine Position wie „Preisnachlass“ mit der Menge −1 hinzu. Dann schreiben Sie die Korrektur fest und senden sie dem Kunden.</li>
+  <li><strong>Stornieren</strong>, wenn mehr falsch ist, etwa der Empfänger. Kontorfreund schreibt eine Stornorechnung über den vollen Betrag und legt sie unveränderbar ab. Ist „Danach eine Kopie zum Korrigieren anlegen“ angekreuzt, entsteht gleich ein neuer Entwurf mit denselben Angaben; er bekommt beim Festschreiben eine neue Nummer.</li>
+</ul>
+<p>Beides lässt sich nicht rückgängig machen. Ist eine Rechnung schon teilweise korrigiert, lässt sie sich nur noch weiter mindern.</p>
+
+<h2 id="kopieren">Wiederkehrende Rechnungen</h2>
+<p>Für eine Rechnung, die Sie regelmäßig ähnlich schreiben, etwa für einen Wartungsvertrag, öffnen Sie die letzte und klicken auf „Kopieren“. Es entsteht ein neuer Entwurf mit Empfänger und Positionen; Sie passen nur den Leistungszeitraum an.</p>
+
+<h2 id="liste">Die Liste der Rechnungen</h2>
+<p>Unter <a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a> stehen alle Rechnungen mit Stand, darüber die Reiter für Angebote und Auftragsbestätigungen. Mit „Wiedervorlage“ auf der Seite einer Rechnung erinnern Sie sich an etwas, das noch zu tun ist.</p>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="anlegen">Einen Artikel anlegen</h2>
+<p>Was Sie öfter berechnen, ob Stundensatz, Pauschale oder Ware, legen Sie einmal unter <a href="{% url 'artikel:liste' %}">Artikel</a> mit „Neuer Artikel“ an: Bezeichnung, auf Wunsch eine Beschreibung, Einheit und Preis. Die Nummer vergibt Kontorfreund.</p>
+<p>Ändern Sie den Preis später, bleiben bestehende Rechnungen und Angebote, wie sie sind.</p>
+
+<h2 id="einfuegen">Artikel in Belegen</h2>
+<p>In Rechnungen, Angeboten und Auftragsbestätigungen bietet das Feld Bezeichnung jeder Position Ihre Artikel an, sobald Sie zu tippen beginnen. Wählen Sie einen aus, übernimmt die Position Beschreibung, Einheit und Preis. Einen Preis, den Sie danach von Hand ändern, lässt Kontorfreund stehen. Alternativ wählen Sie mit „Artikel einfügen“ unter den Positionen aus der Liste Ihrer Artikel.</p>
+
+<h2 id="inaktiv">Nicht mehr anbieten</h2>
+<p>Bieten Sie etwas nicht mehr an, öffnen Sie den Artikel und klicken unter „Nicht mehr anbieten“ auf „Auf inaktiv setzen“. Er erscheint dann nicht mehr in der Auswahl, bleibt aber erhalten. Über „inaktiv“ oben in der Liste finden Sie ihn wieder und aktivieren ihn bei Bedarf mit „Wieder aktivieren“.</p>
+
+<h2 id="import">Artikel übernehmen</h2>
+<p>Eine Preisliste aus Excel oder LibreOffice übernehmen Sie mit „Importieren“ über der Liste, so wie <a href="{% url 'core:hilfe_thema' 'adressen' %}#import">Adressen</a>. Preise wie „1.234,50 €“ und Einheiten wie „Stk“ oder „h“ versteht der Import.</p>
+{% endblock %}

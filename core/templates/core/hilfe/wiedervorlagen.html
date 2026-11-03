@@ -1,0 +1,19 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="anlegen">Eine Wiedervorlage anlegen</h2>
+<p>Eine Wiedervorlage erinnert Sie an etwas, das Sie an einem bestimmten Tag tun wollen: ein Angebot nachfassen, zurückrufen, einen Termin vorbereiten. Am schnellsten legen Sie sie dort an, wo der Anlass ist:</p>
+<ul>
+  <li>mit „Wiedervorlage“ auf der Seite einer Adresse, eines Angebots oder einer Rechnung,</li>
+  <li>mit „Nachfassen“ an einem Eintrag im Verlauf einer Adresse,</li>
+  <li>oder unter <a href="{% url 'wiedervorlagen:liste' %}">Wiedervorlagen</a> mit „Neue Wiedervorlage“.</li>
+</ul>
+<p>Tragen Sie ein, was zu tun ist und wann, auf Wunsch mit Uhrzeit und einer Notiz. Arbeiten mehrere im Programm, wählen Sie, wer zuständig ist.</p>
+
+<h2 id="faellig">Wenn sie fällig ist</h2>
+<p>Am Fälligkeitstag steht die Wiedervorlage auf der Übersicht unter „Heute zu tun“, die der nächsten sieben Tage unter „Demnächst“. Die Seitenleiste zählt, wie viele fällig sind. Sind Benachrichtigungen über <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#telegram">Telegram</a> eingerichtet, kommen sie morgens in der Tagesübersicht aufs Handy, und vor Terminen mit Uhrzeit kommt eine Erinnerung.</p>
+
+<h2 id="erledigen">Verschieben und erledigen</h2>
+<p>In jeder Liste verschieben Sie eine Wiedervorlage mit „Verschieben“ auf morgen, um eine Woche oder um einen Monat. Mit „Erledigt“ schließen Sie sie ab; auf ihrer Seite können Sie dazu das Ergebnis notieren. Erledigte Wiedervorlagen stehen danach im Verlauf der Adresse. Mit „Wieder öffnen“ holen Sie eine zurück.</p>
+<p>Oben in der Liste wechseln Sie zwischen offenen und erledigten und, wenn mehrere im Programm arbeiten, zwischen Ihren und allen.</p>
+{% endblock %}

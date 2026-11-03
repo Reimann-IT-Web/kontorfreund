@@ -1,0 +1,47 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Einstellungen, Benutzer, Benachrichtigungen und Firmen sieht nur der Inhaber. „Mein Konto“ hat jeder.</p>
+
+<h2 id="firmendaten">Firmendaten</h2>
+<p>Unter <a href="{% url 'core:einstellungen' %}">Einstellungen</a> stehen die Angaben, die als Absender auf jedem Beleg erscheinen:</p>
+<ul>
+  <li><strong>Unternehmen:</strong> Firmenname, auf Wunsch eine Marke oder ein Zusatz, Inhaber und Anschrift.</li>
+  <li><strong>Logo und Marke:</strong> ein Logo als SVG, PNG oder JPG bis 1 MB; es steht oben links auf jeder Rechnung.</li>
+  <li><strong>Steuer:</strong> Steuernummer oder USt-IdNr. und ob Sie Kleinunternehmer nach § 19 UStG sind.</li>
+  <li><strong>Kontakt und Bank:</strong> E-Mail-Adresse, Telefon, IBAN und Bank. Die IBAN braucht es für den GiroCode, Telefon, E-Mail-Adresse und IBAN für die XRechnung.</li>
+</ul>
+<p>Eine Änderung gilt für neue Belege. Festgeschriebene Rechnungen behalten die Angaben, mit denen sie geschrieben wurden.</p>
+
+<h2 id="e-mail">E-Mail-Versand</h2>
+<p>Damit Kontorfreund Rechnungen, Angebote und Mahnungen selbst verschickt, tragen Sie unter „E-Mail-Versand“ den Postausgangsserver Ihres E-Mail-Anbieters ein: Server, Port, Verschlüsselung, Benutzername (meist Ihre E-Mail-Adresse) und Kennwort. Die Angaben finden Sie beim Anbieter unter „SMTP“ oder „Postausgang“. Bei Gmail brauchen Sie ein App-Passwort. Ohne diese Angaben laden Sie die PDFs herunter und hängen sie in Ihrem E-Mail-Programm an.</p>
+
+<h2 id="benutzer">Benutzer und Rollen</h2>
+<p>Unter Einstellungen › „Benutzer“ legen Sie Konten für weitere Personen an. Es gibt drei Rollen:</p>
+<ul>
+  <li><strong>Inhaber</strong> dürfen alles.</li>
+  <li><strong>Mitarbeiter</strong> bearbeiten Adressen und Belege, sehen aber keine Einstellungen, keine Datensicherung und kein Protokoll.</li>
+  <li><strong>Prüfer</strong> des Finanzamts lesen nur, nur die Jahre der Prüfung und nur bis zu einem festen Tag (<a href="{% url 'core:hilfe_thema' 'finanzamt-datenschutz' %}#pruefung">Betriebsprüfung</a>).</li>
+</ul>
+<p>Mit „Konto anlegen“ vergeben Sie ein erstes Kennwort, das Sie persönlich weitergeben. Bei der ersten Anmeldung wählt die Person damit ein eigenes. Ein Klick auf einen Namen öffnet das Konto: Dort ändern Sie die Rolle, setzen ein vergessenes Kennwort neu, setzen die Zwei-Faktor-Anmeldung zurück, melden das Konto auf allen Geräten ab, sperren den Zugang oder heben eine Sperre nach Fehlversuchen auf.</p>
+
+<h2 id="konto">Mein Konto</h2>
+<p>Ein Klick auf Ihren Namen unten in der Seitenleiste öffnet „Mein Konto“. Dort ändern Sie Ihr Kennwort, sehen, auf welchen Geräten Sie angemeldet sind, und melden fremde ab.</p>
+<p>Die Zwei-Faktor-Anmeldung schützt Ihr Konto, auch wenn jemand Ihr Kennwort kennt: Nach dem Kennwort fragt Kontorfreund nach einem Code aus einer Authenticator-App auf Ihrem Telefon. Unter „Zwei-Faktor-Anmeldung“ klicken Sie auf „Einrichten“, scannen den QR-Code mit der App, geben Kennwort und Code ein und klicken auf „Einschalten“.</p>
+
+<h2 id="telegram">Benachrichtigungen über Telegram</h2>
+<p>Unter Einstellungen › „Benachrichtigungen“ verbinden Sie Kontorfreund mit Telegram. Dann kommt morgens eine Übersicht aufs Handy mit den Wiedervorlagen des Tages, nicht bezahlten Rechnungen und Eingangsrechnungen, die Sie bald zahlen müssen; vor Terminen mit Uhrzeit eine Erinnerung; und sofort eine Nachricht, wenn eine abgelegte Datei fehlt oder verändert ist. Telegram ist kostenlos.</p>
+<ol>
+  <li>Suchen Sie in Telegram <strong>@BotFather</strong> (mit blauem Haken) und schicken Sie ihm <code>/newbot</code>. Er fragt nach einem Namen und einem Benutzernamen, der auf „bot“ endet.</li>
+  <li>BotFather antwortet mit einem Schlüssel. Fügen Sie ihn in Kontorfreund ein und speichern Sie.</li>
+  <li>Scannen Sie den angezeigten Code mit dem Handy, tippen Sie in Telegram auf „Starten“ und danach in Kontorfreund auf „Verbindung prüfen“.</li>
+</ol>
+<p>Unter „Wann“ wählen Sie die Uhrzeit der Tagesübersicht und wie lange vor einem Termin die Erinnerung kommt; „Testnachricht senden“ probiert es aus. Namen von Kunden und Lieferanten gehen nicht an Telegram, nur Titel der Wiedervorlagen, Rechnungsnummern und Beträge.</p>
+<p>Nachrichten kommen nur, solange Kontorfreund läuft, auch minimiert. Unter Windows startet es mit „Beim Anmelden an Windows im Hintergrund starten“ von selbst.</p>
+
+<h2 id="firmen">Mehrere Firmen</h2>
+<p>Führen Sie mehr als eine Firma, legen Sie unter Einstellungen › „Firmen“ mit „Weitere Firma anlegen“ eine weitere an. Jede hat eigene Adressen, Rechnungen, Nummernkreise, Benutzer und Datensicherung. In der neuen Firma legen Sie zuerst ein Konto an, tragen die Firmendaten ein und richten die Datensicherung ein. Gewechselt wird mit „Firma wechseln“ in der Seitenleiste oder schon auf der Anmeldeseite; Kontorfreund startet dabei kurz neu.</p>
+
+<h2 id="protokoll">Protokoll</h2>
+<p>Das <a href="{% url 'protokoll:liste' %}">Protokoll</a> in der Seitenleiste verzeichnet, wer wann etwas angelegt, geändert oder gelöscht hat, mit altem und neuem Wert, dazu jede Anmeldung und jede Abweichung in der Ablage. Niemand kann Einträge ändern oder löschen.</p>
+{% endblock %}

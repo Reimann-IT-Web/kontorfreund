@@ -1,0 +1,35 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<h2 id="liste">Die offenen Posten</h2>
+<p>Jede festgeschriebene Rechnung steht unter <a href="{% url 'zahlungen:liste' %}">Offene Posten</a>, bis sie bezahlt ist. Oben wählen Sie, ob Sie die offenen, die überfälligen, die bezahlten oder alle Rechnungen sehen, und auf Wunsch nur die eines Kunden. Für einen Kunden zeigt Kontorfreund dann einen Kontoauszug mit allen Rechnungen und Zahlungen. Unter der Liste laden Sie sie als Excel, LibreOffice oder CSV herunter.</p>
+
+<h2 id="buchen">Eine Zahlung buchen</h2>
+<ol>
+  <li>Klicken Sie in der Liste bei der Rechnung auf „Zahlung“, oder auf der Seite der Rechnung auf „Zahlung buchen“.</li>
+  <li>Tragen Sie ein, wann das Geld eingegangen ist und wie viel, so wie es auf dem Kontoauszug steht. Die Art ist meist Überweisung.</li>
+  <li>Bestätigen Sie mit „Zahlung buchen“.</li>
+</ol>
+<p>Zahlt der Kunde in Raten, buchen Sie jede Zahlung einzeln; Kontorfreund zeigt, was noch offen ist. Hat der Kunde innerhalb der Skontofrist gezahlt, buchen Sie einfach den eingegangenen Betrag: Das Skonto zieht Kontorfreund selbst ab. Eine falsch gebuchte Zahlung löschen Sie auf der Seite der Rechnung.</p>
+
+<h2 id="ausbuchen">Was nicht mehr kommt, und zu viel Gezahltes</h2>
+<p>Fehlt ein kleiner Rest, etwa weil der Kunde Bankgebühren abgezogen hat, oder ist der Kunde zahlungsunfähig, schließen Sie die Rechnung mit „Ausbuchen“ ab und nennen den Grund.</p>
+<p>Hat der Kunde zu viel gezahlt, überweisen Sie ihm den Betrag zurück und buchen mit „Rückzahlung von heute buchen“ die Rückzahlung.</p>
+
+<h2 id="mahnen">Mahnen</h2>
+<p>Kontorfreund kennt drei Stufen: Zahlungserinnerung, 1. Mahnung und 2. Mahnung. Ist eine Stufe fällig, steht die Rechnung in den offenen Posten unter „Mahnung fällig“ und auf der Seite der Rechnung unter „Mahnungen“.</p>
+<ol>
+  <li>Klicken Sie auf der Seite der Rechnung auf „Zahlungserinnerung schreiben“ (bzw. die fällige Mahnung).</li>
+  <li>Prüfen Sie Datum, Frist und Text. Die Anrede setzt Kontorfreund davor, Aufstellung, Betrag, Frist und Bankverbindung darunter.</li>
+  <li>Auf Wunsch kreuzen Sie „Verzugszinsen berechnen“ an: 5 Prozentpunkte über dem Basiszinssatz bei Privatkunden, 9 bei Unternehmen. Gegenüber Unternehmen steht Ihnen außerdem die Verzugspauschale von 40 € zu.</li>
+  <li>„Vorschau“ rechnet die Beträge neu und zeigt das Schreiben. Danach erstellen Sie es; Kontorfreund legt es als PDF ab.</li>
+  <li>Laden Sie es herunter oder senden Sie es per E-Mail. Haben Sie es doch nicht verschickt, entfernen Sie es mit „Löschen, weil nicht verschickt“.</li>
+</ol>
+<p>Sind alle Stufen ausgeschöpft, käme als Nächstes ein gerichtlicher Mahnbescheid. Den beantragen Sie online beim zuständigen Mahngericht.</p>
+
+<h2 id="einstellen">Mahnwesen einstellen</h2>
+<p>Der Inhaber legt unter „Mahnwesen einstellen“ (oben in den offenen Posten) für jede Stufe fest, wann Kontorfreund sie vorschlägt, mit welcher Frist, Gebühr und welchem Text. Mahngebühren dürfen nur tatsächliche Kosten wie Porto abdecken. Das Schreiben, das den Kunden erst in Verzug setzt, meist die Zahlungserinnerung, darf nichts kosten.</p>
+
+<h2 id="basiszins">Basiszinssatz</h2>
+<p>Die Verzugszinsen richten sich nach dem Basiszinssatz. Die Deutsche Bundesbank gibt ihn zum 1. Januar und 1. Juli bekannt. Tragen Sie den neuen Satz dann unter „Mahnwesen einstellen“ bei „Basiszinssatz“ ein. Ist der letzte Eintrag nicht mehr aktuell, weist Kontorfreund in den offenen Posten darauf hin.</p>
+{% endblock %}

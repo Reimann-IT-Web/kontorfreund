@@ -1,0 +1,23 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Alle Auswertungen gelten für einen Zeitraum, den Sie oben wählen: ein Jahr, ein Quartal oder einen Monat. Sie enthalten die festgeschriebenen Rechnungen, Stornos und Korrekturen; Entwürfe zählen nicht.</p>
+
+<h2 id="ausgangsbuch">Rechnungsausgangsbuch</h2>
+<p>Das <a href="{% url 'auswertungen:rechnungsausgangsbuch' %}">Rechnungsausgangsbuch</a> listet jede Rechnung mit Kunde, Netto, Umsatzsteuer, Brutto, Zahlungsstand und offenem Betrag, darunter die Summen. Belege aus Ihrem bisherigen Programm stehen mit dem gedruckten Betrag dabei. Mit den Knöpfen oben laden Sie es als CSV, Excel oder LibreOffice herunter, mit echten Zahlen zum Weiterrechnen.</p>
+
+<h2 id="datev">DATEV-Export für den Steuerberater</h2>
+<p>Der <a href="{% url 'auswertungen:datev' %}">DATEV-Export</a> macht aus den Rechnungen des Zeitraums einen Buchungsstapel, den Ihr Steuerberater in sein Programm einliest. Die Vorschau zeigt jede Buchung mit Konto und Gegenkonto.</p>
+<ol>
+  <li>Der Inhaber trägt unter „DATEV einstellen“ einmal die Berater- und die Mandantennummer ein, die der Steuerberater nennt, und wählt den Kontenrahmen SKR 03 oder SKR 04.</li>
+  <li>Bei den Kundenkonten wählen Sie ein Konto je Kunde (10000 plus Kundennummer, K-0007 bucht also auf 10007) oder ein Sammelkonto für alle.</li>
+  <li>Die Erlöskonten sind die üblichen Standardkonten. Lassen Sie sie vom Steuerberater bestätigen, bevor er die Datei zum ersten Mal einliest.</li>
+  <li>Danach laden Sie die „DATEV-Datei“ herunter oder, mit allen Rechnungen als PDF, „Mit Rechnungen (ZIP)“.</li>
+</ol>
+
+<h2 id="betriebspruefung">Betriebsprüfung</h2>
+<p>Unter „Betriebsprüfung“ erstellt der Inhaber das Datenpaket, das ein Prüfer des Finanzamts verlangen kann. <a href="{% url 'core:hilfe_thema' 'finanzamt-datenschutz' %}#pruefung">Mehr dazu</a></p>
+
+<h2 id="umsatz">Umsatz und Kleinunternehmergrenze</h2>
+<p>Sind Sie Kleinunternehmer, zeigt die Übersicht Ihren Umsatz des laufenden Jahres im Vergleich zur Grenze. Ab 80 % warnt Kontorfreund beim Schreiben jeder Rechnung, damit Sie rechtzeitig mit Ihrem Steuerberater sprechen können.</p>
+{% endblock %}

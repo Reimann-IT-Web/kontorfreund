@@ -1,0 +1,21 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Seit 2025 müssen Sie E-Rechnungen anderer Unternehmen annehmen können. Kontorfreund zeigt sie lesbar an, ordnet sie dem Lieferanten zu und bewahrt das Original unverändert auf.</p>
+
+<h2 id="hochladen">Eine E-Rechnung hochladen</h2>
+<ol>
+  <li>Speichern Sie den Anhang aus der E-Mail des Lieferanten: eine XML-Datei (XRechnung) oder ein PDF mit eingebetteten Daten (ZUGFeRD oder Factur-X).</li>
+  <li>Wählen Sie unter <a href="{% url 'eingang:liste' %}">Eingangsrechnungen</a> die Datei aus und klicken Sie auf „Hochladen“. Mehrere Dateien gehen auf einmal.</li>
+</ol>
+<p>Eine gewöhnliche PDF-Rechnung ohne eingebettete Daten ist keine E-Rechnung; Kontorfreund weist sie ab. Bewahren Sie sie wie bisher auf.</p>
+
+<h2 id="lesen">Was Sie sehen</h2>
+<p>Die Seite der Rechnung zeigt Absender und Empfänger, Nummer, Datum, Fälligkeit, alle Positionen, die Summen und die Zahlungsangaben mit IBAN und Verwendungszweck. Bei einem PDF öffnet „PDF öffnen“ das Druckbild, „Original herunterladen“ liefert die Datei genau so, wie sie ankam. Überweisen müssen Sie weiter in Ihrem Online-Banking.</p>
+
+<h2 id="zuordnen">Dem Lieferanten zuordnen</h2>
+<p>Passen USt-IdNr. oder Name genau zu einer Ihrer Adressen, ordnet Kontorfreund die Rechnung beim Hochladen selbst zu. Sonst wählen Sie unter „Lieferant“ die Adresse und klicken auf „Zuordnen“, oder Sie legen den Lieferanten mit „Als neue Adresse anlegen“ an. Danach steht die Rechnung im Verlauf seiner Adresse.</p>
+
+<h2 id="aufbewahren">Aufbewahren</h2>
+<p>Das Original bleibt unverändert in der Ablage, wird täglich geprüft und gesichert. Bei einer XRechnung ist die XML-Datei das Original, das aufbewahrt werden muss. Sind <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#telegram">Benachrichtigungen über Telegram</a> eingerichtet, nennt die Nachricht am Morgen Eingangsrechnungen, die Sie bald zahlen müssen.</p>
+{% endblock %}

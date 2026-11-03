@@ -9,6 +9,7 @@ from contacts.models import Kontakt
 from wiedervorlagen.models import Wiedervorlage
 
 from . import firmen
+from .hilfe import THEMEN
 from .models import Firmendaten
 from .navigation import NAVIGATION
 from .templatetags.kf import euro
@@ -135,6 +136,14 @@ def navigation(request):
                 "url": reverse("protokoll:liste"),
             },
         ]
+    suchindex += [
+        {
+            "titel": f"Hilfe: {t['titel']}",
+            "info": t["kurz"],
+            "url": reverse("core:hilfe_thema", args=[t["slug"]]),
+        }
+        for t in THEMEN
+    ]
     suchindex += [
         {
             "titel": k.anzeigename,

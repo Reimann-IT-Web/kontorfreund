@@ -380,4 +380,7 @@ def test_nur_fuer_den_inhaber(kunde, mitarbeiter):
         url = reverse(f"contacts:{name}", args=[kunde.pk])
         assert mitarbeiter.post(url, {"bestaetigt": "1"}).status_code == 403
     assert Kontakt.objects.filter(gesperrt_am__isnull=True).exists()
-    assert "Datenschutz" not in mitarbeiter.get(reverse("contacts:liste")).text
+    assert (
+        reverse("contacts:datenschutz", args=[kunde.pk])
+        not in mitarbeiter.get(reverse("contacts:liste")).text
+    )

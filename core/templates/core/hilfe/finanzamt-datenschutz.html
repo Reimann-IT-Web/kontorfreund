@@ -1,0 +1,35 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Was das Finanzamt und die Datenschutz-Grundverordnung verlangen, erledigt Kontorfreund zum großen Teil selbst: Festgeschriebene Belege sind unveränderbar, werden täglich geprüft und gesichert, und das Protokoll hält jede Änderung fest. Die Aufgaben auf dieser Seite sind dem Inhaber vorbehalten.</p>
+
+<h2 id="dokumentation">Verfahrensdokumentation und Verzeichnis</h2>
+<p>Unter Einstellungen › <a href="{% url 'dokumentation:seite' %}">Dokumentation</a> erstellt Kontorfreund zwei Dokumente als PDF: die Verfahrensdokumentation nach den GoBD, nach der das Finanzamt bei einer Betriebsprüfung fragt, und das Verzeichnis von Verarbeitungstätigkeiten mit den technischen und organisatorischen Maßnahmen nach der DSGVO.</p>
+<ol>
+  <li>Was das Programm betrifft, schreibt Kontorfreund selbst, aus Ihren Einstellungen.</li>
+  <li>Unter „Ihr Betrieb“ ergänzen Sie in eigenen Worten ein paar Sätze, etwa wie Sie Kontoauszüge und Papierbelege aufbewahren. Unter „Datenschutz“ und „Schutz am Arbeitsplatz“ kreuzen Sie an, was bei Ihnen zutrifft. Speichern Sie.</li>
+  <li>„Herunterladen“ erstellt das PDF. Was noch fehlt, steht darin als „Noch offen“.</li>
+</ol>
+<p>Hat sich seit dem letzten Herunterladen etwas geändert, legt Kontorfreund eine neue Fassung mit Datum ab; die früheren bleiben erhalten.</p>
+
+<h2 id="pruefung">Betriebsprüfung</h2>
+<p>Der Prüfer des Finanzamts darf auf Ihre Daten zugreifen (§ 147 Abs. 6 AO). Kontorfreund kennt beide üblichen Wege:</p>
+<ul>
+  <li><strong>Datenpaket:</strong> Unter Auswertungen › <a href="{% url 'auswertungen:betriebspruefung' %}">Betriebsprüfung</a> wählen Sie ein Jahr und klicken auf „Datenpaket herunterladen“. Die ZIP-Datei nach dem Beschreibungsstandard der Finanzverwaltung geben Sie dem Prüfer, zum Beispiel auf einem USB-Stick; seine Software liest sie ohne weitere Erklärung ein. Für eine Prüfung über mehrere Jahre laden Sie je Jahr ein Paket herunter.</li>
+  <li><strong>Zugang im Programm:</strong> Unter Einstellungen › Benutzer › „Zugang für einen Betriebsprüfer“ legen Sie ein Konto mit den Jahren der Prüfung und einem letzten Tag an, höchstens ein Jahr voraus. Der Prüfer sieht nur Rechnungen, Zahlungen, Mahnungen, Eingangsrechnungen, die alten Belege, das Rechnungsausgangsbuch, das Protokoll und die Verfahrensdokumentation dieser Jahre und kann nichts ändern. Am letzten Tag endet der Zugang von selbst; sperren können Sie ihn jederzeit.</li>
+</ul>
+
+<h2 id="auskunft">Auskunft über gespeicherte Daten</h2>
+<p>Verlangt jemand Auskunft über die Daten, die Sie zu ihm gespeichert haben (Art. 15 DSGVO), öffnen Sie seine Adresse, klicken auf „Datenschutz“ und dann auf „Auskunft herunterladen“. Die ZIP-Datei enthält einen Brief mit allen Angaben, dieselben Daten maschinenlesbar und Kopien der Belege und Dateien. Geben Sie sie ihm innerhalb eines Monats.</p>
+
+<h2 id="loeschen">Löschen und Sperren</h2>
+<p>Verlangt jemand die Löschung seiner Daten (Art. 17 DSGVO), zeigt die Seite „Datenschutz“ der Adresse, ob noch Belege aufbewahrt werden müssen:</p>
+<ul>
+  <li><strong>Keine Belege mehr aufzubewahren:</strong> Nach einer Bestätigung entfernt „Endgültig löschen“ die Adresse mit Verlauf, Dateien, Wiedervorlagen und Entwürfen. Im Protokoll bleibt nur, wann wer etwas getan hat. Das lässt sich nicht rückgängig machen.</li>
+  <li><strong>Belege müssen noch aufbewahrt werden:</strong> „Adresse sperren“ sperrt sie bis dahin (Art. 18 DSGVO). Sie erscheint in keiner Liste und Suche mehr, niemand kann sie ändern, nur Sie als Inhaber sehen sie. Ist die Frist abgelaufen, löschen Sie sie unter <a href="{% url 'core:hilfe_thema' 'ablage' %}#fristen">Aufbewahrungsfristen</a>.</li>
+</ul>
+<p>Haben Sie versehentlich gesperrt, heben Sie die Sperre mit „Sperre aufheben“ wieder auf.</p>
+
+<h2 id="programmwechsel">Wenn Sie das Programm wechseln</h2>
+<p>Belege müssen auch dann lesbar bleiben, wenn Sie Kontorfreund nicht mehr nutzen. Der <a href="{% url 'core:hilfe_thema' 'datensicherung' %}#gesamtexport">Gesamtexport</a> liefert alle Daten als Tabellen und alle Belege im Original, lesbar ohne Kontorfreund.</p>
+{% endblock %}

@@ -196,4 +196,6 @@ def test_nur_fuer_den_inhaber(kunde):
     assert mitarbeiter.get(url).status_code == 403
     assert mitarbeiter.post(url, {"jahr": ["2015"]}).status_code == 403
     assert Altbeleg.objects.count() == 1
-    assert "Aufbewahrungsfrist" not in mitarbeiter.get(reverse("core:start")).text
+    start = mitarbeiter.get(reverse("core:start")).text
+    assert "Aufbewahrungsfrist abgelaufen" not in start
+    assert url not in start

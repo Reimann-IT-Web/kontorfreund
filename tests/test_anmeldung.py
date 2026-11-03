@@ -109,8 +109,8 @@ def test_mitarbeiter_sieht_keine_einstellungen(client, mitarbeiterin):
 
     start = client.get(reverse("core:start")).content.decode()
     assert "Guten Tag, Anna Beispiel" in start
-    assert reverse("core:einstellungen") not in start
-    assert reverse("backups:uebersicht") not in start
+    assert f'href="{reverse("core:einstellungen")}"' not in start
+    assert f'href="{reverse("backups:uebersicht")}"' not in start
     for adresse in (
         reverse("core:einstellungen"),
         reverse("backups:uebersicht"),

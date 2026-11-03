@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Hilfe{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Hilfe</h1>
+    <p class="muted">Kurze Anleitungen zu jedem Bereich und Antworten auf häufige Fragen.</p>
+  </div>
+</div>
+
+<nav aria-label="Themen der Hilfe">
+  <ul class="hilfe-themen">
+    {% for t in themen %}
+    <li>
+      <a class="hilfe-thema" href="{% url 'core:hilfe_thema' t.slug %}">
+        {% icon t.icon %}
+        <span><span class="row-title">{{ t.titel }}</span><span class="small muted">{{ t.kurz }}</span></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+
+<section class="hilfe-fragen" aria-labelledby="fragen">
+  <h2 id="fragen">Häufige Fragen</h2>
+
+  <details class="disclosure">
+    <summary>Wie beende ich Kontorfreund?</summary>
+    <div class="hilfe">
+      <p>Beim Start öffnet sich neben dem Browser ein kleines Fenster mit dem Hinweis „Dieses Fenster bitte offen lassen“. Schließen Sie dieses Fenster, ist Kontorfreund beendet. Schließen Sie nur den Browser, läuft es weiter; ein Doppelklick auf das Symbol öffnet es dann wieder.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Wo liegen meine Daten?</summary>
+    <div class="hilfe">
+      <p>Getrennt vom Programm in Ihrem Benutzerordner: unter Windows in <code>%LOCALAPPDATA%\Kontorfreund</code>, unter macOS in <code>~/Library/Application Support/Kontorfreund</code>, unter Linux in <code>~/.local/share/Kontorfreund</code>. Dort stehen die Datenbank, im Ordner „archiv“ alle Belege und Dateien und im Ordner „sicherung“ die Datensicherungen. Ein Update oder das Deinstallieren lässt diesen Ordner, wie er ist.</p>
+      <p>Ändern Sie dort nichts von Hand. Die tägliche Prüfung der Ablage meldet jede veränderte oder fehlende Datei.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>In einer festgeschriebenen Rechnung ist ein Fehler. Was nun?</summary>
+    <div class="hilfe">
+      <p>Eine festgeschriebene Rechnung bleibt, wie sie ist; so verlangt es das Steuerrecht. Ist der Betrag zu hoch, mindern Sie ihn mit einer Rechnungskorrektur. Ist mehr falsch, etwa der Empfänger, stornieren Sie die Rechnung und schreiben eine neue. Beides steht auf der Seite der Rechnung unter „Fehler in der Rechnung?“. <a href="{% url 'core:hilfe_thema' 'rechnungen' %}#korrigieren">So geht es</a></p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Kann ich eine Rechnung löschen?</summary>
+    <div class="hilfe">
+      <p>Einen Entwurf ja, mit „Entwurf löschen“. Eine festgeschriebene Rechnung nicht: Sie muss 8 Jahre aufbewahrt werden. Statt sie zu löschen, stornieren Sie sie.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Wie entsteht die Rechnungsnummer?</summary>
+    <div class="hilfe">
+      <p>Kontorfreund vergibt sie beim Festschreiben, fortlaufend und ohne Lücken: das Jahr zweistellig und ein Zähler, etwa 260008 für die achte Rechnung im Jahr 2026. Die Nummern schließen an die Belege aus Ihrem bisherigen Programm an. Entwürfe haben noch keine Nummer, deshalb entsteht keine Lücke, wenn Sie einen verwerfen. Angebote und Auftragsbestätigungen haben je einen eigenen Nummernkreis.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Wie verschicke ich eine Rechnung per E-Mail?</summary>
+    <div class="hilfe">
+      <p>Laden Sie das PDF auf der Seite der Rechnung mit „Herunterladen“ herunter und hängen Sie es in Ihrem E-Mail-Programm an. Soll Kontorfreund die E-Mail selbst senden, trägt der Inhaber einmal den Postausgangsserver ein (<a href="{% url 'core:hilfe_thema' 'einstellungen' %}#e-mail">E-Mail-Versand</a>). Danach steht auf jeder Rechnung „Per E-Mail senden“.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Was ist der Unterschied zwischen ZUGFeRD und XRechnung?</summary>
+    <div class="hilfe">
+      <p>Jede Rechnung aus Kontorfreund ist ein ZUGFeRD-PDF: ein normales PDF zum Lesen, in dem die Rechnungsdaten zusätzlich für Programme stecken. Das ist eine E-Rechnung, wie sie Unternehmen seit 2025 annehmen müssen. Eine XRechnung ist eine reine XML-Datei ohne Druckbild; Behörden und manche Firmen verlangen sie. Kontorfreund erstellt sie zusätzlich, wenn Sie das bei der Adresse einschalten. <a href="{% url 'core:hilfe_thema' 'rechnungen' %}#xrechnung">Mehr dazu</a></p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Ich bin Kleinunternehmer. Worauf achtet Kontorfreund?</summary>
+    <div class="hilfe">
+      <p>Ist in den Einstellungen „Ich bin Kleinunternehmer nach § 19 UStG“ angekreuzt, schreibt Kontorfreund Rechnungen ohne Umsatzsteuer und mit dem nötigen Hinweis. Die Übersicht zeigt Ihren Umsatz im Vergleich zur Grenze: Er darf im Vorjahr höchstens 25.000 € und im laufenden Jahr höchstens 100.000 € betragen. Ab 80 % warnt Kontorfreund beim Schreiben jeder Rechnung.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Muss ich E-Rechnungen annehmen können?</summary>
+    <div class="hilfe">
+      <p>Ja. Seit dem 1. Januar 2025 muss jedes Unternehmen E-Rechnungen anderer Unternehmen annehmen können, auch Kleinunternehmer. Laden Sie die Datei aus der E-Mail unter <a href="{% url 'eingang:liste' %}">Eingangsrechnungen</a> hoch; Kontorfreund zeigt sie lesbar an und bewahrt das Original auf.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Ich habe mein Kennwort vergessen, oder mein Konto ist gesperrt.</summary>
+    <div class="hilfe">
+      <p>Nach fünf falschen Kennwörtern sperrt Kontorfreund das Konto für 15 Minuten; danach geht es wieder. Ein vergessenes Kennwort setzt der Inhaber unter Einstellungen › Benutzer neu.</p>
+      <p>Hat der Inhaber selbst sein Kennwort vergessen und gibt es keinen zweiten Inhaber, öffnen Sie den Programmordner von Kontorfreund (unter Windows <code>%LOCALAPPDATA%\Programs\Kontorfreund</code>), tippen in die Adresszeile des Explorers <code>cmd</code> und geben ein: <code>Kontorfreund changepassword ihre@e-mail.de</code>. Fehlt das Telefon für die Zwei-Faktor-Anmeldung, schaltet <code>Kontorfreund entsperren ihre@e-mail.de --ohne-zwei-faktor</code> sie aus.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Was passiert bei einem Update?</summary>
+    <div class="hilfe">
+      <p>Beenden Sie Kontorfreund und starten Sie das neue Installationsprogramm. Ihre Daten bleiben, wo sie sind. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Wie ziehe ich auf einen neuen Rechner um?</summary>
+    <div class="hilfe">
+      <p>Mit der Datensicherung: Sichern Sie auf dem alten Rechner, installieren Sie Kontorfreund auf dem neuen und spielen Sie dort die Sicherung ein. <a href="{% url 'core:hilfe_thema' 'datensicherung' %}#neuer-rechner">Schritt für Schritt</a></p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Braucht Kontorfreund das Internet?</summary>
+    <div class="hilfe">
+      <p>Nein. Kontorfreund läuft auf Ihrem Rechner, auch die Orte zu den Postleitzahlen sind im Programm enthalten. Ins Internet geht es nur, wenn Sie Belege per E-Mail senden oder Benachrichtigungen über Telegram eingerichtet haben.</p>
+    </div>
+  </details>
+
+  <details class="disclosure">
+    <summary>Kann ich vom Handy oder einem anderen Rechner aus arbeiten?</summary>
+    <div class="hilfe">
+      <p>In dieser Version nicht: Kontorfreund ist nur auf dem Rechner erreichbar, auf dem es läuft. So kommt auch niemand anderes im Netzwerk an Ihre Daten. Die Seiten passen sich aber an kleine Bildschirme an.</p>
+    </div>
+  </details>
+</section>
+
+<p class="small muted hilfe-fuss">{{ marke }} {{ version }} · entwickelt von Reimann IT &amp; Web · freie Software unter der <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a> · <a href="https://github.com/Reimann-IT-Web/kontorfreund">Quellcode</a></p>
+{% endblock %}

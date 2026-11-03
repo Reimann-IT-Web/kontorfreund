@@ -1,0 +1,40 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Die Datensicherung richtet der Inhaber ein. Eine Sicherung enthält die ganze Datenbank mit Adressen, Belegen, Konten und Einstellungen und alle abgelegten Dateien, verschlüsselt mit Ihrem Kennwort.</p>
+
+<h2 id="einrichten">Einrichten</h2>
+<ol>
+  <li>Öffnen Sie in der Seitenleiste <a href="{% url 'backups:uebersicht' %}">Datensicherung</a>.</li>
+  <li>Legen Sie ein Kennwort fest und wiederholen Sie es. Schreiben Sie es auf und bewahren Sie es getrennt vom Rechner auf: Ohne dieses Kennwort lässt sich keine Sicherung wiederherstellen, und niemand kann es zurücksetzen, auch Kontorfreund nicht.</li>
+  <li>Tragen Sie, wenn möglich, einen zweiten Speicherort ein, etwa einen Ordner auf einer USB-Platte oder einem NAS.</li>
+  <li>Klicken Sie auf „Einrichten und sichern“.</li>
+</ol>
+
+<h2 id="taeglich">Wie gesichert wird</h2>
+<p>Kontorfreund sichert an jedem Tag, an dem Sie es benutzen, von selbst, und vor jedem Update. Mit „Jetzt sichern“ geht es sofort, etwa vor einer größeren Änderung. Unter „Sicherungen aufbewahren“ legen Sie fest, wie viele an jedem Ort bleiben; ältere löscht Kontorfreund.</p>
+<p>Ist die letzte erfolgreiche Sicherung älter als 7 Tage oder fehlen am zweiten Speicherort neue, steht ein Ausrufezeichen an der Datensicherung in der Seitenleiste. Schließen Sie dann die Platte an und klicken Sie auf „Jetzt sichern“.</p>
+
+<h2 id="zweiter-ort">Warum ein zweiter Speicherort</h2>
+<p>Rechnungen und Belege müssen 8 Jahre erhalten bleiben. Liegen die Sicherungen nur auf dem Rechner, sind sie mit verloren, wenn die Festplatte ausfällt, der Rechner gestohlen wird oder es brennt. Eine USB-Platte, die Sie nach dem Sichern abziehen, ein NAS oder ein Cloud-Ordner bei einem Anbieter in der EU schützen davor.</p>
+
+<h2 id="wiederherstellen">Wiederherstellen</h2>
+<ol>
+  <li>Klicken Sie in der Liste „Sicherungen“ bei der gewünschten Sicherung auf „Wiederherstellen“.</li>
+  <li>Die Vorschau vergleicht, was in der Sicherung steht und was jetzt da ist: Adressen, Rechnungen, Entwürfe, alte Belege und Dateien.</li>
+  <li>Geben Sie das Kennwort der Sicherung ein und klicken Sie auf „Wiederherstellen“.</li>
+</ol>
+<p>Alles, was Sie seit dieser Sicherung geändert haben, wird ersetzt. Ihren jetzigen Stand sichert Kontorfreund vorher; Sie können also zurück. Fehlt nur ein einzelner Beleg, holen Sie ihn besser unter <a href="{% url 'core:hilfe_thema' 'ablage' %}#zurueckholen">Ablage</a> zurück, ohne den Rest anzufassen.</p>
+
+<h2 id="neuer-rechner">Auf einen neuen Rechner umziehen</h2>
+<ol>
+  <li>Klicken Sie auf dem alten Rechner auf „Jetzt sichern“ und kopieren Sie die neueste Sicherungsdatei auf eine USB-Platte, falls sie nicht schon am zweiten Speicherort liegt.</li>
+  <li>Installieren Sie Kontorfreund auf dem neuen Rechner und legen Sie beim ersten Start ein Konto an. Es wird gleich durch Ihre Konten aus der Sicherung ersetzt.</li>
+  <li>Wählen Sie unter Datensicherung bei „Neuer Rechner?“ die Sicherungsdatei aus und klicken Sie auf „Einlesen“.</li>
+  <li>Prüfen Sie Datum und Inhalt, geben Sie das Kennwort der Sicherung ein und stellen Sie sie wieder her.</li>
+  <li>Melden Sie sich mit Ihrem bisherigen Konto an. Die tägliche Sicherung läuft mit demselben Kennwort weiter; tragen Sie den zweiten Speicherort neu ein.</li>
+</ol>
+
+<h2 id="gesamtexport">Gesamtexport</h2>
+<p>„Gesamtexport herunterladen“ liefert alle Daten als Tabellen (CSV) und alle Belege im Original in einer ZIP-Datei, die sich ohne Kontorfreund öffnen lässt, mit einer Datei LIESMICH.txt, die alles erklärt. Das ist für einen Programmwechsel oder als Kopie für Ihre Unterlagen gedacht. Der Export ist nicht verschlüsselt; zum Wiederherstellen dient die Datensicherung.</p>
+{% endblock %}

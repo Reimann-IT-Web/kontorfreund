@@ -21,7 +21,7 @@ def test_version_wie_in_pyproject():
 
 
 def test_version_und_urheber_auf_der_hilfeseite(client):
-    seite = client.get(reverse("core:platzhalter", args=["hilfe"])).content.decode()
+    seite = client.get(reverse("core:hilfe")).content.decode()
     assert (
         f"Kontorfreund {settings.VERSION} · entwickelt von Reimann IT &amp; Web"
         in seite

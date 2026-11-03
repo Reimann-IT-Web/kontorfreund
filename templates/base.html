@@ -25,7 +25,7 @@
           {% for item in navigation %}
             {% if item.gruppe == "weitere" and not forloop.first %}{% ifchanged item.gruppe %}<li class="nav-sep" role="presentation"></li>{% endifchanged %}{% endif %}
             <li>
-              <a class="nav-link" href="{% if item.url %}{% url item.url %}{% else %}{% url 'core:platzhalter' item.slug %}{% endif %}"{% if bereich == item.key %} aria-current="page"{% endif %}>
+              <a class="nav-link" href="{% url item.url %}"{% if bereich == item.key %} aria-current="page"{% endif %}>
                 {% icon item.icon %}
                 <span class="nav-label">{{ item.label }}</span>
                 {% if item.warnung %}<span class="nav-count is-warn" title="{{ item.warnung }}"><span class="visually-hidden">{{ item.warnung }}</span><span aria-hidden="true">{{ item.zahl }}</span></span>{% elif item.zahl %}<span class="nav-count">{{ item.zahl }}</span>{% endif %}
@@ -48,7 +48,7 @@
         {% if mehrere_firmen %}
         <li><a class="nav-link" href="{% url 'core:firmen' %}"{% if bereich == "firmen" %} aria-current="page"{% endif %}>{% icon "building" %}<span class="nav-label">Firma wechseln</span></a></li>
         {% endif %}
-        <li><a class="nav-link" href="{% url 'core:platzhalter' 'hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
+        <li><a class="nav-link" href="{% url 'core:hilfe' %}"{% if bereich == "hilfe" %} aria-current="page"{% endif %}>{% icon "help" %}<span class="nav-label">Hilfe</span></a></li>
       </ul>
       {% if user.ist_inhaber and not firma.name and not firma.inhaber %}
       <a class="sidebar-user" href="{% url 'core:einstellungen' %}">

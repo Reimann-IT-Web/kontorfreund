@@ -3310,3 +3310,130 @@ input[type="file"]::file-selector-button {
     width: 100%;
   }
 }
+
+/* ---------- Hilfe ---------- */
+
+.hilfe-themen {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hilfe-thema {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  height: 100%;
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.hilfe-thema:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-hover);
+}
+
+.hilfe-thema > .icon {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--accent);
+}
+
+.hilfe-thema .row-title,
+.hilfe-thema .small {
+  display: block;
+}
+
+.hilfe-thema .small {
+  margin-top: var(--s1);
+}
+
+.hilfe {
+  max-width: 70ch;
+  line-height: 1.6;
+}
+
+.hilfe h2 {
+  margin-top: var(--s6);
+  font-size: var(--fs-md);
+}
+
+.hilfe p,
+.hilfe ul,
+.hilfe ol {
+  margin: var(--s2) 0 0;
+}
+
+.hilfe > :first-child {
+  margin-top: 0;
+}
+
+.hilfe ul,
+.hilfe ol {
+  padding-left: var(--s5);
+}
+
+.hilfe li + li {
+  margin-top: var(--s2);
+}
+
+.hilfe code {
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.hilfe-fragen {
+  max-width: 70ch;
+  margin-top: var(--s7);
+}
+
+.hilfe-fragen h2 {
+  margin-bottom: var(--s2);
+}
+
+.hilfe-fragen .disclosure {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.hilfe-fragen .disclosure > summary {
+  padding: var(--s3) 0;
+  color: var(--ink);
+  font-size: var(--fs);
+}
+
+.hilfe-fragen .disclosure > .hilfe {
+  padding-bottom: var(--s4);
+}
+
+.hilfe-blaettern {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  max-width: 70ch;
+  margin-top: var(--s7);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+
+.hilfe-blaettern a {
+  display: grid;
+  gap: var(--s1);
+  text-decoration: none;
+}
+
+.hilfe-blaettern .hilfe-weiter {
+  margin-left: auto;
+  text-align: right;
+}
+
+.hilfe-fuss {
+  margin-top: var(--s6);
+}

@@ -1,0 +1,28 @@
+{% extends "core/hilfe/thema.html" %}
+
+{% block anleitung %}
+<p>Jeder Schritt ist freiwillig: Sie können ein Angebot direkt in eine Rechnung übernehmen, eine Auftragsbestätigung ohne Angebot schreiben oder gleich mit der Rechnung beginnen.</p>
+
+<h2 id="angebot">Ein Angebot schreiben</h2>
+<p>Mit „Neues Angebot“ auf der Übersicht oder unter <a href="{% url 'angebote:liste' %}">Angebote &amp; Rechnungen › Angebote</a>, oder mit „Angebot schreiben“ an einer Adresse. Wie bei der Rechnung geht es in drei Schritten:</p>
+<ol>
+  <li><strong>Empfänger &amp; Bedingungen:</strong> Empfänger, bis wann das Angebot gilt, Steuerfall und auf Wunsch Betreff und einleitender Text.</li>
+  <li><strong>Positionen:</strong> wie bei der Rechnung, mit Vorschlägen aus Ihren Artikeln.</li>
+  <li><strong>Prüfen &amp; fertigstellen:</strong> Text nach den Positionen, dann „Fertigstellen“.</li>
+</ol>
+<p>Beim Fertigstellen erhält das Angebot seine Nummer und wird als PDF abgelegt, so wie Ihr Kunde es bekommt. Danach bleibt es unverändert. Brauchen Sie eine geänderte Fassung, legen Sie mit „Kopieren“ einen neuen Entwurf an. Gesendet wird es wie eine <a href="{% url 'core:hilfe_thema' 'rechnungen' %}#senden">Rechnung</a>.</p>
+
+<h2 id="antwort">Die Antwort des Kunden</h2>
+<p>Auf der Seite des Angebots tragen Sie unter „Antwort des Kunden“ ein, ob er es angenommen oder abgelehnt hat. Bis dahin steht es auf der Übersicht unter „Offene Angebote“; ist die Frist abgelaufen, lohnt eine kurze Nachfrage. Dafür legen Sie mit „Wiedervorlage“ eine Erinnerung an. Eine versehentliche Antwort nehmen Sie mit „Antwort zurücknehmen“ zurück.</p>
+
+<h2 id="auftrag">Vom angenommenen Angebot weiter</h2>
+<p>Nach „Angenommen“ bietet die Seite zwei Wege:</p>
+<ul>
+  <li><strong>Auftrag bestätigen</strong> legt eine Auftragsbestätigung mit Empfänger, Betreff und allen Positionen an.</li>
+  <li><strong>Rechnung erstellen</strong> legt gleich einen Rechnungsentwurf an. Tragen Sie dort noch den Leistungszeitraum ein.</li>
+</ul>
+
+<h2 id="bestaetigung">Auftragsbestätigungen</h2>
+<p>Eine Auftragsbestätigung ohne Angebot schreiben Sie unter <a href="{% url 'auftraege:liste' %}">Angebote &amp; Rechnungen › Auftragsbestätigungen</a> mit „Neue Auftragsbestätigung“. Im ersten Schritt können Sie den Zeitraum der Ausführung eintragen. Beim Fertigstellen bekommt sie eine Nummer aus einem eigenen Nummernkreis und wird als PDF abgelegt.</p>
+<p>Ist der Auftrag ausgeführt, klicken Sie auf ihrer Seite auf „Rechnung erstellen“. Der Rechnungsentwurf übernimmt Empfänger, Betreff, Positionen und die Ausführung als Leistungszeitraum.</p>
+{% endblock %}

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.28.0 – 03.11.2026
+
+- Hilfe: Der Bereich „Hilfe“ in der Seitenleiste hat jetzt eine kurze Anleitung zu jedem Bereich, von den ersten Schritten über Adressen, Rechnungen, Angebote, Zahlungen und Mahnungen bis zu Datensicherung, Einstellungen und den Pflichten gegenüber Finanzamt und Datenschutz. Jede Anleitung erklärt Schritt für Schritt, welcher Knopf was tut, und verweist auf die passenden Seiten im Programm.
+- Häufige Fragen auf der Seite „Hilfe“ zum Aufklappen, etwa wie Sie Kontorfreund beenden, wo Ihre Daten liegen, was bei einem Fehler in einer festgeschriebenen Rechnung zu tun ist, wie die Rechnungsnummer entsteht und was bei einem vergessenen Kennwort hilft.
+- Die Suche oben (Strg K) findet auch die Anleitungen: Tippen Sie etwa „storn“ oder „Mahnung“.
+
 ## 0.27.1 – 03.11.2026
 
 - Der Selbsttest des Installationspakets prüft jetzt auch die Datensicherung: Er legt in einem Wegwerf-Ordner eine eigene Datenbank mit einer Adresse und einem Beleg an, sichert sie verschlüsselt, löscht beides und stellt es wieder her. Das läuft bei jeder neuen Version auf frischen Rechnern mit Windows, macOS und Linux. Ihre Daten und Ihre Sicherungen fasst der Selbsttest nicht an.
