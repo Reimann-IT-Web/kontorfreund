@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.24.0 – 03.11.2026
+
+- Die Adressliste lässt sich sortieren: Ein Klick auf „Nr.“, „Name“ oder „Ort“ sortiert danach, ein zweiter dreht die Reihenfolge um; ein Pfeil am Spaltenkopf zeigt die Richtung. Umlaute stehen beim Grundbuchstaben, „Ärztehaus“ also bei A und nicht mehr hinter Z, und Groß- und Kleinschreibung zählen nicht. Adressen ohne Ort stehen am Ende. Der Export der Liste übernimmt die Reihenfolge.
+- Neben der Kategorie filtert die Liste jetzt nach dem Ort („Alle Orte“). Verschiedene Schreibweisen wie „Überlingen“ und „überlingen“ gelten als ein Ort. Suche, Kategorie und Ort lassen sich kombinieren.
+- Behoben: Der Export nach Excel und LibreOffice brach ab, wenn der Name der gewählten Kategorie oder des Orts einen Schrägstrich oder ein anderes in Blattnamen verbotenes Zeichen enthielt, etwa „Frankfurt/Main“.
+- Behoben: Auf dem Handy hatten Adressen ohne Kategorie in der Liste unten eine leere Zeile.
+
 ## 0.23.0 – 03.11.2026
 
 - Eigene Kategorien: Neben Kunde, Interessent und Lieferant legen Sie eigene an, etwa „Wartungsvertrag“ oder „Webdesign“, und eine Adresse kann mehrere davon haben. Sie wählen sie beim Bearbeiten der Adresse; eine neue tragen Sie dort direkt unter „Neue Kategorie“ ein. Jede Adresse behält ihre bisherige Kategorie.

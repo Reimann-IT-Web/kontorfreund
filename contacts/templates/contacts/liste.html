@@ -34,7 +34,17 @@
       {% for kat in kategorien %}<option value="{{ kat.pk }}"{% if kat == kategorie %} selected{% endif %}>{{ kat }}</option>{% endfor %}
     </select>
   </label>
+  {% if orte %}
+  <label class="field field-inline">
+    <span class="visually-hidden">Ort</span>
+    <select name="ort" data-auto-submit>
+      <option value="">Alle Orte</option>
+      {% for o in orte %}<option value="{{ o }}"{% if o|lower == ort|lower %} selected{% endif %}>{{ o }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
   {% if archiv %}<input type="hidden" name="archiv" value="1">{% endif %}
+  {% if sortiert %}<input type="hidden" name="sortiert" value="{{ sortiert }}">{% endif %}
   <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
 </form>
 {% endif %}{% endif %}
@@ -44,9 +54,9 @@
   <table class="table addresses">
     <thead>
       <tr>
-        <th scope="col">Nr.</th>
-        <th scope="col">Name</th>
-        <th scope="col" class="col-ort">Ort</th>
+        {% include "contacts/spaltenkopf.html" with s=spalten.nr titel="Nr." name="Nummer" %}
+        {% include "contacts/spaltenkopf.html" with s=spalten.name titel="Name" name="Name" %}
+        {% include "contacts/spaltenkopf.html" with s=spalten.ort titel="Ort" name="Ort" klasse="col-ort" %}
         <th scope="col" class="col-kat">Kategorien</th>
         <th scope="col" class="col-kontakt">Telefon</th>
         <th scope="col"><span class="visually-hidden">Details</span></th>
@@ -114,12 +124,12 @@
     </tbody>
   </table>
 </div>
-{% if not gesperrt %}<p class="table-foot muted">{% if q or kategorie %}{{ kontakte|length }} Treffer · {% endif %}{% include "auswertungen/herunterladen.html" %}</p>{% endif %}
+{% if not gesperrt %}<p class="table-foot muted">{% if q or kategorie or ort %}{{ kontakte|length }} Treffer · {% endif %}{% include "auswertungen/herunterladen.html" %}</p>{% endif %}
 
-{% elif q or kategorie %}
+{% elif q or kategorie or ort %}
 <div class="empty">
   <h2>Keine Adresse gefunden</h2>
-  <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer{% if kategorie %} in der Kategorie „{{ kategorie }}“{% endif %}. Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.{% else %}Keine {% if archiv %}archivierte {% endif %}Adresse hat die Kategorie „{{ kategorie }}“.{% endif %}</p>
+  <p class="muted">{% if q %}Für „{{ q }}“ gibt es keinen Treffer{% if kategorie %} in der Kategorie „{{ kategorie }}“{% endif %}{% if ort %}{% if kategorie %} und{% endif %} in {{ ort }}{% endif %}. Prüfen Sie die Schreibweise oder suchen Sie nach der Nummer, z. B. K-0001.{% elif kategorie %}Keine {% if archiv %}archivierte {% endif %}Adresse {% if ort %}in {{ ort }} {% endif %}hat die Kategorie „{{ kategorie }}“.{% else %}In {{ ort }} gibt es keine {% if archiv %}archivierte {% endif %}Adresse.{% endif %}</p>
   <p class="actions"><a class="btn" href="{% url 'contacts:liste' %}">Filter zurücksetzen</a></p>
 </div>
 

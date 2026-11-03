@@ -32,6 +32,9 @@ NAMEN = [("xlsx", "Excel"), ("ods", "LibreOffice"), ("csv", "CSV")]
 FORMEL = ("=", "+", "-", "@", "\t", "\r")
 # Nur Ziffern und Rechenzeichen, etwa „+49 6131 12345“: rechnet höchstens, ruft nichts auf.
 HARMLOS = re.compile(r"[+-][\d ()/.,+-]*")
+# Im Namen eines Blatts verbieten Excel und LibreOffice diese Zeichen, etwa bei
+# „Frankfurt/Main“.
+UNERLAUBT_IM_BLATT = re.compile(r"[\\/?*\[\]:]")
 
 
 def _text(wert, art):
@@ -61,7 +64,7 @@ def csv(spalten, zeilen):
 def xlsx(spalten, zeilen, name):
     mappe = Workbook()
     blatt = mappe.active
-    blatt.title = name[:31]
+    blatt.title = UNERLAUBT_IM_BLATT.sub("-", name)[:31]
     blatt.append([titel for titel, _ in spalten])
     for zelle in blatt[1]:
         zelle.font = Font(bold=True)
@@ -127,6 +130,7 @@ def _ods_zelle(wert, art):
 
 
 def ods(spalten, zeilen, name):
+    name = UNERLAUBT_IM_BLATT.sub("-", name)
     teile = [ODS_KOPF, f"<table:table table:name={quoteattr(name)}>"]
     teile.append(
         "<table:table-row>"

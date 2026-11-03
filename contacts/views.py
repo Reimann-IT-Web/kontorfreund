@@ -1,5 +1,7 @@
 import re
+import unicodedata
 from datetime import date
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.db import transaction
@@ -70,10 +72,49 @@ def _nummer(text):
     return int(treffer.group(1)) if treffer else None
 
 
+def _alphabetisch(text):
+    """Schlüssel für das Alphabet nach DIN 5007: Ä wie A, groß wie klein."""
+    zerlegt = unicodedata.normalize("NFKD", text.casefold())
+    return "".join(z for z in zerlegt if not unicodedata.combining(z))
+
+
+# Sortierbare Spalten der Liste; „-ort“ dreht die Reihenfolge um.
+SORTIERUNG = {
+    "nr": lambda k: k.nummer,
+    "name": lambda k: _alphabetisch(k.anzeigename),
+    "ort": lambda k: _alphabetisch(k.ort),
+}
+
+
+def _sortieren(kontakte, sortiert):
+    """Gleiche Werte nach dem Namen, Adressen ohne Ort in beiden Richtungen am Ende."""
+    feld = sortiert.removeprefix("-")
+    kontakte = sorted(kontakte, key=SORTIERUNG["name"])
+    ohne = [k for k in kontakte if feld == "ort" and not k.ort]
+    mit = [k for k in kontakte if feld != "ort" or k.ort]
+    return sorted(mit, key=SORTIERUNG[feld], reverse=sortiert != feld) + ohne
+
+
+def _orte(kontakte):
+    """Jeder Ort einmal, ohne Rücksicht auf Groß- und Kleinschreibung.
+
+    Von mehreren Schreibweisen gilt die erste nach Zeichencode, also „Überlingen“
+    vor „überlingen“.
+    """
+    orte = {}
+    for ort in kontakte.exclude(ort="").order_by("ort").values_list("ort", flat=True):
+        orte.setdefault(ort.casefold(), ort)
+    return sorted(orte.values(), key=_alphabetisch)
+
+
 def liste(request):
     q = request.GET.get("q", "").strip()
     wahl = request.GET.get("kategorie", "")
     kategorie = Kategorie.objects.filter(pk=wahl).first() if wahl.isdigit() else None
+    ort = request.GET.get("ort", "").strip()
+    sortiert = request.GET.get("sortiert", "")
+    if sortiert.removeprefix("-") not in SORTIERUNG:
+        sortiert = "name"
     archiv = request.GET.get("archiv") == "1"
     # Gesperrte Adressen (Art. 18 DSGVO) stehen nur in dieser Liste, nur für den Inhaber.
     gesperrt = request.GET.get("gesperrt") == "1" and request.user.ist_inhaber
@@ -81,6 +122,7 @@ def liste(request):
         kontakte = Kontakt.objects.filter(gesperrt_am__isnull=False)
     else:
         kontakte = Kontakt.objects.filter(archiviert=archiv, gesperrt_am__isnull=True)
+    orte = _orte(kontakte)
     kontakte = (
         kontakte.select_related("firma")
         .prefetch_related("kontaktwege", "kategorien")
@@ -107,14 +149,37 @@ def liste(request):
         if (nummer := _nummer(q)) is not None:
             bedingung |= Q(nummer=nummer)
         kontakte = kontakte.filter(bedingung)
+    # In Python statt in SQLite: dort stünden „Ärzte“ hinter „Zahnarzt“ und
+    # „Überlingen“ fände „überlingen“ nicht.
+    if ort:
+        kontakte = [k for k in kontakte if k.ort.casefold() == ort.casefold()]
+    kontakte = _sortieren(kontakte, sortiert)
     endung = request.GET.get("format", "")
     if endung in tabelle.TYPEN and not gesperrt:
-        titel = f"Adressen {kategorie}" if kategorie else "Adressen"
+        titel = " ".join(str(t) for t in ("Adressen", kategorie, ort) if t)
         if archiv:
             titel = f"Archiv {titel}"
         return tabelle.antwort(
             endung, *_export(kontakte), f"{titel} {date.today():%d.%m.%Y}"
         )
+
+    def spalte(feld):
+        """Kopf einer Spalte: Ein Klick sortiert danach, ein zweiter dreht um."""
+        neu = f"-{feld}" if sortiert == feld else feld
+        werte = {
+            "q": q,
+            "kategorie": kategorie.pk if kategorie else "",
+            "ort": ort,
+            "archiv": "1" if archiv else "",
+            "gesperrt": "1" if gesperrt else "",
+            "sortiert": "" if neu == "name" else neu,
+        }
+        richtung = {feld: "ascending", f"-{feld}": "descending"}.get(sortiert, "")
+        return {
+            "adresse": "?" + urlencode({n: w for n, w in werte.items() if w != ""}),
+            "richtung": richtung,
+        }
+
     return render(
         request,
         "contacts/liste.html",
@@ -124,6 +189,10 @@ def liste(request):
             "q": q,
             "kategorie": kategorie,
             "kategorien": Kategorie.objects.all(),
+            "ort": ort,
+            "orte": orte,
+            "sortiert": "" if sortiert == "name" else sortiert,
+            "spalten": {feld: spalte(feld) for feld in SORTIERUNG},
             "archiv": archiv,
             "gesperrt": gesperrt,
             "anzahl": Kontakt.objects.filter(archiviert=False).count(),

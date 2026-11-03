@@ -3001,6 +3001,10 @@ input[type="file"]::file-selector-button {
     margin-top: var(--s2);
   }
 
+  .addresses td.col-kat .tags:empty {
+    display: none;
+  }
+
   .addresses td.docnr {
     grid-area: nr;
     color: var(--ink-2);
@@ -3135,12 +3139,14 @@ input[type="file"]::file-selector-button {
   gap: var(--s2) var(--s3);
 }
 
-.pruefer-tabelle th a {
+.pruefer-tabelle th a,
+.addresses th a {
   color: inherit;
   text-decoration: none;
 }
 
-.pruefer-tabelle th a:hover {
+.pruefer-tabelle th a:hover,
+.addresses th a:hover {
   text-decoration: underline;
 }
 

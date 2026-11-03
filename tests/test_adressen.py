@@ -160,3 +160,111 @@ def test_export_der_liste(client):
     assert "Archiv Adressen" in archiv["Content-Disposition"]
     with zipfile.ZipFile(BytesIO(archiv.content)) as ods:
         assert "Alt GmbH" in ods.read("content.xml").decode()
+
+
+def namen(antwort):
+    return [k.anzeigename for k in antwort.context["kontakte"]]
+
+
+def test_liste_sortieren(client):
+    """Spezifikation K-1: Nummer, Name und Ort, Umlaute und Kleinschreibung wie im Duden."""
+    Kontakt.objects.create(firmenname="Zahnarzt Weber", ort="Berlin")
+    Kontakt.objects.create(firmenname="Ärztehaus Mitte", ort="Überlingen")
+    Kontakt.objects.create(firmenname="bäckerei Krume")
+    Kontakt.objects.create(firmenname="Hof Ahorn", ort="aachen")
+    liste = reverse("contacts:liste")
+
+    seite = client.get(liste)
+    assert namen(seite) == [
+        "Ärztehaus Mitte",
+        "bäckerei Krume",
+        "Hof Ahorn",
+        "Zahnarzt Weber",
+    ]
+    assert (
+        '<th scope="col" aria-sort="ascending"><a href="?sortiert=-name" '
+        'title="Reihenfolge umdrehen">Name<span aria-hidden="true"> ↑</span></a></th>'
+    ) in seite.text
+    assert '<a href="?sortiert=nr" title="Nach Nummer sortieren">Nr.</a>' in seite.text
+    assert 'name="sortiert"' not in seite.text
+    assert namen(client.get(liste, {"sortiert": "-name"}))[0] == "Zahnarzt Weber"
+    assert namen(client.get(liste, {"sortiert": "abc"}))[0] == "Ärztehaus Mitte"
+
+    nach_nummer = client.get(liste, {"sortiert": "-nr"})
+    assert namen(nach_nummer) == [
+        "Hof Ahorn",
+        "bäckerei Krume",
+        "Ärztehaus Mitte",
+        "Zahnarzt Weber",
+    ]
+    assert '<a href="?" title="Nach Name sortieren">Name</a>' in nach_nummer.text
+    assert '<a href="?sortiert=nr" title="Reihenfolge umdrehen">Nr.' in nach_nummer.text
+    assert '<input type="hidden" name="sortiert" value="-nr">' in nach_nummer.text
+
+    # Ohne Ort in beiden Richtungen zuletzt
+    assert namen(client.get(liste, {"sortiert": "ort"})) == [
+        "Hof Ahorn",
+        "Zahnarzt Weber",
+        "Ärztehaus Mitte",
+        "bäckerei Krume",
+    ]
+    assert namen(client.get(liste, {"sortiert": "-ort"})) == [
+        "Ärztehaus Mitte",
+        "Zahnarzt Weber",
+        "Hof Ahorn",
+        "bäckerei Krume",
+    ]
+    gesucht = client.get(liste, {"sortiert": "-ort", "q": "z"})
+    assert namen(gesucht) == ["Ärztehaus Mitte", "Zahnarzt Weber"]
+    assert (
+        '<a href="?q=z&amp;sortiert=ort" title="Reihenfolge umdrehen">Ort'
+        in gesucht.text
+    )
+
+    export = client.get(liste, {"sortiert": "-nr", "format": "csv"})
+    zeilen = export.content.decode("utf-8-sig").splitlines()
+    assert [z.split(";")[0] for z in zeilen[1:]] == [
+        "K-0004",
+        "K-0003",
+        "K-0002",
+        "K-0001",
+    ]
+
+
+def test_liste_nach_ort_filtern(client):
+    lieferant = Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT)
+    Kontakt.objects.create(firmenname="Bäckerei Korn", ort="Überlingen")
+    Kontakt.objects.create(firmenname="Hof Ahorn", ort="überlingen")
+    Kontakt.objects.create(firmenname="Weingut Rhein", ort="Frankfurt/Main")
+    Kontakt.objects.create(firmenname="Alt GmbH", ort="Bonn", archiviert=True)
+    liste = reverse("contacts:liste")
+
+    alle = client.get(liste)
+    assert alle.context["orte"] == ["Frankfurt/Main", "Überlingen"]
+    assert client.get(liste, {"archiv": "1"}).context["orte"] == ["Bonn"]
+    gefiltert = client.get(liste, {"ort": "ÜBERLINGEN"})
+    assert namen(gefiltert) == ["Bäckerei Korn", "Hof Ahorn"]
+    assert '<option value="Überlingen" selected>Überlingen</option>' in gefiltert.text
+    assert "2 Treffer" in gefiltert.text
+
+    # Excel verbietet den Schrägstrich im Namen des Blatts
+    export = client.get(liste, {"ort": "Frankfurt/Main", "format": "xlsx"})
+    blatt = load_workbook(BytesIO(export.content)).active
+    assert blatt.title.startswith("Adressen Frankfurt-Main ")
+    assert blatt["D2"].value == "Weingut Rhein"
+    ods = client.get(liste, {"ort": "Frankfurt/Main", "format": "ods"})
+    with zipfile.ZipFile(BytesIO(ods.content)) as datei:
+        assert (
+            'table:name="Adressen Frankfurt-Main ' in datei.read("content.xml").decode()
+        )
+
+    assert "In Bonn gibt es keine Adresse." in client.get(liste, {"ort": "Bonn"}).text
+    archiv = client.get(liste, {"ort": "Überlingen", "archiv": "1"})
+    assert "In Überlingen gibt es keine archivierte Adresse." in archiv.text
+    mit_kategorie = client.get(liste, {"ort": "Überlingen", "kategorie": lieferant.pk})
+    assert (
+        "Keine Adresse in Überlingen hat die Kategorie „Lieferant“."
+        in mit_kategorie.text
+    )
+    gesucht = client.get(liste, {"ort": "Bonn", "q": "Alt"})
+    assert "Für „Alt“ gibt es keinen Treffer in Bonn." in gesucht.text
