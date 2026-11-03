@@ -46,7 +46,19 @@
   {% if archiv %}<input type="hidden" name="archiv" value="1">{% endif %}
   {% if sortiert %}<input type="hidden" name="sortiert" value="{{ sortiert }}">{% endif %}
   <noscript><button class="btn" type="submit">Anzeigen</button></noscript>
+  <details class="menu spalten-wahl" data-menue>
+    <summary class="btn">{% icon "columns" %}Spalten{% icon "chevron-down" %}</summary>
+    <div class="spalten-liste" role="group" aria-label="Spalten der Liste">
+      <p class="menu-meta spalten-hinweis">Nummer und Name stehen immer da.</p>
+      {% for feld, titel, an in spaltenwahl %}<label><input type="checkbox" name="spalte" value="{{ feld }}" form="spalten"{% if an %} checked{% endif %}>{{ titel }}</label>{% endfor %}
+      <div class="spalten-aktionen">
+        <button class="btn btn-sm btn-primary" type="submit" form="spalten">Übernehmen</button>
+        <button class="btn btn-sm" type="submit" form="spalten" name="vorgabe" value="1">Wie vorgegeben</button>
+      </div>
+    </div>
+  </details>
 </form>
+<form id="spalten" method="post" action="{% url 'contacts:spalten' %}">{% csrf_token %}<input type="hidden" name="abfrage" value="{{ request.GET.urlencode }}"></form>
 {% endif %}{% endif %}
 
 {% if kontakte %}
@@ -54,11 +66,10 @@
   <table class="table addresses">
     <thead>
       <tr>
-        {% include "contacts/spaltenkopf.html" with s=spalten.nr titel="Nr." name="Nummer" %}
-        {% include "contacts/spaltenkopf.html" with s=spalten.name titel="Name" name="Name" %}
-        {% include "contacts/spaltenkopf.html" with s=spalten.ort titel="Ort" name="Ort" klasse="col-ort" %}
-        <th scope="col" class="col-kat">Kategorien</th>
-        <th scope="col" class="col-kontakt">Telefon</th>
+        {% include "contacts/spaltenkopf.html" with s=koepfe.nr titel="Nr." name="Nummer" %}
+        {% include "contacts/spaltenkopf.html" with s=koepfe.name titel="Name" name="Name" %}
+        {% for s in spalten %}{% if s.kopf %}{% include "contacts/spaltenkopf.html" with s=s.kopf titel=s.titel name=s.titel klasse=s.klasse %}{% else %}<th scope="col" class="{{ s.klasse }}">{{ s.titel }}</th>
+        {% endif %}{% endfor %}
         <th scope="col"><span class="visually-hidden">Details</span></th>
       </tr>
     </thead>
@@ -73,9 +84,7 @@
           {% if k.firma and not k.firma.gesperrt_am %}<span class="cell-sub">{{ k.position|default:"Ansprechpartner" }} bei {{ k.firma }}</span>
           {% elif not k.anschrift_vollstaendig %}<span class="status status-today status-inline">{% icon "alert" %}Anschrift unvollständig</span>{% endif %}
         </td>
-        <td class="col-ort">{{ k.ort|default:"–" }}</td>
-        <td class="col-kat"><span class="tags">{% for kat in k.kategorien.all %}<span class="tag">{{ kat }}</span>{% endfor %}</span></td>
-        <td class="col-kontakt">{% firstof k.telefon k.weitere_telefon.0.wert "–" %}</td>
+        {% for s in spalten %}{% include "contacts/zelle.html" %}{% endfor %}
         <td class="cell-action">
           <button class="btn btn-ghost btn-icon" type="button" data-expand aria-controls="details-{{ k.pk }}" aria-expanded="{% if offen == auf %}true{% else %}false{% endif %}">
             {% icon "chevron-down" %}<span class="visually-hidden">Details zu {{ k.anzeigename }}</span>
@@ -83,7 +92,7 @@
         </td>
       </tr>
       <tr class="detail-row" id="details-{{ k.pk }}"{% if offen != auf %} hidden{% endif %}>
-        <td colspan="6">
+        <td colspan="{{ spalten|length|add:3 }}">
           <div class="detail">
             <div>
               <h3 class="detail-title">Kontakt</h3>

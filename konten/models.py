@@ -48,6 +48,8 @@ class Benutzer(AbstractBaseUser):
     gesperrt_bis = models.DateTimeField(null=True, blank=True, editable=False)
     # Das Kennwort hat der Inhaber vergeben; nach der Anmeldung wählt man ein eigenes.
     kennwort_vorlaeufig = models.BooleanField(default=False, editable=False)
+    # Gewählte Spalten der Adressliste (contacts.views.SPALTEN), None für die Vorgabe.
+    adressen_spalten = models.JSONField(null=True, editable=False)
     erstellt = models.DateTimeField(auto_now_add=True)
     zugang_bis = models.DateField("Zugang bis", null=True, blank=True)
     pruefung_von = models.PositiveSmallIntegerField(

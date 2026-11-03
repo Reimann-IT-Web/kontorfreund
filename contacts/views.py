@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -82,17 +82,34 @@ def _alphabetisch(text):
 SORTIERUNG = {
     "nr": lambda k: k.nummer,
     "name": lambda k: _alphabetisch(k.anzeigename),
+    "plz": lambda k: k.plz,
     "ort": lambda k: _alphabetisch(k.ort),
 }
 
+# Spalten, die jeder Benutzer neben Nummer und Name wählt (Spezifikation K-1), in
+# dieser Reihenfolge; die Klasse blendet sie auf schmalen Bildschirmen aus.
+SPALTEN = [
+    ("strasse", "Straße", "col-ort"),
+    ("plz", "PLZ", "col-ort"),
+    ("ort", "Ort", "col-ort"),
+    ("land", "Land", "col-ort"),
+    ("kategorien", "Kategorien", "col-kat"),
+    ("telefon", "Telefon", "col-kontakt"),
+    ("email", "E-Mail", "col-kontakt"),
+    ("website", "Website", "col-kontakt"),
+    ("ust_id", "USt-IdNr.", "col-ort"),
+]
+SPALTEN_VORGABE = ["ort", "kategorien", "telefon"]
+
 
 def _sortieren(kontakte, sortiert):
-    """Gleiche Werte nach dem Namen, Adressen ohne Ort in beiden Richtungen am Ende."""
+    """Gleiche Werte nach dem Namen, Adressen ohne Wert in beiden Richtungen am Ende."""
     feld = sortiert.removeprefix("-")
+    schluessel = SORTIERUNG[feld]
     kontakte = sorted(kontakte, key=SORTIERUNG["name"])
-    ohne = [k for k in kontakte if feld == "ort" and not k.ort]
-    mit = [k for k in kontakte if feld != "ort" or k.ort]
-    return sorted(mit, key=SORTIERUNG[feld], reverse=sortiert != feld) + ohne
+    mit = [k for k in kontakte if schluessel(k)]
+    ohne = [k for k in kontakte if not schluessel(k)]
+    return sorted(mit, key=schluessel, reverse=sortiert != feld) + ohne
 
 
 def _orte(kontakte):
@@ -180,6 +197,10 @@ def liste(request):
             "richtung": richtung,
         }
 
+    koepfe = {feld: spalte(feld) for feld in SORTIERUNG}
+    gewaehlt = request.user.adressen_spalten
+    if gewaehlt is None:
+        gewaehlt = SPALTEN_VORGABE
     return render(
         request,
         "contacts/liste.html",
@@ -192,7 +213,20 @@ def liste(request):
             "ort": ort,
             "orte": orte,
             "sortiert": "" if sortiert == "name" else sortiert,
-            "spalten": {feld: spalte(feld) for feld in SORTIERUNG},
+            "koepfe": koepfe,
+            "spalten": [
+                {
+                    "feld": feld,
+                    "titel": titel,
+                    "klasse": klasse,
+                    "kopf": koepfe.get(feld),
+                }
+                for feld, titel, klasse in SPALTEN
+                if feld in gewaehlt
+            ],
+            "spaltenwahl": [
+                (feld, titel, feld in gewaehlt) for feld, titel, _ in SPALTEN
+            ],
             "archiv": archiv,
             "gesperrt": gesperrt,
             "anzahl": Kontakt.objects.filter(archiviert=False).count(),
@@ -206,6 +240,19 @@ def liste(request):
             "exporte": tabelle.links(request),
         },
     )
+
+
+@require_POST
+def spalten(request):
+    """Spalten der Liste wählen; gilt für den Benutzer auf allen Geräten."""
+    if request.POST.get("vorgabe"):
+        request.user.adressen_spalten = None
+    else:
+        gewaehlt = request.POST.getlist("spalte")
+        request.user.adressen_spalten = [f for f, _, _ in SPALTEN if f in gewaehlt]
+    request.user.save(update_fields=["adressen_spalten"])
+    abfrage = QueryDict(request.POST.get("abfrage", "")).urlencode()
+    return redirect(reverse("contacts:liste") + (f"?{abfrage}" if abfrage else ""))
 
 
 def moegliche_dubletten(kontakt, wege=()):

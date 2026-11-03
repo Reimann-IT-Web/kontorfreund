@@ -151,6 +151,21 @@ document.querySelectorAll("[data-auto-submit]").forEach((feld) => {
   feld.addEventListener("change", () => feld.form.requestSubmit());
 });
 
+// ---------- Aufklappmenüs: Klick daneben oder Esc schließt ----------
+
+document.querySelectorAll("details[data-menue]").forEach((menue) => {
+  document.addEventListener("click", (e) => {
+    if (!menue.contains(e.target)) menue.open = false;
+  });
+  menue.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && menue.open) {
+      e.preventDefault();
+      menue.open = false;
+      menue.querySelector("summary").focus();
+    }
+  });
+});
+
 // ---------- Dateien hineinziehen (Spezifikation K-3) ----------
 
 const ablagen = document.querySelectorAll("[data-ablage]");

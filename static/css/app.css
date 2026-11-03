@@ -1360,6 +1360,9 @@ select {
 /* ---------- Tabellen ---------- */
 
 .table-wrap {
+  /* Hält auch die versteckten Beschriftungen (.visually-hidden) im Rahmen; sonst wird
+     die ganze Seite breiter, sobald eine Tabelle seitlich scrollt. */
+  position: relative;
   overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1856,6 +1859,57 @@ select {
 
 .menu-list button:focus-visible {
   outline-offset: -2px;
+}
+
+.spalten-wahl {
+  margin-left: auto;
+}
+
+.spalten-liste {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s1));
+  right: 0;
+  min-width: 15rem;
+  padding: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.spalten-hinweis {
+  margin: 0;
+  padding: var(--s2) 0.75rem;
+}
+
+.spalten-liste label {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.spalten-liste label:hover {
+  background: var(--accent-soft);
+}
+
+.spalten-liste input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.spalten-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s1);
+  padding: var(--s3) 0.75rem var(--s2);
+  border-top: 1px solid var(--line);
 }
 
 .menu-meta {
@@ -2868,10 +2922,6 @@ input[type="file"]::file-selector-button {
   .check-bar.is-ok .check-bar-state {
     color: var(--ok);
   }
-
-  .col-kontakt {
-    display: none;
-  }
 }
 
 @media (max-width: 40rem) {
@@ -2939,6 +2989,11 @@ input[type="file"]::file-selector-button {
 
   .filterbar .field-search {
     max-width: none;
+  }
+
+  /* Das Handy zeigt von den Spalten nur die Kategorien. */
+  .spalten-wahl {
+    display: none;
   }
 
   .segmented {

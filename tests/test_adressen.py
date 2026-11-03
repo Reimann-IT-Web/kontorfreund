@@ -6,6 +6,7 @@ from django.urls import reverse
 from openpyxl import load_workbook
 
 from contacts.models import Kategorie, Kontakt
+from protokoll.models import Eintrag
 
 pytestmark = pytest.mark.django_db
 
@@ -268,3 +269,57 @@ def test_liste_nach_ort_filtern(client):
     )
     gesucht = client.get(liste, {"ort": "Bonn", "q": "Alt"})
     assert "Für „Alt“ gibt es keinen Treffer in Bonn." in gesucht.text
+
+
+def test_spalten_waehlen(client, inhaber):
+    """Spezifikation K-1: Spalten wählen, je Benutzer, ohne Eintrag im Protokoll."""
+    Kontakt.objects.create(
+        firmenname="Bäckerei Krume", plz="01067", ort="Dresden", email="info@krume.test"
+    )
+    Kontakt.objects.create(firmenname="Hof Ahorn", plz="55116")
+    Kontakt.objects.create(firmenname="Weingut Rhein")
+    liste = reverse("contacts:liste")
+
+    seite = client.get(liste).text
+    assert '<th scope="col" class="col-kontakt">Telefon</th>' in seite
+    assert ">E-Mail</th>" not in seite
+    assert (
+        '<input type="checkbox" name="spalte" value="ort" form="spalten" checked>Ort'
+    ) in seite
+    assert '<input type="checkbox" name="spalte" value="email" form="spalten">' in seite
+    assert '<td colspan="6">' in seite
+
+    protokoll = Eintrag.objects.count()
+    antwort = client.post(
+        reverse("contacts:spalten"),
+        {"spalte": ["email", "plz", "unbekannt"], "abfrage": "q=e&sortiert=-nr"},
+    )
+    assert antwort.url == "/adressen/?q=e&sortiert=-nr"
+    inhaber.refresh_from_db()
+    assert inhaber.adressen_spalten == ["plz", "email"]
+    assert Eintrag.objects.count() == protokoll
+
+    seite = client.get(liste).text
+    assert ">Telefon</th>" not in seite and ">Kategorien</th>" not in seite
+    assert '<a href="?sortiert=plz" title="Nach PLZ sortieren">PLZ</a>' in seite
+    assert '<th scope="col" class="col-kontakt">E-Mail</th>' in seite
+    assert '<td class="col-ort">01067</td>' in seite
+    assert '<td class="col-kontakt">info@krume.test</td>' in seite
+    assert '<td colspan="5">' in seite
+    # Ohne PLZ in beiden Richtungen zuletzt
+    assert namen(client.get(liste, {"sortiert": "-plz"})) == [
+        "Hof Ahorn",
+        "Bäckerei Krume",
+        "Weingut Rhein",
+    ]
+
+    client.post(reverse("contacts:spalten"), {"abfrage": ""})
+    inhaber.refresh_from_db()
+    assert inhaber.adressen_spalten == []
+    assert '<td colspan="3">' in client.get(liste).text
+
+    antwort = client.post(reverse("contacts:spalten"), {"vorgabe": "1"})
+    assert antwort.url == "/adressen/"
+    inhaber.refresh_from_db()
+    assert inhaber.adressen_spalten is None
+    assert ">Telefon</th>" in client.get(liste).text

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.25.0 – 03.11.2026
+
+- Spalten wählen: Mit „Spalten“ rechts über der Adressliste legen Sie fest, was die Liste neben Nummer und Name zeigt: Straße, PLZ, Ort, Land, Kategorien, Telefon, E-Mail, Website und USt-IdNr. „Wie vorgegeben“ stellt Ort, Kategorien und Telefon wieder her. Die Wahl gilt für Ihr Benutzerkonto, auf jedem Gerät. Nach der PLZ lässt sich wie nach dem Ort sortieren.
+- Auf schmaleren Bildschirmen wie einem Tablet bleiben die gewählten Spalten stehen, auch das Telefon; ist die Tabelle zu breit, schieben Sie sie seitlich. Auf dem Handy zeigt die Liste wie bisher Nummer, Name und Kategorien.
+- Behoben: War eine Tabelle breiter als der Bildschirm, ließ sich die ganze Seite seitlich verschieben statt nur die Tabelle.
+
 ## 0.24.0 – 03.11.2026
 
 - Die Adressliste lässt sich sortieren: Ein Klick auf „Nr.“, „Name“ oder „Ort“ sortiert danach, ein zweiter dreht die Reihenfolge um; ein Pfeil am Spaltenkopf zeigt die Richtung. Umlaute stehen beim Grundbuchstaben, „Ärztehaus“ also bei A und nicht mehr hinter Z, und Groß- und Kleinschreibung zählen nicht. Adressen ohne Ort stehen am Ende. Der Export der Liste übernimmt die Reihenfolge.
