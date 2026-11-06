@@ -369,6 +369,31 @@ def test_mahnung_erstellen_als_pdf(client, firma, firmenkunde, settings):
     assert not (settings.DATA_DIR / mahnung.datei).exists()
 
 
+def test_mahnung_traegt_die_unterschrift(
+    client, firma, firmenkunde, settings, unterschrift
+):
+    firma.unterschrift = unterschrift
+    firma.unterschrift_text = "Mara Beispiel"
+    firma.save()
+    rechnung = rechnung_schreiben(client, firmenkunde)
+
+    client.post(
+        reverse("zahlungen:mahnen", args=[rechnung.pk]),
+        {
+            "datum": "2026-10-01",
+            "frist": "2026-10-11",
+            "text": "Bitte zahlen Sie.",
+            "gebuehr": "0,00",
+            "aktion": "erstellen",
+        },
+    )
+
+    inhalt = (settings.DATA_DIR / Mahnung.objects.get().datei).read_bytes()
+    seite = PdfReader(BytesIO(inhalt)).pages[0]
+    assert "Mara Beispiel" in seite.extract_text()
+    assert len(seite.images) == 1
+
+
 def test_zahlung_deckt_mahnkosten(client, firma, firmenkunde):
     rechnung = rechnung_schreiben(client, firmenkunde)
     client.post(

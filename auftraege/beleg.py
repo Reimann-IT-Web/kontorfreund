@@ -19,6 +19,7 @@ from invoicing.beleg import (
     datum_de,
     druck_positionen,
     druck_summen,
+    druckbilder,
     empfaenger_daten,
     grussformel,
     leistungszeit,
@@ -80,7 +81,7 @@ def beleg_daten(auftrag, firma, nummer):
     }
 
 
-def druckdaten(b, entwurf=False, logo=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     """Angaben der Auftragsbestätigung als fertig formatierte Texte für die Typst-Vorlage."""
     e = b["empfaenger"]
     info = [
@@ -99,6 +100,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         if b["nummer"]
         else "Auftragsbestätigung (Entwurf)",
         "logo": list(logo) or None,
+        "unterschrift": list(unterschrift) or None,
         **briefkopf(b["absender"]),
         "empfaenger": e["zeilen"],
         "info": info,
@@ -116,8 +118,8 @@ def druckdaten(b, entwurf=False, logo=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b""):
-    return setzen(druckdaten(b, entwurf, logo))
+def pdf(b, entwurf=False, logo=b"", unterschrift=b""):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift))
 
 
 def fertigstellen(auftrag, firma):
@@ -125,7 +127,7 @@ def fertigstellen(auftrag, firma):
     with transaction.atomic():
         nummer = Auftragsbestaetigung.naechste_nummer(auftrag.datum)
         b = beleg_daten(auftrag, firma, nummer)
-        inhalt = pdf(b, logo=bytes(firma.logo))
+        inhalt = pdf(b, **druckbilder(firma))
         relativ = (
             Path("archiv")
             / "auftraege"

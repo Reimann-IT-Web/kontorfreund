@@ -51,6 +51,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 
 - Erzeugt mit Typst als PDF/A-3b.
 - Briefpapier: Logo, Akzentfarbe, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt), Anschriftfeld nach DIN 5008.
+- Unterschrift: Bild und Text aus den Firmendaten am Ende von Rechnung, Angebot, Auftragsbestätigung und Mahnung, mit dem Schlusstext auf einer Seite.
 
 ## B-7 E-Rechnung erzeugen
 

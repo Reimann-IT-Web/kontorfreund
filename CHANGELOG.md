@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.0 – 06.11.2026
+
+- Unterschrift: Die Einstellungen haben den neuen Abschnitt „Unterschrift“. Dort laden Sie ein Bild Ihrer Unterschrift hoch (PNG, JPG oder SVG bis 1 MB) und tragen auf Wunsch einen Text darunter ein, etwa Ihren Namen und Ihre Funktion. Beides steht ab jetzt am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen, nach Ihrem Schlusstext und auch schon in der Vorschau. Reicht der Platz auf der Seite nicht, rücken Schlusstext und Unterschrift gemeinsam auf die nächste Seite. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.30.0 – 06.11.2026
 
 - Entwürfe auf der Übersicht: Rechts steht jetzt der Abschnitt „Entwürfe“ mit allen noch nicht festgeschriebenen Rechnungen und allen noch nicht fertiggestellten Angeboten und Auftragsbestätigungen. Sie sehen Kunde, Belegart und wann Sie zuletzt daran gearbeitet haben, die zuletzt geänderten stehen oben, ein Klick öffnet den Entwurf. Gibt es keine Entwürfe, fehlt der Abschnitt.

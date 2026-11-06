@@ -18,6 +18,7 @@ from invoicing.beleg import (
     datum_de,
     druck_positionen,
     druck_summen,
+    druckbilder,
     empfaenger_daten,
     grussformel,
     lieferanschrift_daten,
@@ -66,7 +67,7 @@ def beleg_daten(angebot, firma, nummer):
     }
 
 
-def druckdaten(b, entwurf=False, logo=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     """Angebots-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     e = b["empfaenger"]
     info = [
@@ -80,6 +81,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "entwurf": entwurf,
         "titel": f"Angebot {b['nummer']}" if b["nummer"] else "Angebot (Entwurf)",
         "logo": list(logo) or None,
+        "unterschrift": list(unterschrift) or None,
         **briefkopf(b["absender"]),
         "empfaenger": e["zeilen"],
         "info": info,
@@ -97,8 +99,8 @@ def druckdaten(b, entwurf=False, logo=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b""):
-    return setzen(druckdaten(b, entwurf, logo))
+def pdf(b, entwurf=False, logo=b"", unterschrift=b""):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift))
 
 
 def fertigstellen(angebot, firma):
@@ -106,7 +108,7 @@ def fertigstellen(angebot, firma):
     with transaction.atomic():
         nummer = Angebot.naechste_nummer(angebot.datum)
         b = beleg_daten(angebot, firma, nummer)
-        inhalt = pdf(b, logo=bytes(firma.logo))
+        inhalt = pdf(b, **druckbilder(firma))
         relativ = (
             Path("archiv")
             / "angebote"

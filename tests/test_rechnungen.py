@@ -573,6 +573,123 @@ def test_kaputtes_logo_abgelehnt(client, firma):
     assert bytes(Firmendaten.laden().logo) == b""
 
 
+def test_unterschrift_hochladen_und_auf_rechnung(
+    client, firma, kunde, daten, unterschrift
+):
+    einstellungen_absenden(
+        client,
+        firma,
+        unterschrift_datei=SimpleUploadedFile("u.png", unterschrift, "image/png"),
+        unterschrift_text="Mara Beispiel\r\nGeschäftsführung",
+    )
+    assert bytes(Firmendaten.laden().unterschrift) == unterschrift
+    seite = client.get(reverse("core:einstellungen")).text
+    assert 'alt="Ihre aktuelle Unterschrift"' in seite
+
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    rechnung = Rechnung.objects.get()
+    absender = rechnung.beleg["absender"]
+    assert absender["unterschrift_text"] == "Mara Beispiel\r\nGeschäftsführung"
+    pdf = PdfReader(BytesIO((daten / rechnung.datei).read_bytes())).pages[0]
+    assert "Mara Beispiel\nGeschäftsführung" in pdf.extract_text()
+    assert len(pdf.images) == 1
+
+
+def test_ohne_unterschrift_kein_bild_und_kein_text(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    rechnung = Rechnung.objects.get()
+    pdf = PdfReader(BytesIO((daten / rechnung.datei).read_bytes())).pages[0]
+    assert not pdf.images
+
+
+@pytest.mark.parametrize(
+    "modell, adresse",
+    [
+        (Rechnung, "invoicing:pdf"),
+        (Angebot, "angebote:pdf"),
+        (Auftragsbestaetigung, "auftraege:pdf"),
+    ],
+)
+def test_unterschrift_steht_auf_jeder_belegart(
+    client, firma, unterschrift, modell, adresse
+):
+    firma.unterschrift = unterschrift
+    firma.unterschrift_text = "Geschäftsführung"
+    firma.save()
+
+    entwurf = client.get(reverse(adresse, args=[modell.objects.create().pk]))
+
+    pdf = PdfReader(BytesIO(entwurf.content)).pages[0]
+    assert "Geschäftsführung" in pdf.extract_text()
+    assert len(pdf.images) == 1
+
+
+def test_gruss_und_unterschrift_bleiben_auf_einer_seite(
+    client, firma, kunde, unterschrift
+):
+    firma.unterschrift = unterschrift
+    firma.save()
+    rechnung = Rechnung.objects.create(
+        kontakt=kunde, fusstext="Mit freundlichen Grüßen"
+    )
+
+    # Mit jeder Position wandert das Ende des Belegs weiter nach unten über den Umbruch.
+    for nr in range(1, 18):
+        rechnung.positionen.create(
+            nr=nr, bezeichnung=f"Leistung {nr}", menge=1, einheit="Std.", preis=80
+        )
+        entwurf = client.get(reverse("invoicing:pdf", args=[rechnung.pk]))
+        pdf = PdfReader(BytesIO(entwurf.content))
+        for seite in pdf.pages:
+            gruss = "Mit freundlichen Grüßen" in seite.extract_text()
+            assert bool(seite.images) == gruss, nr
+    assert len(pdf.pages) == 2
+
+
+def test_unterschrift_nur_als_bild(client, firma, unterschrift):
+    firma.unterschrift = unterschrift
+    firma.save()
+
+    entwurf = client.get(reverse("invoicing:pdf", args=[Rechnung.objects.create().pk]))
+
+    assert len(PdfReader(BytesIO(entwurf.content)).pages[0].images) == 1
+
+
+def test_leeres_feld_behaelt_die_unterschrift(client, firma, unterschrift):
+    einstellungen_absenden(
+        client,
+        firma,
+        unterschrift_datei=SimpleUploadedFile("u.png", unterschrift, "image/png"),
+    )
+    einstellungen_absenden(client, firma)
+    assert bytes(Firmendaten.laden().unterschrift) == unterschrift
+
+    einstellungen_absenden(client, firma, unterschrift_entfernen="on")
+    assert bytes(Firmendaten.laden().unterschrift) == b""
+
+
+def test_kaputte_unterschrift_abgelehnt(client, firma):
+    antwort = einstellungen_absenden(
+        client,
+        firma,
+        unterschrift_datei=SimpleUploadedFile("u.png", b"\x89PNG kaputt", "image/png"),
+    )
+    assert "nicht als Bild lesen" in antwort.text
+    assert bytes(Firmendaten.laden().unterschrift) == b""
+
+
+def test_zu_grosse_unterschrift_abgelehnt(client, firma):
+    antwort = einstellungen_absenden(
+        client,
+        firma,
+        unterschrift_datei=SimpleUploadedFile(
+            "u.png", b"\x89PNG" + bytes(1024 * 1024), "image/png"
+        ),
+    )
+    assert "Die Unterschrift darf höchstens 1 MB groß sein." in antwort.text
+    assert bytes(Firmendaten.laden().unterschrift) == b""
+
+
 def test_entwurf_steht_auf_der_uebersicht_bis_zum_festschreiben(
     client, firma, kunde, daten
 ):

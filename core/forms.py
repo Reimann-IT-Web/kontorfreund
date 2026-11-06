@@ -5,7 +5,26 @@ from invoicing.beleg import logo_lesbar
 
 from .models import Firmendaten
 
-LOGO_GROESSE = 1024 * 1024
+BILD_GROESSE = 1024 * 1024
+BILDARTEN = ".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
+
+
+def bilddatei_lesen(datei, name):
+    """Inhalt der hochgeladenen Bilddatei; leer, wenn keine gewählt ist."""
+    if not datei:
+        return b""
+    if datei.size > BILD_GROESSE:
+        raise forms.ValidationError(f"{name} darf höchstens 1 MB groß sein.")
+    daten = datei.read()
+    kopf = daten[:512].lstrip(b"\xef\xbb\xbf \t\r\n")
+    bekannt = daten.startswith((b"\x89PNG", b"\xff\xd8")) or (
+        kopf.startswith(b"<") and b"<svg" in daten
+    )
+    if not (bekannt and logo_lesbar(daten)):
+        raise forms.ValidationError(
+            "Die Datei lässt sich nicht als Bild lesen. Bitte SVG, PNG oder JPG verwenden."
+        )
+    return daten
 
 
 class FirmendatenForm(forms.ModelForm):
@@ -13,17 +32,25 @@ class FirmendatenForm(forms.ModelForm):
         label="Bilddatei",
         required=False,
         help_text="SVG, PNG oder JPG bis 1 MB. Steht oben links auf jeder Rechnung.",
-        widget=forms.FileInput(
-            attrs={"accept": ".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"}
-        ),
+        widget=forms.FileInput(attrs={"accept": BILDARTEN}),
     )
     logo_entfernen = forms.BooleanField(label="Logo entfernen", required=False)
+    unterschrift_datei = forms.FileField(
+        label="Bilddatei",
+        required=False,
+        help_text="PNG, JPG oder SVG bis 1 MB. Steht am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen.",
+        widget=forms.FileInput(attrs={"accept": BILDARTEN}),
+    )
+    unterschrift_entfernen = forms.BooleanField(
+        label="Unterschrift entfernen", required=False
+    )
 
     class Meta:
         model = Firmendaten
         fields = [
             "name",
             "marke",
+            "unterschrift_text",
             "inhaber",
             "strasse",
             "plz",
@@ -50,9 +77,11 @@ class FirmendatenForm(forms.ModelForm):
             "mail_passwort": forms.PasswordInput(
                 render_value=False, attrs={"autocomplete": "new-password"}
             ),
+            "unterschrift_text": forms.Textarea(attrs={"rows": 2}),
         }
         help_texts = {
             "marke": "Steht klein unter dem Firmennamen neben dem Logo, z. B. Ihr Markenname.",
+            "unterschrift_text": "Zum Beispiel Ihr Name und in der zweiten Zeile Ihre Funktion.",
             "steuernummer": "Steht auf jeder Rechnung. Alternativ genügt die USt-IdNr.",
             "kleinunternehmer": "Dann weist Kontorfreund keine Umsatzsteuer aus und druckt den Hinweis nach § 19 UStG.",
             "iban": "Erscheint in der Fußzeile und im GiroCode.",
@@ -73,25 +102,17 @@ class FirmendatenForm(forms.ModelForm):
         return self.cleaned_data["mail_passwort"] or self.instance.mail_passwort
 
     def clean_logo_datei(self):
-        datei = self.cleaned_data["logo_datei"]
-        if not datei:
-            return b""
-        if datei.size > LOGO_GROESSE:
-            raise forms.ValidationError("Das Logo darf höchstens 1 MB groß sein.")
-        daten = datei.read()
-        kopf = daten[:512].lstrip(b"\xef\xbb\xbf \t\r\n")
-        bekannt = daten.startswith((b"\x89PNG", b"\xff\xd8")) or (
-            kopf.startswith(b"<") and b"<svg" in daten
+        return bilddatei_lesen(self.cleaned_data["logo_datei"], "Das Logo")
+
+    def clean_unterschrift_datei(self):
+        return bilddatei_lesen(
+            self.cleaned_data["unterschrift_datei"], "Die Unterschrift"
         )
-        if not (bekannt and logo_lesbar(daten)):
-            raise forms.ValidationError(
-                "Die Datei lässt sich nicht als Bild lesen. Bitte SVG, PNG oder JPG verwenden."
-            )
-        return daten
 
     def save(self, commit=True):
-        if self.cleaned_data["logo_datei"]:
-            self.instance.logo = self.cleaned_data["logo_datei"]
-        elif self.cleaned_data["logo_entfernen"]:
-            self.instance.logo = b""
+        for feld in ("logo", "unterschrift"):
+            if self.cleaned_data[f"{feld}_datei"]:
+                setattr(self.instance, feld, self.cleaned_data[f"{feld}_datei"])
+            elif self.cleaned_data[f"{feld}_entfernen"]:
+                setattr(self.instance, feld, b"")
         return super().save(commit)

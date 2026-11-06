@@ -122,7 +122,7 @@ def festschreiben(client, adresse, kunde, steuerfall, *mengen, **mehr):
 
 
 @pytest.fixture
-def rechnungen(client, settings):
+def rechnungen(client, settings, unterschrift):
     """Je Steuerfall Rechnung, Stornorechnung und Rechnungskorrektur, festgeschrieben."""
     f = Firmendaten.laden()
     f.name = "Muster IT"
@@ -135,6 +135,9 @@ def rechnungen(client, settings):
     f.email = "post@muster.test"
     f.telefon = "06131 123456"
     f.iban = "DE02120300000000202051"
+    # Durchsichtiger Grund: Mustang prüft damit auch das PDF/A samt Bild.
+    f.unterschrift = unterschrift
+    f.unterschrift_text = "Max Muster\nInhaber"
     f.save()
 
     dateien = {}

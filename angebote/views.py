@@ -259,7 +259,7 @@ def loeschen(request, pk):
 
 def _entwurf_pdf(angebot, firma):
     b = beleg.beleg_daten(angebot, firma, "")
-    return beleg.pdf(b, entwurf=True, logo=bytes(firma.logo))
+    return beleg.pdf(b, entwurf=True, **beleg.druckbilder(firma))
 
 
 # Der PDF-Betrachter des Browsers scheitert an der strengen Richtlinie der Seiten.

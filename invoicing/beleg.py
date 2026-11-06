@@ -135,8 +135,14 @@ def absender_daten(firma):
             "telefon",
             "iban",
             "bank",
+            "unterschrift_text",
         )
     }
+
+
+def druckbilder(firma):
+    """Bilder für den Druck; sie liegen nur in den Firmendaten, nicht im Beleg."""
+    return {"logo": bytes(firma.logo), "unterschrift": bytes(firma.unterschrift)}
 
 
 def empfaenger_daten(k, anschrift=None):
@@ -276,7 +282,7 @@ def girocode_svg(b):
     return ausgabe.getvalue().decode()
 
 
-def druckdaten(b, entwurf=False, logo=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     """Beleg-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     a, e, storno = b["absender"], b["empfaenger"], b["storno_zu"]
     korrektur = b.get("korrektur_zu")
@@ -332,6 +338,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "entwurf": entwurf,
         "titel": titel,
         "logo": list(logo) or None,
+        "unterschrift": list(unterschrift) or None,
         **briefkopf(a),
         "empfaenger": e["zeilen"],
         "info": info,
@@ -361,6 +368,7 @@ def briefkopf(a):
     return {
         "absender_name": a["name"],
         "marke": a["marke"],
+        "unterschrift_text": a["unterschrift_text"].splitlines(),
         "kopf": [
             z
             for z in (
@@ -443,8 +451,8 @@ def setzen(druck, format="pdf"):
     )
 
 
-def pdf(b, entwurf=False, logo=b"", format="pdf"):
-    return setzen(druckdaten(b, entwurf, logo), format)
+def pdf(b, entwurf=False, logo=b"", unterschrift=b"", format="pdf"):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift), format)
 
 
 def logo_lesbar(daten):
@@ -618,7 +626,7 @@ def zugferd(b):
     return doc.serialize(schema="FACTUR-X_EN16931")
 
 
-def endgueltiges_pdf(b, logo=b""):
+def endgueltiges_pdf(b, **bilder):
     """PDF/A-3 mit eingebetteter XML, dazu die XML selbst (None, wenn keine entsteht)."""
     xml = zugferd(b)
     if b["xrechnung"] and not xml:
@@ -626,7 +634,7 @@ def endgueltiges_pdf(b, logo=b""):
             "Für eine XRechnung muss das Land des Empfängers und der "
             "Lieferanschrift bekannt sein."
         )
-    inhalt = pdf(b, logo=logo)
+    inhalt = pdf(b, **bilder)
     return (attach_xml(inhalt, xml, lang="de-DE") if xml else inhalt), xml
 
 
@@ -635,7 +643,7 @@ def festschreiben(rechnung, firma):
     with transaction.atomic():
         nummer = Rechnung.naechste_nummer(rechnung.datum)
         b = beleg_daten(rechnung, firma, nummer)
-        inhalt, xml = endgueltiges_pdf(b, bytes(firma.logo))
+        inhalt, xml = endgueltiges_pdf(b, **druckbilder(firma))
         relativ = (
             Path("archiv")
             / "rechnungen"

@@ -19,6 +19,21 @@ def iban_pruefen(wert):
         )
 
 
+def daten_url(daten):
+    """Bild als Daten-URL für die Ansicht in den Einstellungen."""
+    daten = bytes(daten)
+    if not daten:
+        return ""
+    typ = (
+        "image/png"
+        if daten.startswith(b"\x89PNG")
+        else "image/jpeg"
+        if daten.startswith(b"\xff\xd8")
+        else "image/svg+xml"
+    )
+    return f"data:{typ};base64,{base64.b64encode(daten).decode()}"
+
+
 class Firmendaten(models.Model):
     """Angaben zum eigenen Unternehmen; es gibt genau einen Datensatz."""
 
@@ -41,6 +56,8 @@ class Firmendaten(models.Model):
     bank = models.CharField("Bank", max_length=100, blank=True)
     # In der Datenbank statt als Datei, damit es mit jeder Sicherung erhalten bleibt.
     logo = models.BinaryField("Logo", blank=True, default=b"")
+    unterschrift = models.BinaryField("Unterschrift", blank=True, default=b"")
+    unterschrift_text = models.TextField("Text unter der Unterschrift", blank=True)
 
     class Verschluesselung(models.TextChoices):
         STARTTLS = "starttls", "STARTTLS (meist Port 587)"
@@ -89,18 +106,11 @@ class Firmendaten(models.Model):
 
     @property
     def logo_bild(self):
-        """Logo als Daten-URL für die Ansicht in den Einstellungen."""
-        daten = bytes(self.logo)
-        if not daten:
-            return ""
-        typ = (
-            "image/png"
-            if daten.startswith(b"\x89PNG")
-            else "image/jpeg"
-            if daten.startswith(b"\xff\xd8")
-            else "image/svg+xml"
-        )
-        return f"data:{typ};base64,{base64.b64encode(daten).decode()}"
+        return daten_url(self.logo)
+
+    @property
+    def unterschrift_bild(self):
+        return daten_url(self.unterschrift)
 
     @property
     def mail_bereit(self):

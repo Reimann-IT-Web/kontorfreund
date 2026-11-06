@@ -299,7 +299,7 @@ def loeschen(request, pk):
 
 def _entwurf_pdf(rechnung, firma):
     b = beleg.beleg_daten(rechnung, firma, "")
-    return beleg.pdf(b, entwurf=True, logo=bytes(firma.logo))
+    return beleg.pdf(b, entwurf=True, **beleg.druckbilder(firma))
 
 
 def xml(request, pk):

@@ -15,6 +15,7 @@ from invoicing.beleg import (
     briefanrede,
     briefkopf,
     datum_de,
+    druckbilder,
     empfaenger_daten,
     girocode_svg,
     grussformel,
@@ -193,7 +194,7 @@ def beleg_daten(rechnung, firma, stufe, datum, frist, text, aufstellung):
     }
 
 
-def druckdaten(b, entwurf=False, logo=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     """Mahnung als fertig formatierte Texte für die Typst-Vorlage der Rechnung."""
     a, e, r = b["absender"], b["empfaenger"], b["rechnung"]
     info = [("Datum", datum_de(b["datum"]))]
@@ -214,6 +215,7 @@ def druckdaten(b, entwurf=False, logo=b""):
         "entwurf": entwurf,
         "titel": b["bezeichnung"],
         "logo": list(logo) or None,
+        "unterschrift": list(unterschrift) or None,
         **briefkopf(a),
         "empfaenger": e["zeilen"],
         "info": info,
@@ -235,8 +237,8 @@ def druckdaten(b, entwurf=False, logo=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b""):
-    return setzen(druckdaten(b, entwurf, logo))
+def pdf(b, entwurf=False, logo=b"", unterschrift=b""):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift))
 
 
 def erstellen(rechnung, firma, stufe, datum, frist, text, gebuehr, zinsen, pauschale):
@@ -244,7 +246,7 @@ def erstellen(rechnung, firma, stufe, datum, frist, text, gebuehr, zinsen, pausc
     with transaction.atomic():
         aufstellung = berechnen(rechnung, stufe, datum, gebuehr, zinsen, pauschale)
         b = beleg_daten(rechnung, firma, stufe, datum, frist, text, aufstellung)
-        inhalt = pdf(b, logo=bytes(firma.logo))
+        inhalt = pdf(b, **druckbilder(firma))
         relativ = (
             Path("archiv")
             / "mahnungen"

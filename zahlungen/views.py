@@ -377,7 +377,9 @@ def mahnung_neu(request, pk):
             werte["text"],
             aufstellung,
         )
-        vorschau = seitenbilder(mahnen.pdf(b, entwurf=True, logo=bytes(firma.logo)))
+        vorschau = seitenbilder(
+            mahnen.pdf(b, entwurf=True, **mahnen.druckbilder(firma))
+        )
     return render(
         request,
         "zahlungen/mahnen.html",

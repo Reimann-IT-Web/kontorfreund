@@ -182,4 +182,19 @@
 ))
 
 #v(2mm)
-#for absatz in d.fusstext { par(zeilen(absatz)) }
+// Gruß und Unterschrift bleiben auf einer Seite. Quer- wie Hochformat passen in 60 × 16 mm.
+#let unterschrift = d.unterschrift != none or d.unterschrift_text.len() > 0
+#block(above: 1.1em, breakable: not unterschrift, {
+  for absatz in d.fusstext { par(zeilen(absatz)) }
+  if unterschrift {
+    v(4mm)
+    if d.unterschrift != none {
+      context {
+        let groesse = measure(image(bytes(d.unterschrift)))
+        let faktor = calc.min(60mm / groesse.width, 16mm / groesse.height)
+        image(bytes(d.unterschrift), width: groesse.width * faktor)
+      }
+    }
+    if d.unterschrift_text.len() > 0 { par(zeilen(d.unterschrift_text)) }
+  }
+})

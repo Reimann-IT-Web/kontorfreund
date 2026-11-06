@@ -1,5 +1,8 @@
+from io import BytesIO
+
 import pytest
 from django.test import Client
+from PIL import Image, ImageDraw
 
 from archive import pruefung
 from konten.models import Benutzer
@@ -30,6 +33,18 @@ def client(client, inhaber):
     """Als Inhaber angemeldet; die Anmeldung selbst prüfen Tests mit `anonym`."""
     client.force_login(inhaber)
     return client
+
+
+@pytest.fixture
+def unterschrift():
+    """PNG mit durchsichtigem Grund, wie eine freigestellte Unterschrift."""
+    bild = Image.new("RGBA", (300, 80), (0, 0, 0, 0))
+    ImageDraw.Draw(bild).line(
+        [(10, 60), (80, 20), (150, 60), (290, 20)], fill=(0, 0, 0, 255), width=4
+    )
+    ausgabe = BytesIO()
+    bild.save(ausgabe, format="PNG")
+    return ausgabe.getvalue()
 
 
 @pytest.fixture

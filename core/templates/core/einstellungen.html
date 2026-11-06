@@ -42,6 +42,18 @@
     </div>
   </section>
 
+  <section class="form-section" aria-labelledby="t-unterschrift">
+    <h2 class="form-title" id="t-unterschrift">Unterschrift</h2>
+    <div class="logo-feld">
+      {% if form.instance.unterschrift_bild %}<img class="logo-bild" src="{{ form.instance.unterschrift_bild }}" alt="Ihre aktuelle Unterschrift">{% endif %}
+      <div class="stack">
+        {% include "core/feld.html" with f=form.unterschrift_datei optional=True %}
+        {% if form.instance.unterschrift_bild %}<label class="choice">{{ form.unterschrift_entfernen }}<span>{{ form.unterschrift_entfernen.label }}</span></label>{% endif %}
+        {% include "core/feld.html" with f=form.unterschrift_text optional=True %}
+      </div>
+    </div>
+  </section>
+
   <section class="form-section" aria-labelledby="t-steuer">
     <h2 class="form-title" id="t-steuer">Steuer</h2>
     <div class="form-grid">
