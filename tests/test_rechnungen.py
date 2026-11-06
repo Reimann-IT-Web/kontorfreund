@@ -1,7 +1,7 @@
 """Rechnung schreiben, festschreiben und versenden – mit erfundenen Daten."""
 
 import hashlib
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from io import BytesIO
 
@@ -594,11 +594,16 @@ def test_uebersicht_zeigt_entwuerfe_aller_belegarten_zuletzt_geaenderte_oben(
     rechnung = Rechnung.objects.create(kontakt=kunde)
     angebot = Angebot.objects.create(kontakt=kunde)
     auftrag = Auftragsbestaetigung.objects.create()
-    rechnung.save()
+    # Feste Zeiten: Unter Windows bekommen schnell angelegte Belege oft dieselbe.
+    for beleg, stunde in ((rechnung, 18), (auftrag, 9), (angebot, 8)):
+        type(beleg).objects.filter(pk=beleg.pk).update(
+            geaendert=datetime(2026, 11, 6, stunde, 53, tzinfo=UTC)
+        )
 
     start = client.get(reverse("core:start")).text
 
     assert "noch kein Empfänger" in start
+    assert "Rechnung · 06.11.2026, 19:53" in start  # Ortszeit, nicht UTC
     assert (
         start.index(f'href="{reverse("invoicing:bearbeiten", args=[rechnung.pk])}"')
         < start.index(f'href="{reverse("auftraege:bearbeiten", args=[auftrag.pk])}"')
