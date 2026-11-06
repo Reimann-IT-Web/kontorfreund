@@ -19,7 +19,7 @@ OWN-WORLD: Helles, leicht warmes Neutralgrau als Fläche, eine zweite, etwas dun
 
 STORY: Der Inhaber öffnet morgens, sieht in einer Arbeitsliste, was heute fällig ist, erledigt es mit einem Klick und schreibt eine Rechnung, deren Pflichtangaben das Programm sichtbar abhakt.
 
-FIRST VIEWPORT: Links Seitenleiste mit den Bereichen in vertrauter Reihenfolge und Zählern. Oben Suche (Strg+K). Inhalt: Datumszeile, Schnellstart-Leiste mit „Neue Rechnung“ als einziger gefüllter Schaltfläche, darunter die Arbeitsliste „Heute zu tun“ in drei Gruppen; rechts eine schmale Spalte, durch Haarlinien gegliedert: offene Beträge, Umsatzgrenze nach § 19, „Zuletzt bearbeitet“ als Wiedereinstieg. Auf schmalen Bildschirmen begleitet eine Prüfleiste („7 von 8 · Es fehlt …“) den Rechnungseditor am unteren Rand.
+FIRST VIEWPORT: Links Seitenleiste mit den Bereichen in vertrauter Reihenfolge und Zählern. Oben Suche (Strg+K). Inhalt: Datumszeile, Schnellstart-Leiste mit „Neue Rechnung“ als einziger gefüllter Schaltfläche, darunter die Arbeitsliste „Heute zu tun“ in drei Gruppen; rechts eine schmale Spalte, durch Haarlinien gegliedert: offene Beträge, Umsatzgrenze nach § 19, „Entwürfe“ und „Zuletzt bearbeitet“ als Wiedereinstieg. Auf schmalen Bildschirmen begleitet eine Prüfleiste („7 von 8 · Es fehlt …“) den Rechnungseditor am unteren Rand.
 
 FORM: Standardweg, vom Nutzer gewählt (vertraut wie die bisherige Software, eigenes Aussehen); nicht von der gewürfelten Liste; Seed 44122482. Signatur-Interaktion: Die Pflichtangaben-Prüfung im Rechnungseditor hakt live ab, Festschreiben wird erst bei 8 von 8 möglich. Bewegung nur für Zustandswechsel, 150–200 ms, ease-out.
 

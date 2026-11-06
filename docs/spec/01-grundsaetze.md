@@ -8,7 +8,7 @@ Gilt für alle Phasen. Ziel: spürbar einfacher zu bedienen und schöner als kla
 |---|---|---|
 | G-1 | Häufige Aufgaben brauchen wenige Schritte. | Vom Kontakt zum Rechnungsentwurf höchstens 3 Klicks. Beim neuen Kontakt ist nur der Name Pflicht. |
 | G-2 | Eine Suche für alles: Kontakte, Belege, Artikel, Wiedervorlagen. | Öffnet mit Strg+K bzw. ⌘K und zeigt Treffer schon beim Tippen. |
-| G-3 | Die Startseite ist eine Arbeitsliste, kein Menü. | Zeigt fällige Wiedervorlagen, überfällige Rechnungen und offene Angebote. |
+| G-3 | Die Startseite ist eine Arbeitsliste, kein Menü. | Zeigt fällige Wiedervorlagen, überfällige Rechnungen und offene Angebote, rechts daneben die Entwürfe. |
 | G-4 | Vollständig per Tastatur bedienbar. | Jede Funktion ohne Maus erreichbar, Fokus immer sichtbar. |
 | G-5 | Nichts geht verloren. | Entwürfe speichern automatisch. Statt „Wirklich löschen?“ gibt es „Rückgängig“. Endgültige Schritte (Rechnung festschreiben, Daten endgültig löschen) erklären vorher genau, was passiert. |
 | G-6 | Status auf einen Blick. | Belege zeigen ihren Status als Text und Farbe: Entwurf, Versendet, Bezahlt, Überfällig, Storniert. |

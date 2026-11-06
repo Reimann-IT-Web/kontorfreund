@@ -149,6 +149,17 @@
     </section>
     {% endif %}
 
+    {% if entwuerfe %}
+    <section class="side-section" aria-labelledby="entwuerfe">
+      <h2 id="entwuerfe" class="panel-title">Entwürfe</h2>
+      <ul class="recent">
+        {% for e in entwuerfe %}
+        <li><a href="{{ e.url }}"><span>{{ e.kontakt|default:"noch kein Empfänger" }}</span><span class="muted">{{ e.bezeichnung }} · {{ e.geaendert|date:"d.m.Y, H:i" }}</span></a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
     <section class="side-section" aria-labelledby="zuletzt">
       <h2 id="zuletzt" class="panel-title">Zuletzt bearbeitet</h2>
       {% if zuletzt %}

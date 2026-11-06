@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from angebote.models import Angebot
 from archive import fristen
+from auftraege.models import Auftragsbestaetigung
 from backups import sicherung
 from contacts.models import Kontakt
 from invoicing.models import Rechnung
@@ -26,6 +27,24 @@ from . import umsatz as umsaetze
 from .forms import FirmendatenForm
 from .hilfe import THEMEN
 from .models import Firmendaten
+
+BELEGARTEN = (
+    (Rechnung, "invoicing:bearbeiten"),
+    (Angebot, "angebote:bearbeiten"),
+    (Auftragsbestaetigung, "auftraege:bearbeiten"),
+)
+
+
+def _entwuerfe():
+    """Entwürfe aller Belegarten, die zuletzt geänderten oben."""
+    entwuerfe = []
+    for modell, ziel in BELEGARTEN:
+        for beleg in modell.objects.filter(status=modell.Status.ENTWURF).select_related(
+            "kontakt"
+        ):
+            beleg.url = reverse(ziel, args=[beleg.pk])
+            entwuerfe.append(beleg)
+    return sorted(entwuerfe, key=lambda b: b.geaendert, reverse=True)
 
 
 def start(request):
@@ -51,6 +70,7 @@ def start(request):
             "anzahl_kontakte": anzahl,
             "erste_schritte": not (firma.vollstaendig and anzahl),
             "zuletzt": kontakte.order_by("-geaendert")[:5],
+            "entwuerfe": _entwuerfe(),
             # Offene Posten: Summen in der Seitenleiste, Überfälliges in der Arbeitsliste.
             "posten": bool(offen)
             or Rechnung.objects.filter(status=Rechnung.Status.FESTGESCHRIEBEN).exists(),

@@ -13,7 +13,9 @@ from django.core.mail.backends import locmem
 from django.urls import reverse
 from pypdf import PdfReader
 
+from angebote.models import Angebot
 from archive.models import Altbeleg
+from auftraege.models import Auftragsbestaetigung
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing import versand
@@ -569,3 +571,36 @@ def test_kaputtes_logo_abgelehnt(client, firma):
     )
     assert "nicht als Bild lesen" in antwort.content.decode()
     assert bytes(Firmendaten.laden().logo) == b""
+
+
+def test_entwurf_steht_auf_der_uebersicht_bis_zum_festschreiben(
+    client, firma, kunde, daten
+):
+    assert 'id="entwuerfe"' not in client.get(reverse("core:start")).text
+
+    client.post(reverse("invoicing:neu"), formular(kunde, aktion="speichern"))
+    rechnung = Rechnung.objects.get()
+    start = client.get(reverse("core:start")).text
+    assert 'id="entwuerfe"' in start
+    assert f'href="{reverse("invoicing:bearbeiten", args=[rechnung.pk])}"' in start
+
+    client.post(reverse("invoicing:bearbeiten", args=[rechnung.pk]), formular(kunde))
+    assert 'id="entwuerfe"' not in client.get(reverse("core:start")).text
+
+
+def test_uebersicht_zeigt_entwuerfe_aller_belegarten_zuletzt_geaenderte_oben(
+    client, kunde
+):
+    rechnung = Rechnung.objects.create(kontakt=kunde)
+    angebot = Angebot.objects.create(kontakt=kunde)
+    auftrag = Auftragsbestaetigung.objects.create()
+    rechnung.save()
+
+    start = client.get(reverse("core:start")).text
+
+    assert "noch kein Empfänger" in start
+    assert (
+        start.index(f'href="{reverse("invoicing:bearbeiten", args=[rechnung.pk])}"')
+        < start.index(f'href="{reverse("auftraege:bearbeiten", args=[auftrag.pk])}"')
+        < start.index(f'href="{reverse("angebote:bearbeiten", args=[angebot.pk])}"')
+    )

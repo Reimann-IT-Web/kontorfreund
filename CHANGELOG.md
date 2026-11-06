@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.30.0 – 06.11.2026
+
+- Entwürfe auf der Übersicht: Rechts steht jetzt der Abschnitt „Entwürfe“ mit allen noch nicht festgeschriebenen Rechnungen und allen noch nicht fertiggestellten Angeboten und Auftragsbestätigungen. Sie sehen Kunde, Belegart und wann Sie zuletzt daran gearbeitet haben, die zuletzt geänderten stehen oben, ein Klick öffnet den Entwurf. Gibt es keine Entwürfe, fehlt der Abschnitt.
+
 ## 0.29.0 – 06.11.2026
 
 - Unter Windows installiert sich Kontorfreund jetzt nach `C:\Program Files\Kontorfreund` statt in den Benutzerordner. Dort sind die Programmdateien vor Veränderungen geschützt, und jedes Windows-Konto auf dem Rechner kann das Programm starten, jedes mit eigenen Daten.
