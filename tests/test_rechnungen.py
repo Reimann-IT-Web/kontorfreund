@@ -19,7 +19,7 @@ from auftraege.models import Auftragsbestaetigung
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing import versand
-from invoicing.beleg import leistungszeit
+from invoicing.beleg import grussformel, leistungszeit, schlusstext
 from invoicing.forms import dezimal
 from invoicing.models import Position, Rechnung
 
@@ -622,6 +622,60 @@ def test_unterschrift_steht_auf_jeder_belegart(
     pdf = PdfReader(BytesIO(entwurf.content)).pages[0]
     assert "Geschäftsführung" in pdf.extract_text()
     assert len(pdf.images) == 1
+
+
+@pytest.mark.parametrize(
+    "modell, adresse",
+    [
+        (Rechnung, "invoicing:pdf"),
+        (Angebot, "angebote:pdf"),
+        (Auftragsbestaetigung, "auftraege:pdf"),
+    ],
+)
+def test_name_steht_nur_unter_der_unterschrift(
+    client, firma, unterschrift, modell, adresse
+):
+    firma.unterschrift = unterschrift
+    firma.unterschrift_text = "Max Muster\r\nGeschäftsführung"
+    firma.save()
+    # Gespeicherte Entwürfe tragen den Vorgabetext mit den Zeilenenden des Browsers.
+    fusstext = grussformel(firma).replace("\n", "\r\n")
+
+    entwurf = client.get(
+        reverse(adresse, args=[modell.objects.create(fusstext=fusstext).pk])
+    )
+
+    text = PdfReader(BytesIO(entwurf.content)).pages[0].extract_text()
+    assert "Mit freundlichen Grüßen\nMax Muster\nGeschäftsführung" in text
+
+
+@pytest.mark.parametrize(
+    "text, unter_der_unterschrift, erwartet",
+    [
+        ("Gruß\n\nMax Muster", "Max Muster", [["Gruß"]]),
+        ("Gruß\r\n\r\nMax Muster\r\n", "Max Muster\r\nInhaber", [["Gruß"]]),
+        ("Gruß\n\nMax Muster", "Max Muster, Inhaber", [["Gruß"]]),
+        ("Gruß\n\nMax Muster", "Inhaber", [["Gruß"], ["Max Muster"]]),
+        ("Gruß\n\nMax Muster", "", [["Gruß"], ["Max Muster"]]),
+        ("Ihr Max Muster", "Max Muster", [["Ihr Max Muster"]]),
+        ("Max Muster\n\nDanke.", "Max Muster", [["Max Muster"], ["Danke."]]),
+        ("", "Max Muster", []),
+    ],
+)
+def test_schlusstext_laesst_nur_den_doppelten_namen_weg(
+    text, unter_der_unterschrift, erwartet
+):
+    absender = {
+        "inhaber": "Max Muster",
+        "name": "Muster IT",
+        "unterschrift_text": unter_der_unterschrift,
+    }
+    assert schlusstext(text, absender) == erwartet
+
+
+def test_schlusstext_nimmt_ohne_inhaber_den_firmennamen():
+    absender = {"inhaber": "", "name": "Muster IT", "unterschrift_text": "Muster IT"}
+    assert schlusstext("Gruß\n\nMuster IT", absender) == [["Gruß"]]
 
 
 def test_gruss_und_unterschrift_bleiben_auf_einer_seite(

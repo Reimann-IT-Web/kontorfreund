@@ -373,7 +373,7 @@ def test_mahnung_traegt_die_unterschrift(
     client, firma, firmenkunde, settings, unterschrift
 ):
     firma.unterschrift = unterschrift
-    firma.unterschrift_text = "Mara Beispiel"
+    firma.unterschrift_text = "Max Muster\nGeschäftsführung"
     firma.save()
     rechnung = rechnung_schreiben(client, firmenkunde)
 
@@ -390,7 +390,8 @@ def test_mahnung_traegt_die_unterschrift(
 
     inhalt = (settings.DATA_DIR / Mahnung.objects.get().datei).read_bytes()
     seite = PdfReader(BytesIO(inhalt)).pages[0]
-    assert "Mara Beispiel" in seite.extract_text()
+    gruss = "Mit freundlichen Grüßen\nMax Muster\nGeschäftsführung"
+    assert gruss in seite.extract_text()
     assert len(seite.images) == 1
 
 

@@ -26,6 +26,7 @@ from invoicing.beleg import (
     lieferanschrift_daten,
     lieferzeile,
     positionen_daten,
+    schlusstext,
     setzen,
 )
 from invoicing.models import Position as Rechnungsposition
@@ -114,7 +115,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
         "steuerhinweis": b["steuerhinweis"],
         "zahlung": [],
         "girocode": None,
-        "fusstext": absaetze(b["fusstext"]),
+        "fusstext": schlusstext(b["fusstext"], b["absender"]),
     }
 
 

@@ -268,6 +268,15 @@ def absaetze(text):
     ]
 
 
+def schlusstext(text, a):
+    """Absätze nach den Positionen; steht der Name unter der Unterschrift, nicht davor."""
+    name = a["inhaber"] or a["name"]
+    text = text.strip()
+    if text.splitlines()[-1:] == [name] and name in a["unterschrift_text"]:
+        text = text.removesuffix(name)
+    return absaetze(text)
+
+
 def girocode_svg(b):
     """SEPA-Überweisungscode (EPC069-12) als SVG."""
     a = b["absender"]
@@ -354,7 +363,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
         "girocode": girocode_svg(b)
         if b["girocode"] and Decimal(b["brutto"]) > 0
         else None,
-        "fusstext": absaetze(b["fusstext"]),
+        "fusstext": schlusstext(b["fusstext"], a),
     }
 
 

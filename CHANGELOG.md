@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.2 – 07.11.2026
+
+- Steht Ihr Name im Text unter der Unterschrift, stand er am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen zweimal. Jetzt fällt die Zeile im Gruß weg, auch bei schon gespeicherten Entwürfen. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.31.1 – 07.11.2026
 
 - Auf Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen berührte die Linie über dem Gesamtbetrag die Schrift. Jetzt steht ein kleiner Abstand dazwischen. Schon festgeschriebene Belege bleiben unverändert.

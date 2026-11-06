@@ -20,6 +20,7 @@ from invoicing.beleg import (
     girocode_svg,
     grussformel,
     iban_lesbar,
+    schlusstext,
     setzen,
 )
 from invoicing.models import Rechnung
@@ -233,7 +234,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
         )
         if a["iban"] and gesamt > 0
         else None,
-        "fusstext": absaetze(b["grussformel"]),
+        "fusstext": schlusstext(b["grussformel"], a),
     }
 
 
