@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.3 – 07.11.2026
+
+- Der Abstand zwischen Gruß und Unterschrift ist kleiner und entspricht jetzt dem üblichen Absatzabstand im Beleg. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.31.2 – 07.11.2026
 
 - Steht Ihr Name im Text unter der Unterschrift, stand er am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen zweimal. Jetzt fällt die Zeile im Gruß weg, auch bei schon gespeicherten Entwürfen. Schon festgeschriebene Belege bleiben unverändert.

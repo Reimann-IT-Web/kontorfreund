@@ -186,7 +186,6 @@
 #block(above: 1.1em, breakable: not unterschrift, {
   for absatz in d.fusstext { par(zeilen(absatz)) }
   if unterschrift {
-    v(4mm)
     if d.unterschrift != none {
       context {
         let groesse = measure(image(bytes(d.unterschrift)))
