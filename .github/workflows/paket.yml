@@ -77,8 +77,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $ziel = "$env:RUNNER_TEMP\installiert"
-          Start-Process -Wait "dist\Kontorfreund-Setup-$env:VERSION.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$ziel"
+          $ziel = "$env:ProgramFiles\Kontorfreund"
+          Start-Process -Wait "dist\Kontorfreund-Setup-$env:VERSION.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"
           $env:APP_DATA_DIR = "$env:RUNNER_TEMP\installiert-daten"
           & "$ziel\Kontorfreund.exe" migrate --verbosity 0
           & "$ziel\Kontorfreund.exe" selbsttest

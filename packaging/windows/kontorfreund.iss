@@ -2,9 +2,10 @@
 ;
 ;   iscc /DVersion=0.1.0 packaging\windows\kontorfreund.iss
 ;
-; Installiert nur für den angemeldeten Benutzer, ohne Administratorrechte. Die Daten
-; liegen getrennt in %LOCALAPPDATA%\Kontorfreund (siehe kontorfreund.py) und bleiben
-; bei Update und Deinstallation erhalten.
+; Installiert für alle Benutzer nach C:\Program Files und braucht dafür
+; Administratorrechte; Kontorfreund selbst läuft ohne sie. Die Daten liegen je Benutzer
+; getrennt in %LOCALAPPDATA%\Kontorfreund (siehe kontorfreund.py) und bleiben bei
+; Update und Deinstallation erhalten.
 
 #ifndef Version
   #error Version fehlt: iscc /DVersion=0.1.0 …
@@ -22,10 +23,10 @@ AppPublisherURL=https://github.com/Reimann-IT-Web/kontorfreund
 AppCopyright=Copyright (C) 2026 Reimann IT & Web, freie Software unter der AGPL-3.0
 ; Urheber und Lizenz in Kurzform vor der Installation; der volle Text liegt im Programmordner.
 InfoBeforeFile=info.txt
-DefaultDirName={localappdata}\Programs\Kontorfreund
+DefaultDirName={autopf}\Kontorfreund
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\..\dist

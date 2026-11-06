@@ -483,7 +483,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 |---|---|---|---|---|
 | 13.1.1 | 2 | erfüllt | Verbindungen dokumentiert | Abschnitt „Verbindungen“. |
 | 13.2.1 | 2 | entfällt | Dienstkonten | Keine Dienste untereinander; SQLite ist eine Datei. |
-| 13.2.2 | 2 | erfüllt | Wenig Rechte | Läuft als normaler Benutzer ohne Administratorrechte; installiert im Benutzerordner. |
+| 13.2.2 | 2 | erfüllt | Wenig Rechte | Läuft als normaler Benutzer ohne Administratorrechte. Nur die Installation braucht sie; das Programm liegt in `C:\Program Files` und kann seine eigenen Dateien nicht ändern. |
 | 13.2.3 | 2 | entfällt | Standard-Zugangsdaten | Keine Zugangsdaten zwischen Teilen des Programms. |
 | 13.2.4 | 2 | erfüllt | Erlaubte Ziele | Ausgehend nur Telegram (fester Rechner) und der SMTP-Server des Inhabers. |
 | 13.2.5 | 2 | erfüllt | Laden von außen | Das Programm lädt nichts nach; Dateien nur aus Programm- und Datenordner. |

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.29.0 – 06.11.2026
+
+- Unter Windows installiert sich Kontorfreund jetzt nach `C:\Program Files\Kontorfreund` statt in den Benutzerordner. Dort sind die Programmdateien vor Veränderungen geschützt, und jedes Windows-Konto auf dem Rechner kann das Programm starten, jedes mit eigenen Daten.
+- Installation und Updates brauchen dafür Administratorrechte: Windows fragt jedes Mal nach Ihrer Bestätigung. Kontorfreund selbst läuft weiter ohne diese Rechte.
+- Ihre Daten bleiben unverändert in `%LOCALAPPDATA%\Kontorfreund`. Eine Installation im alten Ordner deinstallieren Sie vor dem Update; die Daten bleiben dabei erhalten.
+
 ## 0.28.1 – 06.11.2026
 
 - Mehr Platz für die Leistung auf Rechnungen, Angeboten und Auftragsbestätigungen: Die Spalten Menge, Einzelpreis und Gesamt sind jetzt nur noch so breit, wie ihr Inhalt es braucht. Bei üblichen Beträgen wächst die Spalte „Leistung“ von 7 auf rund 9,5 cm, lange Beschreibungen brechen seltener um und der Beleg wird kürzer. Große Beträge bleiben in einer Zeile; die Leistung wird dann entsprechend schmaler. Schon festgeschriebene Belege bleiben unverändert.
