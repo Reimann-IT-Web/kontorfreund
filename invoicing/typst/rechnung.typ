@@ -155,8 +155,7 @@
   row-gutter: 7pt,
   ..d.summen.flatten(),
   grid.hline(stroke: 0.6pt + tinte),
-  text(size: 11pt, weight: "bold", d.summe_titel),
-  text(size: 11pt, weight: "bold", d.brutto),
+  ..(d.summe_titel, d.brutto).map(t => grid.cell(inset: (top: 5pt), text(size: 11pt, weight: "bold", t))),
 )))
 
 #if d.steuerhinweis != "" [

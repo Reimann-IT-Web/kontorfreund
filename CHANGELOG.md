@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.1 – 07.11.2026
+
+- Auf Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen berührte die Linie über dem Gesamtbetrag die Schrift. Jetzt steht ein kleiner Abstand dazwischen. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.31.0 – 06.11.2026
 
 - Unterschrift: Die Einstellungen haben den neuen Abschnitt „Unterschrift“. Dort laden Sie ein Bild Ihrer Unterschrift hoch (PNG, JPG oder SVG bis 1 MB) und tragen auf Wunsch einen Text darunter ein, etwa Ihren Namen und Ihre Funktion. Beides steht ab jetzt am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen, nach Ihrem Schlusstext und auch schon in der Vorschau. Reicht der Platz auf der Seite nicht, rücken Schlusstext und Unterschrift gemeinsam auf die nächste Seite. Schon festgeschriebene Belege bleiben unverändert.
