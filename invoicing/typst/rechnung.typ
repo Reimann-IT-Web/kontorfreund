@@ -120,9 +120,10 @@
     ..d.aufstellung.map(((posten, betrag)) => (posten, betrag, table.hline(stroke: 0.4pt + linie))).flatten(),
   )
 }
+// Zahlenspalten so breit wie ihr Inhalt; die Leistung bekommt den Rest.
 #if d.positionen.len() > 0 { table(
-  columns: (9mm, 1fr, 26mm, 25mm, 25mm),
-  column-gutter: 2.5mm,
+  columns: (7mm, 1fr, auto, auto, auto),
+  column-gutter: 5mm,
   inset: (x: 0pt, y: 5.5pt),
   stroke: none,
   align: (left, left, right, right, right),

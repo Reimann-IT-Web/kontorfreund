@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.28.1 – 06.11.2026
+
+- Mehr Platz für die Leistung auf Rechnungen, Angeboten und Auftragsbestätigungen: Die Spalten Menge, Einzelpreis und Gesamt sind jetzt nur noch so breit, wie ihr Inhalt es braucht. Bei üblichen Beträgen wächst die Spalte „Leistung“ von 7 auf rund 9,5 cm, lange Beschreibungen brechen seltener um und der Beleg wird kürzer. Große Beträge bleiben in einer Zeile; die Leistung wird dann entsprechend schmaler. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.28.0 – 03.11.2026
 
 - Hilfe: Der Bereich „Hilfe“ in der Seitenleiste hat jetzt eine kurze Anleitung zu jedem Bereich, von den ersten Schritten über Adressen, Rechnungen, Angebote, Zahlungen und Mahnungen bis zu Datensicherung, Einstellungen und den Pflichten gegenüber Finanzamt und Datenschutz. Jede Anleitung erklärt Schritt für Schritt, welcher Knopf was tut, und verweist auf die passenden Seiten im Programm.

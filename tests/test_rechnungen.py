@@ -446,6 +446,18 @@ def test_entwurf_vorschau_und_loeschen(client, firma, kunde, daten):
     assert not Rechnung.objects.exists()
 
 
+def test_kurze_zahlen_lassen_der_leistung_platz(client, firma, kunde, daten):
+    zeile = "14. Synchronisierung der FAQ-Daten mit den sichtbaren Inhalten"
+    client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, aktion="vorschau", beschreibung=[zeile, ""]),
+    )
+
+    pdf = client.get(reverse("invoicing:pdf", args=[Rechnung.objects.get().pk]))
+
+    assert zeile in PdfReader(BytesIO(pdf.content)).pages[0].extract_text()
+
+
 def test_versand_mit_pdf_anhang(client, firma, kunde, daten, monkeypatch):
     monkeypatch.setattr(versand, "SmtpVersand", lambda **_: locmem.EmailBackend())
     firma.mail_server = "smtp.muster.test"
