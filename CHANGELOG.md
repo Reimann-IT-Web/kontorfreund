@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.5 – 07.11.2026
+
+- Die Internetadresse von Reimann IT & Web, https://it-lsg-reimann.de, steht jetzt im Installationsprogramm und in der Hilfe. Der Eintrag von Kontorfreund in den Windows-Einstellungen führt dorthin. Der Link zum Quellcode bleibt erhalten.
+
 ## 0.31.4 – 07.11.2026
 
 - Positionen reißen auf Rechnungen, Angeboten und Auftragsbestätigungen nicht mehr mitten im Text über zwei Seiten. Passt eine Position nicht mehr auf die Seite, steht sie ganz auf der nächsten. Ist sie höher als 6 cm, trennt die Seite nur zwischen zwei Zeilen der Beschreibung. Schon festgeschriebene Belege bleiben unverändert.
