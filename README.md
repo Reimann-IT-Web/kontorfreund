@@ -6,7 +6,25 @@ Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut
 
+![Übersicht von Kontorfreund im hellen Design mit den Aufgaben für heute, überfälligen Rechnungen, offenen Beträgen und der Kleinunternehmergrenze](docs/bilder/uebersicht-hell.png)
+
 **Status:** frühe Entwicklung, Version 0.34.0. Im Einsatz sind Adressen mit Ansprechpartnern, eigenen Kategorien, mehreren Anschriften, Telefonnummern und E-Mail-Adressen, Verlauf, Dateien und Wiedervorlagen samt Erinnerung über Telegram, Auskunft, Löschen und Sperren nach der DSGVO, Artikel, Angebote, Auftragsbestätigungen und Rechnungen mit ZUGFeRD und XRechnung, Stornorechnung und Rechnungskorrektur, offene Posten mit Zahlungen und Mahnungen samt Verzugszinsen, Eingangsrechnungen, das Rechnungsausgangsbuch, Export von Adressen, offenen Posten und Rechnungsausgangsbuch als CSV, Excel und LibreOffice, Import von Adressen und Artikeln aus diesen Formaten mit Probelauf, der DATEV-Export für den Steuerberater, das Datenpaket für die Betriebsprüfung (Datenträgerüberlassung nach § 147 Abs. 6 AO) und ein Zugang für den Prüfer, der nur lesen kann und von selbst abläuft, die Ablage übernommener Altbelege mit täglicher Prüfung aller abgelegten Belege und jährlichem Vorschlag, abgelaufene Belege zu löschen, Anmeldung, verschlüsselte Datensicherung, ein Gesamtexport aller Daten und Belege, der ohne Kontorfreund lesbar bleibt, die Verfahrensdokumentation nach den GoBD und das Verzeichnis von Verarbeitungstätigkeiten nach der DSGVO, deren Teil zum Programm Kontorfreund selbst schreibt, und mehrere Firmen mit getrennten Daten. Was sich geändert hat, steht in [CHANGELOG.md](CHANGELOG.md), was noch entsteht, in der [Spezifikation](docs/spec/README.md).
+
+## So sieht es aus
+
+Alle Bilder zeigen erfundene Beispieldaten. Kontorfreund richtet sich hell oder dunkel nach Ihrem System, oben rechts können Sie umschalten.
+
+| Übersicht im dunklen Design | Angebote und Rechnungen |
+|---|---|
+| ![Übersicht im dunklen Design](docs/bilder/uebersicht-dunkel.png) | ![Liste der Rechnungen mit Status Entwurf, Festgeschrieben, Überfällig und Bezahlt](docs/bilder/belege-hell.png) |
+
+| Adressen | Offene Posten |
+|---|---|
+| ![Adressliste mit Nummer, Name, Ort, Kategorie und Telefon](docs/bilder/adressen-hell.png) | ![Offene Posten mit fälligen Mahnungen und offenen Rechnungen](docs/bilder/offene-posten-dunkel.png) |
+
+| Rechnung schreiben | Fertige Rechnung als PDF |
+|---|---|
+| ![Rechnungsentwurf mit Empfänger, Positionen und Prüfung der Pflichtangaben](docs/bilder/rechnung-dunkel.png) | ![Fertige Rechnung als PDF mit Hinweis nach § 19 UStG und GiroCode](docs/bilder/rechnung-pdf.png) |
 
 ## Installation
 
