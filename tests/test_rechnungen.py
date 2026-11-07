@@ -19,7 +19,13 @@ from auftraege.models import Auftragsbestaetigung
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing import versand
-from invoicing.beleg import grussformel, leistungszeit, schlusstext
+from invoicing.beleg import (
+    druckdaten,
+    grussformel,
+    leistungszeit,
+    schlusstext,
+    setzen,
+)
 from invoicing.forms import dezimal
 from invoicing.models import Position, Rechnung
 
@@ -780,3 +786,87 @@ def test_uebersicht_zeigt_entwuerfe_aller_belegarten_zuletzt_geaenderte_oben(
         < start.index(f'href="{reverse("auftraege:bearbeiten", args=[auftrag.pk])}"')
         < start.index(f'href="{reverse("angebote:bearbeiten", args=[angebot.pk])}"')
     )
+
+
+def seitentexte(inhalt):
+    """Text jeder Seite ohne die Zeilenumbrüche des Satzes."""
+    return [
+        " ".join(seite.extract_text().split())
+        for seite in PdfReader(BytesIO(inhalt)).pages
+    ]
+
+
+def belegseiten(client, kunde, daten, **mehr):
+    client.post(reverse("invoicing:neu"), formular(kunde, **mehr))
+    return seitentexte((daten / Rechnung.objects.get().datei).read_bytes())
+
+
+def test_eintrag_reisst_nicht_ueber_zwei_seiten(client, firma, kunde, daten):
+    fuellung = "Betriebssystem, Bürosoftware und Scanner aktualisiert, " * 3
+    eintraege = [f"Anfang{i} {fuellung}Ende{i}" for i in range(50)]
+
+    seiten = belegseiten(
+        client, kunde, daten, beschreibung=["\r\n".join(eintraege), ""]
+    )
+
+    assert len(seiten) > 2
+    for i in range(50):
+        assert any(f"Anfang{i} " in s and f"Ende{i} " in s for s in seiten), i
+
+
+def test_kurze_position_wechselt_als_ganzes_die_seite(client, firma, kunde, daten):
+    anzahl = 14
+
+    seiten = belegseiten(
+        client,
+        kunde,
+        daten,
+        bezeichnung=[f"Leistung{i}" for i in range(anzahl)] + [""],
+        beschreibung=[
+            "\r\n".join(f"Zeile{i}x{j}" for j in range(5)) for i in range(anzahl)
+        ]
+        + [""],
+        menge=[str(i + 2) for i in range(anzahl)] + [""],
+        einheit=["Std."] * anzahl + [""],
+        preis=["80,00"] * anzahl + [""],
+    )
+
+    assert len(seiten) > 1
+    for i in range(anzahl):
+        fundstellen = [s for s in seiten if f"Leistung{i} " in s]
+        assert len(fundstellen) == 1, i
+        assert f"{i + 1} Leistung{i} " in fundstellen[0]
+        assert f"Zeile{i}x4 " in fundstellen[0]
+        assert f" {i + 2} Std." in fundstellen[0]
+
+
+def test_zu_langer_eintrag_laeuft_nicht_ueber_den_seitenrand(
+    client, firma, kunde, daten
+):
+    seiten = belegseiten(
+        client, kunde, daten, beschreibung=["Wort " * 3000 + "Schlusswort", ""]
+    )
+
+    assert len(seiten) > 3  # sonst stünde der Rest unsichtbar unter der Seite
+    assert "Schlusswort" in seiten[-1]
+
+
+def test_position_beginnt_nie_ohne_ihren_ersten_eintrag(client, firma, kunde, daten):
+    client.post(
+        reverse("invoicing:neu"),
+        formular(
+            kunde,
+            bezeichnung=["Vorab", "Wartung", ""],
+            beschreibung=["", "\r\n".join(f"Eintrag{i}" for i in range(30)), ""],
+            menge=["1", "2,5", ""],
+            einheit=["Std.", "Std.", ""],
+            preis=["80,00", "80,00", ""],
+        ),
+    )
+    druck = druckdaten(Rechnung.objects.get().beleg)
+
+    for anzahl in range(40):  # schiebt die Position bis über das Seitenende
+        druck["kopftext"] = [["Einleitung"] * anzahl]
+        seiten = seitentexte(setzen(druck))
+        for teil in ("2 Wartung", "2,5 Std.", "Eintrag0 "):
+            assert ("Wartung" in seiten[0]) == (teil in seiten[0]), (anzahl, teil)

@@ -120,6 +120,31 @@
     ..d.aufstellung.map(((posten, betrag)) => (posten, betrag, table.hline(stroke: 0.4pt + linie))).flatten(),
   )
 }
+// Eine Position bleibt auf einer Seite. Ist sie höher als 60 mm, trennt die Seite nur zwischen zwei
+// Zeilen der Beschreibung. Nur was selbst höher ist, darf reißen, sonst liefe es über den Seitenrand.
+#let leistung(p) = layout(platz => context {
+  let ganz = {
+    text(weight: "bold", p.bezeichnung)
+    if p.beschreibung.len() > 0 {
+      linebreak()
+      text(size: 9pt, fill: leise, zeilen(p.beschreibung))
+    }
+  }
+  let hoch(inhalt) = measure(inhalt, width: platz.width).height > 60mm
+  if not hoch(ganz) {
+    block(breakable: false, ganz)
+  } else {
+    let abstand = par.leading.to-absolute()
+    set par(leading: abstand)
+    set block(spacing: abstand)
+    block(sticky: true, text(weight: "bold", p.bezeichnung))
+    for zeile in p.beschreibung {
+      let inhalt = text(size: 9pt, fill: leise, if zeile == "" { hide[x] } else { zeile })
+      block(breakable: hoch(inhalt), inhalt)
+    }
+  }
+})
+
 // Zahlenspalten so breit wie ihr Inhalt; die Leistung bekommt den Rest.
 #if d.positionen.len() > 0 { table(
   columns: (7mm, 1fr, auto, auto, auto),
@@ -134,13 +159,7 @@
   ..d.positionen
     .map(p => (
       p.nr,
-      {
-        text(weight: "bold", p.bezeichnung)
-        if p.beschreibung.len() > 0 {
-          linebreak()
-          text(size: 9pt, fill: leise, zeilen(p.beschreibung))
-        }
-      },
+      leistung(p),
       p.menge,
       p.preis,
       p.gesamt,

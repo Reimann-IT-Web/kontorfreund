@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.31.4 – 07.11.2026
+
+- Positionen reißen auf Rechnungen, Angeboten und Auftragsbestätigungen nicht mehr mitten im Text über zwei Seiten. Passt eine Position nicht mehr auf die Seite, steht sie ganz auf der nächsten. Ist sie höher als 6 cm, trennt die Seite nur zwischen zwei Zeilen der Beschreibung. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.31.3 – 07.11.2026
 
 - Der Abstand zwischen Gruß und Unterschrift ist kleiner und entspricht jetzt dem üblichen Absatzabstand im Beleg. Schon festgeschriebene Belege bleiben unverändert.
