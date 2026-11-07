@@ -12,8 +12,12 @@ Programm eine andere Firma geöffnet wird (core/firmen.py), und lässt alle fün
 Minuten die fälligen Benachrichtigungen jeder Firma senden (benachrichtigungen).
 
 Die Daten liegen im Benutzerordner (`datenordner`), nicht im Programmordner,
-damit ein Update oder Deinstallieren sie nicht berührt. APP_DATA_DIR und APP_PORT
-ändern Ort und Port, APP_KEIN_BROWSER=1 lässt den Browser zu.
+damit ein Update oder Deinstallieren sie nicht berührt. Liegt portabel.txt neben
+dem Programm (portable Fassung, ZIP für Windows), liegen sie im Ordner „Daten“
+daneben, und der Server läuft auf 8766, damit sie sich nie mit einer installierten
+Fassung auf demselben Rechner vermischen: Läuft die schon, öffnete der Start sonst
+deren Browser (`laeuft_schon`). APP_DATA_DIR und APP_PORT ändern Ort und Port,
+APP_KEIN_BROWSER=1 lässt den Browser zu.
 """
 
 import os
@@ -28,7 +32,18 @@ from pathlib import Path
 
 from core import firmen
 
-PORT = int(os.environ.get("APP_PORT", "8765"))
+
+def programmordner():
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).resolve().parent
+
+
+def portabel():
+    return (programmordner() / "portabel.txt").is_file()
+
+
+PORT = int(os.environ.get("APP_PORT") or (8766 if portabel() else 8765))
 ADRESSE = f"http://127.0.0.1:{PORT}/"
 # Intern: der Prozess, den das Startprogramm für den Server startet.
 SERVER = "--server"
@@ -38,6 +53,8 @@ TAKT = 300
 
 
 def datenordner():
+    if portabel():
+        return programmordner() / "Daten"
     if sys.platform == "win32":
         basis = Path(
             os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local"
@@ -140,6 +157,8 @@ def betreiben(haupt, hintergrund):
 
 
 def main():
+    if portabel():
+        os.environ["APP_PORTABEL"] = "1"  # für config/settings.py
     if "APP_HAUPTORDNER" not in os.environ:
         haupt = Path(os.environ.get("APP_DATA_DIR") or datenordner())
         os.environ.update(firmen.umgebung(haupt, firmen.aktiv(haupt)))

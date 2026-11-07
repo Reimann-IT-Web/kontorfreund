@@ -1,5 +1,6 @@
 """Installationspaket (Spezifikation D-3): Startprogramm, Version, Selbsttest."""
 
+import os
 import re
 import runpy
 import sys
@@ -81,6 +82,77 @@ def test_daten_liegen_im_benutzerordner(monkeypatch, plattform, umgebung, erwart
     for name, wert in umgebung.items():
         monkeypatch.setenv(name, wert)
     assert kontorfreund.datenordner() == erwartet / "Kontorfreund"
+
+
+@pytest.fixture
+def programm(monkeypatch, tmp_path):
+    """Ein gepacktes Programm in tmp_path/Kontorfreund, wie es PyInstaller baut."""
+    ordner = tmp_path / "Kontorfreund"
+    ordner.mkdir()
+    monkeypatch.setattr(kontorfreund.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(
+        kontorfreund.sys, "executable", str(ordner / "Kontorfreund.exe")
+    )
+    return ordner
+
+
+def test_portabel_liegen_die_daten_neben_dem_programm(programm):
+    assert not kontorfreund.portabel()
+    assert kontorfreund.datenordner() != programm / "Daten"
+    (programm / "portabel.txt").write_text("portabel", encoding="utf-8")
+    assert kontorfreund.portabel()
+    assert kontorfreund.datenordner() == programm / "Daten"
+
+
+def test_portabel_startet_mit_dem_ordner_daten(monkeypatch, programm):
+    (programm / "portabel.txt").write_text("portabel", encoding="utf-8")
+    umgebung = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"APP_HAUPTORDNER", "APP_DATA_DIR", "APP_FIRMA", "APP_PORTABEL"}
+    }
+    monkeypatch.setattr(kontorfreund.os, "environ", umgebung)
+    monkeypatch.setattr(kontorfreund.sys, "argv", ["Kontorfreund", "--server"])
+    monkeypatch.setattr(kontorfreund, "server", lambda: None)
+    kontorfreund.main()
+    assert umgebung["APP_PORTABEL"] == "1"
+    assert umgebung["APP_DATA_DIR"] == str(programm / "Daten")
+
+
+def test_portabel_eigenes_cookie(monkeypatch, tmp_path):
+    monkeypatch.setenv("APP_DATA_DIR", str(tmp_path / "firmen" / "2"))
+    monkeypatch.setenv("APP_HAUPTORDNER", str(tmp_path))
+    monkeypatch.setenv("APP_FIRMA", "2")
+    monkeypatch.setenv("APP_PORTABEL", "1")
+    werte = runpy.run_path(str(Path(settings.BASE_DIR) / "config" / "settings.py"))
+    assert werte["SESSION_COOKIE_NAME"] == "sessionid-portabel-2"
+    monkeypatch.delenv("APP_FIRMA")
+    werte = runpy.run_path(str(Path(settings.BASE_DIR) / "config" / "settings.py"))
+    assert werte["SESSION_COOKIE_NAME"] == "sessionid-portabel"
+
+
+def test_portabel_ohne_start_beim_anmelden(settings, programm, monkeypatch):
+    from benachrichtigungen import autostart
+
+    monkeypatch.setattr(autostart.sys, "platform", "win32")
+    assert autostart.moeglich()
+    settings.PORTABEL = True
+    assert not autostart.moeglich()
+
+
+@pytest.mark.django_db
+def test_hilfe_nennt_den_ordner_der_portablen_fassung(client, settings, tmp_path):
+    ordner = tmp_path / "Kontorfreund" / "Daten"
+    seite = client.get(reverse("core:hilfe")).content.decode()
+    assert "%LOCALAPPDATA%" in seite
+    assert "portable Fassung" not in seite
+    settings.PORTABEL = True
+    settings.HAUPTORDNER = ordner
+    seite = client.get(reverse("core:hilfe")).content.decode()
+    assert f"<code>{ordner}</code>" in seite
+    assert "%LOCALAPPDATA%" not in seite
+    assert "neue portable Fassung in einen neuen Ordner" in seite
+    assert "neue Installationsprogramm" not in seite
 
 
 @pytest.mark.django_db

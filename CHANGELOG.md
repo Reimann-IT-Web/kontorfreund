@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.35.0 – 07.11.2026
+
+- Neu: eine portable Fassung für Windows, `Kontorfreund-windows-portabel.zip`. Entpacken, etwa auf einen USB-Stick, und `Kontorfreund.exe` starten, ohne Installation und ohne Administratorrechte. Alle Daten liegen im Ordner „Daten“ neben dem Programm, nichts im Benutzerordner. Sie läuft unter http://127.0.0.1:8766/, damit sie sich nicht mit einer installierten Fassung auf demselben Rechner vermischt; dort bleiben Sie in beiden zugleich angemeldet. Den Start beim Anmelden an Windows bietet sie nicht an. Die Hilfe nennt in der portablen Fassung den Ordner der Daten und wie ein Update geht.
+- An der installierten Fassung ändert sich nichts.
+
 ## 0.34.1 – 07.11.2026
 
 - Das Installationsprogramm ersetzt jetzt eine frühere Version aus dem Benutzerordner (bis Version 0.28). Bisher blieb sie neben der neuen liegen, und ihre Verknüpfungen starteten weiter das alte Programm. Ihre Daten bleiben unverändert, ein eingeschalteter Start beim Anmelden bleibt eingeschaltet.

@@ -37,7 +37,12 @@
   <details class="disclosure">
     <summary>Wo liegen meine Daten?</summary>
     <div class="hilfe">
+      {% if portabel %}
+      <p>Sie nutzen die portable Fassung. Ihre Daten liegen deshalb im Ordner „Daten“ neben dem Programm: <code>{{ datenordner }}</code>. Dort stehen die Datenbank, im Ordner „archiv“ alle Belege und Dateien und im Ordner „sicherung“ die Datensicherungen. Verschieben Sie das Programm, nehmen Sie diesen Ordner immer mit; die Datei <code>portabel.txt</code> neben dem Programm muss bleiben.</p>
+      <p>Auf einem USB-Stick liegen die Daten unverschlüsselt. Verschlüsseln Sie den Stick, etwa mit BitLocker To Go (Rechtsklick auf das Laufwerk, „BitLocker aktivieren“, ab Windows Pro).</p>
+      {% else %}
       <p>Getrennt vom Programm in Ihrem Benutzerordner: unter Windows in <code>%LOCALAPPDATA%\Kontorfreund</code>, unter macOS in <code>~/Library/Application Support/Kontorfreund</code>, unter Linux in <code>~/.local/share/Kontorfreund</code>. Dort stehen die Datenbank, im Ordner „archiv“ alle Belege und Dateien und im Ordner „sicherung“ die Datensicherungen. Ein Update oder das Deinstallieren lässt diesen Ordner, wie er ist.</p>
+      {% endif %}
       <p>Ändern Sie dort nichts von Hand. Die tägliche Prüfung der Ablage meldet jede veränderte oder fehlende Datei.</p>
     </div>
   </details>
@@ -102,7 +107,11 @@
   <details class="disclosure">
     <summary>Was passiert bei einem Update?</summary>
     <div class="hilfe">
+      {% if portabel %}
+      <p>Beenden Sie Kontorfreund, entpacken Sie die neue portable Fassung in einen neuen Ordner und verschieben Sie den Ordner „Daten“ aus dem alten dorthin. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+      {% else %}
       <p>Beenden Sie Kontorfreund und starten Sie das neue Installationsprogramm. Windows fragt dabei nach Ihrer Bestätigung. Ihre Daten bleiben, wo sie sind. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+      {% endif %}
     </div>
   </details>
 

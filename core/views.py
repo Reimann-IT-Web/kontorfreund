@@ -116,7 +116,14 @@ def einstellungen(request):
 def hilfe(request, thema=None):
     if thema is None:
         return render(
-            request, "core/hilfe/start.html", {"bereich": "hilfe", "themen": THEMEN}
+            request,
+            "core/hilfe/start.html",
+            {
+                "bereich": "hilfe",
+                "themen": THEMEN,
+                "portabel": settings.PORTABEL,
+                "datenordner": settings.HAUPTORDNER,
+            },
         )
     nr = next((i for i, t in enumerate(THEMEN) if t["slug"] == thema), None)
     if nr is None:

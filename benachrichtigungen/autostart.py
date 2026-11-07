@@ -7,13 +7,21 @@ Der Eintrag steht unter HKCU\\...\\Run; das Deinstallieren entfernt ihn
 
 import sys
 
+from django.conf import settings
+
 SCHLUESSEL = r"Software\Microsoft\Windows\CurrentVersion\Run"
 NAME = "Kontorfreund"
 
 
 def moeglich():
-    """Nur im installierten Programm unter Windows."""
-    return sys.platform == "win32" and getattr(sys, "frozen", False)
+    """Nur im installierten Programm unter Windows. Die portable Fassung liegt beim
+    Anmelden vielleicht nicht da (USB-Stick) und überschriebe den Eintrag einer
+    installierten, der denselben Namen hat."""
+    return (
+        sys.platform == "win32"
+        and getattr(sys, "frozen", False)
+        and not settings.PORTABEL
+    )
 
 
 def _befehl():

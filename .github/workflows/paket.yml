@@ -67,6 +67,37 @@ jobs:
           curl -fsS -o /dev/null http://127.0.0.1:8765/static/css/app.css
           if [[ "$RUNNER_OS" == Windows ]]; then taskkill //F //IM Kontorfreund.exe; else kill %1; fi
 
+      # Portable Fassung: der Programmordner mit portabel.txt als ZIP. Geprüft wird das fertige
+      # Archiv, entpackt wie von Hand und ohne APP_DATA_DIR, damit der Weg zu den Daten echt ist.
+      - name: Portable Fassung packen und prüfen
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bau = "$env:RUNNER_TEMP\portabel-bau\Kontorfreund"
+          New-Item -ItemType Directory "$env:RUNNER_TEMP\portabel-bau" | Out-Null
+          Copy-Item -Recurse dist\Kontorfreund $bau
+          Copy-Item packaging\windows\portabel.txt $bau
+          $zip = "dist\Kontorfreund-$env:VERSION-windows-portabel.zip"
+          7z a -tzip -bso0 $zip $bau
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Expand-Archive $zip "$env:RUNNER_TEMP\portabel-probe"
+          $ordner = "$env:RUNNER_TEMP\portabel-probe\Kontorfreund"
+          & "$ordner\Kontorfreund.exe" migrate --verbosity 0
+          & "$ordner\Kontorfreund.exe" selbsttest
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (-not (Test-Path "$ordner\Daten\db.sqlite3")) { throw "Die Daten liegen nicht neben dem Programm." }
+          if (Test-Path "$env:LOCALAPPDATA\Kontorfreund") { throw "Die portable Fassung schreibt in den Benutzerordner." }
+          $env:APP_KEIN_BROWSER = "1"
+          Start-Process "$ordner\Kontorfreund.exe"
+          foreach ($i in 1..60) {
+            curl.exe -fsSL -o seite.html http://127.0.0.1:8766/
+            if (-not $LASTEXITCODE) { break }
+            Start-Sleep 1
+          }
+          if ($LASTEXITCODE) { throw "Die portable Fassung startet nicht auf Port 8766." }
+          if (-not (Select-String -Quiet "Willkommen bei Kontorfreund" seite.html)) { throw "Die Startseite fehlt." }
+          taskkill /F /IM Kontorfreund.exe
+
       - name: Installationsprogramm bauen
         if: runner.os == 'Windows'
         shell: pwsh
@@ -136,6 +167,7 @@ jobs:
           name: paket-${{ matrix.system }}
           path: |
             dist/Kontorfreund-Setup-*.exe
+            dist/Kontorfreund-*.zip
             dist/Kontorfreund-*.tar.gz
           if-no-files-found: error
 
@@ -165,6 +197,7 @@ jobs:
           # Feste Namen ohne Version: Webseite und README verlinken
           # releases/latest/download/<Name>, das muss bei jedem Release stimmen.
           cp "pakete/Kontorfreund-Setup-$version.exe" pakete/Kontorfreund-Setup.exe
+          cp "pakete/Kontorfreund-$version-windows-portabel.zip" pakete/Kontorfreund-windows-portabel.zip
           cp "pakete/Kontorfreund-$version-macos-arm64.tar.gz" pakete/Kontorfreund-macos-arm64.tar.gz
           cp "pakete/Kontorfreund-$version-linux-x86_64.tar.gz" pakete/Kontorfreund-linux-x86_64.tar.gz
           awk -v kopf="## $version " 'index($0, kopf) == 1 {an = 1; next} /^## / {an = 0} an' CHANGELOG.md > notizen.md

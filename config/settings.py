@@ -19,12 +19,14 @@ HAUPTORDNER = Path(os.environ.get("APP_HAUPTORDNER", DATA_DIR))
 FIRMA = os.environ.get("APP_FIRMA", "")
 # Nur unter dem Startprogramm, das den Server zum Firmenwechsel neu startet.
 NEUSTART = os.environ.get("APP_NEUSTART") == "1"
+# Portable Fassung (kontorfreund.py): Daten neben dem Programm, eigener Port.
+PORTABEL = os.environ.get("APP_PORTABEL") == "1"
 
 # Marke und Edition getrennt, damit weitere Editionen dieselbe Codebasis nutzen können.
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.34.1"
+VERSION = "0.35.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -138,9 +140,12 @@ SESSION_COOKIE_AGE = int(os.environ.get("APP_ABMELDEN_NACH_STUNDEN", "8")) * 360
 SESSION_SAVE_EVERY_REQUEST = True
 # Größte Datei, die sich an eine Adresse hängen lässt (Spezifikation K-3).
 DATEI_MB = int(os.environ.get("APP_DATEI_MB", "50"))
-# Jede Firma hat eigene Anmeldungen, Cookies gelten aber für alle Firmen unter derselben
-# Adresse. Mit eigenem Namen bleibt man nach einem Wechsel in jeder Firma angemeldet.
-SESSION_COOKIE_NAME = f"sessionid-{FIRMA}" if FIRMA else "sessionid"
+# Jede Firma hat eigene Anmeldungen, Cookies gelten aber für alle Firmen und Ports unter
+# derselben Adresse. Mit eigenem Namen bleibt man nach einem Wechsel in jeder Firma
+# angemeldet und neben der portablen Fassung auch in der installierten.
+SESSION_COOKIE_NAME = (
+    "sessionid" + ("-portabel" if PORTABEL else "") + (f"-{FIRMA}" if FIRMA else "")
+)
 # Kein Skript liest den Schlüssel gegen CSRF; die Formulare tragen ihn als Feld.
 CSRF_COOKIE_HTTPONLY = True
 # Formular ohne gültigen Schlüssel: verständliche Seite und Eintrag im Protokoll.

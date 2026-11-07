@@ -1,0 +1,23 @@
+Kontorfreund, portable Fassung
+
+Diese Datei schaltet die portable Fassung ein. Bitte nicht löschen oder umbenennen.
+
+Solange sie neben Kontorfreund.exe liegt, speichert Kontorfreund alle Daten im
+Ordner „Daten“ hier daneben und nichts im Benutzerordner von Windows. Den ganzen
+Ordner können Sie so auf einem USB-Stick oder auf einen anderen Rechner mitnehmen.
+
+Starten: Kontorfreund.exe doppelklicken. Kontorfreund öffnet sich im Browser unter
+http://127.0.0.1:8766/ (die installierte Fassung nutzt 8765, so kommen sich beide
+nicht in die Quere). Das kleine Fenster dazu bleibt offen, solange Sie arbeiten;
+schließen beendet das Programm. Einen USB-Stick erst abziehen, wenn es geschlossen ist.
+
+Update: Kontorfreund beenden, die neue portable Fassung in einen neuen Ordner
+entpacken und den Ordner „Daten“ aus dem alten dorthin verschieben. Beim nächsten
+Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand.
+
+Sicherheit: Auf einem USB-Stick liegen Ihre Daten unverschlüsselt. Geht der Stick
+verloren, kann jeder sie lesen. Verschlüsseln Sie ihn deshalb, etwa mit BitLocker
+To Go (Rechtsklick auf das Laufwerk, „BitLocker aktivieren“, ab Windows Pro).
+
+Quellcode und Lizenz: https://github.com/Reimann-IT-Web/kontorfreund (AGPL-3.0,
+siehe LICENSE.txt)
