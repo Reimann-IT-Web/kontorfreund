@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- Quelle der Hintergrundbilder des Installers. Aufruf mit ?w=596&h=432, dunkel mit &dunkel;
+     die Seite zeichnet genau diese Größe, das Bildschirmfoto davon ist das PNG.
+     Links die Seitenleiste: Sie hat dieselbe Breite wie die Bildfläche des Assistenten. -->
+<html lang="de">
+<meta charset="utf-8">
+<title>Kontorfreund Installer</title>
+<style>
+  @font-face {
+    font-family: "Atkinson Hyperlegible Next";
+    src: url("../../../static/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2");
+    font-weight: 200 800;
+  }
+  :root { --grund: #f7f6f3; }
+  :root.dunkel { --grund: #15181a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--grund); font-family: "Atkinson Hyperlegible Next", sans-serif; overflow: hidden; }
+  #flaeche { position: relative; overflow: hidden; background: var(--grund); }
+  #leiste {
+    position: absolute; inset: 0 auto 0 0; overflow: hidden;
+    background: linear-gradient(180deg, #1f6676 0%, #174e5b 62%, #123f4a 100%);
+  }
+  /* Kontobuch: feine Zeilen, am Rand die doppelte Linie */
+  #zeilen {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(180deg, transparent 0 calc(24em - 1px), rgb(255 255 255 / .055) calc(24em - 1px) 24em);
+    font-size: var(--e);
+  }
+  #rand { position: absolute; top: 0; bottom: 0; left: calc(var(--e) * 19); width: calc(var(--e) * 4);
+    border-left: calc(var(--e) * 1) solid rgb(255 219 122 / .22);
+    border-right: calc(var(--e) * 1) solid rgb(255 219 122 / .22);
+  }
+  #marke { position: absolute; left: calc(var(--e) * 34); top: calc(var(--e) * 24); display: flex; flex-direction: column; color: #fff; }
+  #marke b { font-size: calc(var(--e) * 19); font-weight: 700; letter-spacing: -.005em; line-height: 1.1; }
+  #marke span { font-size: calc(var(--e) * 12.5); color: #cfe3e6; margin-top: calc(var(--e) * 2); }
+  #muenze { position: absolute; left: calc(var(--e) * 41); bottom: calc(var(--e) * -38); width: calc(var(--e) * 120); height: calc(var(--e) * 120); }
+</style>
+<div id="flaeche">
+  <div id="leiste">
+    <div id="zeilen"></div>
+    <div id="rand"></div>
+    <div id="marke"><b>Kontorfreund</b><span>Kleinunternehmen</span></div>
+    <svg id="muenze" viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffdb7a"/><stop offset="1" stop-color="#eab040"/></linearGradient></defs>
+      <circle cx="50" cy="53" r="48" fill="#a8741a"/>
+      <circle cx="50" cy="50" r="48" fill="url(#gold)"/>
+      <circle cx="50" cy="50" r="38" fill="none" stroke="#c48820" stroke-width="1.6" stroke-opacity=".7"/>
+      <path d="M65 31.5a23 23 0 1 0 0 37M41 43.5h31M41 56.5h31" fill="none" stroke="#17535f" stroke-width="8.2" stroke-linecap="round" transform="translate(-4.5 0)"/>
+    </svg>
+  </div>
+</div>
+<script>
+  const a = new URLSearchParams(location.search);
+  const w = +a.get("w") || 596, h = +a.get("h") || 432;
+  // Breite der Leiste: 202 von 596 Bildpunkten, wie die Bildfläche von Inno Setup bei 100 %.
+  const leiste = Math.round(w * 202 / 596);
+  document.documentElement.classList.toggle("dunkel", a.has("dunkel"));
+  document.documentElement.style.setProperty("--e", (w / 596) + "px");
+  const f = document.getElementById("flaeche");
+  f.style.width = w + "px"; f.style.height = h + "px";
+  document.getElementById("leiste").style.width = leiste + "px";
+</script>
+</html>

@@ -30,11 +30,14 @@ def test_version_und_urheber_auf_der_hilfeseite(client):
 
 
 def test_internetadresse_steht_im_installer_unter_dem_quellcode():
-    info = Path(settings.BASE_DIR) / "packaging" / "windows" / "info.txt"
+    ordner = Path(settings.BASE_DIR) / "packaging" / "windows"
+    texte = (ordner / "texte.isl").read_text(encoding="utf-8-sig")
+    skript = (ordner / "kontorfreund.iss").read_text(encoding="utf-8")
 
-    assert info.read_text(encoding="utf-8").endswith(
-        "Quellcode: https://github.com/Reimann-IT-Web/kontorfreund\n"
-        "Internet: https://it-lsg-reimann.de\n"
+    assert "QuellcodeAdresse=https://github.com/Reimann-IT-Web/kontorfreund\n" in texte
+    assert "InternetAdresse=https://it-lsg-reimann.de\n" in texte
+    assert skript.index("LinkZeile('QuellcodeName'") < skript.index(
+        "LinkZeile('InternetName'"
     )
 
 
