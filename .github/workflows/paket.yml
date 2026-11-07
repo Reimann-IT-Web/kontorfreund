@@ -121,6 +121,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=${GITHUB_REF_NAME#v}
+          # Feste Namen ohne Version: Webseite und README verlinken
+          # releases/latest/download/<Name>, das muss bei jedem Release stimmen.
+          cp "pakete/Kontorfreund-Setup-$version.exe" pakete/Kontorfreund-Setup.exe
+          cp "pakete/Kontorfreund-$version-macos-arm64.tar.gz" pakete/Kontorfreund-macos-arm64.tar.gz
+          cp "pakete/Kontorfreund-$version-linux-x86_64.tar.gz" pakete/Kontorfreund-linux-x86_64.tar.gz
           awk -v kopf="## $version " 'index($0, kopf) == 1 {an = 1; next} /^## / {an = 0} an' CHANGELOG.md > notizen.md
           test -s notizen.md
           gh release create "$GITHUB_REF_NAME" pakete/* --title "Kontorfreund $version" --notes-file notizen.md

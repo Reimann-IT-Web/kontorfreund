@@ -28,9 +28,9 @@ Alle Bilder zeigen erfundene Beispieldaten. Kontorfreund richtet sich hell oder 
 
 ## Installation
 
-Die Pakete hängen am jeweiligen [Release](../../releases).
+Aktuelle Version direkt laden: [Windows](https://github.com/Reimann-IT-Web/kontorfreund/releases/latest/download/Kontorfreund-Setup.exe), [macOS mit Apple-Chip](https://github.com/Reimann-IT-Web/kontorfreund/releases/latest/download/Kontorfreund-macos-arm64.tar.gz), [Linux](https://github.com/Reimann-IT-Web/kontorfreund/releases/latest/download/Kontorfreund-linux-x86_64.tar.gz). Ältere Versionen und die Stückliste (SBOM) hängen am jeweiligen [Release](../../releases).
 
-- **Windows:** `Kontorfreund-Setup-<Version>.exe` ausführen. Das Programm kommt nach `C:\Program Files\Kontorfreund`, einen anderen Ordner können Sie auf der ersten Seite wählen; dafür fragt Windows nach Administratorrechten. Weil das Programm noch nicht signiert ist, warnt Windows beim ersten Mal („Der Computer wurde durch Windows geschützt“): „Weitere Informationen“ und dann „Trotzdem ausführen“ wählen.
+- **Windows:** `Kontorfreund-Setup.exe` ausführen. Das Programm kommt nach `C:\Program Files\Kontorfreund`, einen anderen Ordner können Sie auf der ersten Seite wählen; dafür fragt Windows nach Administratorrechten. Weil das Programm noch nicht signiert ist, warnt Windows beim ersten Mal („Der Computer wurde durch Windows geschützt“): „Weitere Informationen“ und dann „Trotzdem ausführen“ wählen.
 - **macOS und Linux:** Archiv entpacken und `Kontorfreund/Kontorfreund` starten.
 
 Kontorfreund öffnet sich im Browser unter http://127.0.0.1:8765/. Das kleine Fenster dazu bleibt offen, solange Sie arbeiten; schließen beendet das Programm. Ihre Daten liegen getrennt vom Programm:
