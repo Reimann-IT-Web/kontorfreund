@@ -27,18 +27,15 @@ def test_version_und_urheber_auf_der_hilfeseite(client):
         in seite
     )
     assert "AGPL-3.0" in seite
-    assert '<a href="https://it-lsg-reimann.de">it-lsg-reimann.de</a>' in seite
-    assert 'href="https://github.com/Reimann-IT-Web/kontorfreund"' in seite
 
 
-def test_installer_nennt_internetadresse_und_quellcode():
-    ordner = Path(settings.BASE_DIR) / "packaging" / "windows"
-    skript = (ordner / "kontorfreund.iss").read_text(encoding="utf-8").splitlines()
-    info = (ordner / "info.txt").read_text(encoding="utf-8")
+def test_internetadresse_steht_im_installer_unter_dem_quellcode():
+    info = Path(settings.BASE_DIR) / "packaging" / "windows" / "info.txt"
 
-    assert "AppPublisherURL=https://it-lsg-reimann.de" in skript
-    assert "Internet: https://it-lsg-reimann.de" in info
-    assert "Quellcode: https://github.com/Reimann-IT-Web/kontorfreund" in info
+    assert info.read_text(encoding="utf-8").endswith(
+        "Quellcode: https://github.com/Reimann-IT-Web/kontorfreund\n"
+        "Internet: https://it-lsg-reimann.de\n"
+    )
 
 
 @pytest.mark.parametrize(

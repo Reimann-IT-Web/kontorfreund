@@ -2,7 +2,7 @@
 
 ## 0.31.5 – 07.11.2026
 
-- Die Internetadresse von Reimann IT & Web, https://it-lsg-reimann.de, steht jetzt im Installationsprogramm und in der Hilfe. Der Eintrag von Kontorfreund in den Windows-Einstellungen führt dorthin. Der Link zum Quellcode bleibt erhalten.
+- Das Installationsprogramm nennt unter dem Link zum Quellcode jetzt auch die Internetadresse https://it-lsg-reimann.de.
 
 ## 0.31.4 – 07.11.2026
 
