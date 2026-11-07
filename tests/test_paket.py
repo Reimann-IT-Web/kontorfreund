@@ -1,5 +1,6 @@
 """Installationspaket (Spezifikation D-3): Startprogramm, Version, Selbsttest."""
 
+import re
 import runpy
 import sys
 import tomllib
@@ -48,6 +49,21 @@ def test_speicherort_ist_waehlbar_und_programme_ist_die_vorgabe():
 
     assert "DefaultDirName={autopf}\\Kontorfreund\n" in skript
     assert "WizardForm.DirBrowseButton.OnClick" in skript
+
+
+def test_fruehere_installation_wird_ersetzt_und_laeuft_ohne_erhoehte_rechte():
+    skript = (
+        Path(settings.BASE_DIR) / "packaging" / "windows" / "kontorfreund.iss"
+    ).read_text(encoding="utf-8")
+
+    kennung = re.search(r"^AppId=\{(\{[0-9A-F-]+\})$", skript, re.MULTILINE).group(1)
+    assert f"\\Uninstall\\{kennung}_is1'" in skript
+    # Der Pfad steht unter HKCU, jedes Programm des Benutzers kann ihn ändern.
+    assert "ExecAsOriginalUser(Programm," in skript
+    assert "Exec(Programm," not in skript
+    # Erst entfernen, wenn das neue Programm liegt: Ein Abbruch ließe sonst keines übrig.
+    assert "ssPostInstall then\n    FruehereErsetzen" in skript
+    assert "function PrepareToInstall" not in skript
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,8 @@
 ; Installiert für alle Benutzer, vorgegeben nach C:\Program Files, und braucht dafür
 ; Administratorrechte; Kontorfreund selbst läuft ohne sie. Die Daten liegen je Benutzer
 ; getrennt in %LOCALAPPDATA%\Kontorfreund (siehe kontorfreund.py) und bleiben bei
-; Update und Deinstallation erhalten.
+; Update und Deinstallation erhalten. Eine frühere Installation aus dem Benutzerordner
+; (bis Version 0.28) ersetzt es, siehe FruehereErsetzen.
 
 #ifndef Version
   #error Version fehlt: iscc /DVersion=0.1.0 …
@@ -79,11 +80,16 @@ const
   NUR_DIESES_PROGRAMM = $10;
   SCHRIFT = 'Atkinson Hyperlegible Next';
   LINKS = 230;
+  // Bis Version 0.28 lag das Programm im Benutzerordner, eingetragen unter HKCU. Die Kennung ist die AppId.
+  FRUEHER_SCHLUESSEL = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{52BF44B4-6F13-4902-8F7A-13F8263453E4}_is1';
+  START_SCHLUESSEL = 'Software\Microsoft\Windows\CurrentVersion\Run';
+  START_NAME = 'Kontorfreund';
 
 var
   Schritte: array[0..2] of TNewStaticText;
   Ordner: TNewStaticText;
   Breite: Integer;
+  Frueher: String;
 
 function AddFontResourceEx(Datei: String; Art: DWORD; Rest: Cardinal): Integer;
   external 'AddFontResourceExW@gdi32.dll stdcall';
@@ -284,9 +290,45 @@ procedure FertigAnordnen;
 begin
   WizardForm.FinishedLabel.SetBounds(Stelle(LINKS), Stelle(62), Breite, Stelle(44));
   WizardForm.FinishedLabel.Caption := Trim(WizardForm.FinishedLabel.Caption);
+  if Frueher <> '' then
+    WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 + CustomMessage(Frueher);
   WizardForm.FinishedLabel.AdjustHeight;
   WizardForm.RunList.SetBounds(Stelle(LINKS), WizardForm.FinishedLabel.Top + WizardForm.FinishedLabel.Height + Stelle(14), Breite, Stelle(28));
   WizardForm.NextButton.Left := WizardForm.CancelButton.Left;
+end;
+
+// Setup sucht frühere Installationen nur unter HKLM. Eine aus dem Benutzerordner bliebe sonst neben
+// der neuen liegen: Ihre Verknüpfungen starteten das alte Programm, und läuft das, öffnet die neue
+// Version nur den Browser dorthin (laeuft_schon in kontorfreund.py). Erst nach dem Kopieren entfernen,
+// damit bei einem Abbruch die alte Installation bleibt. Die Daten liegen anderswo.
+// Nicht erfasst: andere Windows-Konten und die Bestätigung als anderer Administrator, HKCU ist dann ein anderes.
+procedure FruehereErsetzen;
+var
+  Programm: String;
+  Anmeldestart: Boolean;
+  Ergebnis: Integer;
+begin
+  if not RegQueryStringValue(HKCU, FRUEHER_SCHLUESSEL, 'UninstallString', Programm) then
+    Exit;
+  Programm := RemoveQuotes(Programm);
+  // Wer den alten Ordner als Speicherort gewählt hat, hat ihn gerade überschrieben; das Deinstallieren träfe das neue Programm.
+  if CompareText(ExtractFileDir(Programm), ExpandConstant('{app}')) = 0 then begin
+    RegDeleteKeyIncludingSubkeys(HKCU, FRUEHER_SCHLUESSEL);
+    Exit;
+  end;
+  WizardForm.StatusLabel.Caption := CustomMessage('FruehereEntfernen');
+  // Das Deinstallieren nimmt den Start beim Anmelden mit, und ohne ihn fehlten Erinnerungen und tägliche Sicherung.
+  Anmeldestart := RegValueExists(HKCU, START_SCHLUESSEL, START_NAME);
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM Kontorfreund.exe', '', SW_HIDE, ewWaitUntilTerminated, Ergebnis);
+  Sleep(1000);
+  // Den Pfad kann jedes Programm des Benutzers ändern, darum ohne erhöhte Rechte; das frühere Programm braucht auch keine.
+  ExecAsOriginalUser(Programm, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, Ergebnis);
+  if Anmeldestart then
+    RegWriteStringValue(HKCU, START_SCHLUESSEL, START_NAME, '"' + ExpandConstant('{app}\Kontorfreund.exe') + '" --hintergrund');
+  if RegKeyExists(HKCU, FRUEHER_SCHLUESSEL) then
+    Frueher := 'FruehereGeblieben'
+  else
+    Frueher := 'FruehereEntfernt';
 end;
 
 procedure InitializeWizard;
@@ -295,6 +337,12 @@ begin
   SchriftLaden('atkinson-bold.ttf');
   SeitenAnordnen;
   SchritteAnlegen;
+end;
+
+procedure CurStepChanged(Stufe: TSetupStep);
+begin
+  if Stufe = ssPostInstall then
+    FruehereErsetzen;
 end;
 
 procedure CurPageChanged(Seite: Integer);

@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.34.1 – 07.11.2026
+
+- Das Installationsprogramm ersetzt jetzt eine frühere Version aus dem Benutzerordner (bis Version 0.28). Bisher blieb sie neben der neuen liegen, und ihre Verknüpfungen starteten weiter das alte Programm. Ihre Daten bleiben unverändert, ein eingeschalteter Start beim Anmelden bleibt eingeschaltet.
+
 ## 0.34.0 – 07.11.2026
 
 - Den Speicherort des Programms können Sie jetzt auf der ersten Seite des Installationsprogramms ändern. Vorgegeben bleibt `C:\Program Files\Kontorfreund`. Ihre Daten liegen davon unabhängig weiter im Benutzerordner.

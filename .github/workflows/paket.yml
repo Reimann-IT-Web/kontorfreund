@@ -86,6 +86,47 @@ jobs:
           Start-Process -Wait "$ziel\unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES"
           if (Test-Path "$ziel\Kontorfreund.exe") { throw "Die Deinstallation hat das Programm nicht entfernt." }
           if (-not (Test-Path "$env:APP_DATA_DIR\db.sqlite3")) { throw "Die Deinstallation hat die Daten gelöscht." }
+      # Bis 0.28 lag das Programm im Benutzerordner. Geprüft wird mit dem echten alten Paket, das gerade läuft
+      # und beim Anmelden startet: erst allein, dann neben einer schon vorhandenen neuen Installation.
+      - name: Frühere Installation ersetzen
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.28.1 --pattern Kontorfreund-Setup-0.28.1.exe --dir alt
+          $alt = "$env:LOCALAPPDATA\Programs\Kontorfreund"
+          $neu = "$env:ProgramFiles\Kontorfreund"
+          $eintrag = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{52BF44B4-6F13-4902-8F7A-13F8263453E4}_is1"
+          $start = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+          if (-not (Test-Path $start)) { New-Item $start | Out-Null }
+          function Installieren($datei) {
+            $lauf = Start-Process -Wait -PassThru $datei -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"
+            if ($lauf.ExitCode) { throw "$datei endete mit $($lauf.ExitCode)." }
+          }
+          foreach ($runde in 1, 2) {
+            Installieren "alt\Kontorfreund-Setup-0.28.1.exe"
+            if (-not (Test-Path $eintrag)) { throw "Die frühere Installation steht nicht unter HKCU." }
+            Start-Process "$alt\Kontorfreund.exe" -ArgumentList "--hintergrund"
+            foreach ($i in 1..60) {
+              curl.exe -fs -o NUL http://127.0.0.1:8765/
+              if (-not $LASTEXITCODE) { break }
+              Start-Sleep 1
+            }
+            if ($LASTEXITCODE) { throw "Die frühere Version startet nicht." }
+            Set-ItemProperty $start Kontorfreund "`"$alt\Kontorfreund.exe`" --hintergrund"
+            Installieren "dist\Kontorfreund-Setup-$env:VERSION.exe"
+            if (Test-Path "$alt\Kontorfreund.exe") { throw "Die frühere Installation ist noch da." }
+            if (Test-Path $eintrag) { throw "Der Eintrag der früheren Installation ist noch da." }
+            if (Get-Process Kontorfreund -ErrorAction SilentlyContinue) { throw "Die frühere Version läuft noch." }
+            if (-not (Test-Path "$neu\Kontorfreund.exe")) { throw "Das neue Programm fehlt." }
+            if ((Get-ItemPropertyValue $start Kontorfreund) -ne "`"$neu\Kontorfreund.exe`" --hintergrund") {
+              throw "Der Start beim Anmelden zeigt nicht auf das neue Programm."
+            }
+          }
+          if (-not (Test-Path "$env:LOCALAPPDATA\Kontorfreund\db.sqlite3")) { throw "Die Daten fehlen." }
+          & "$neu\Kontorfreund.exe" migrate --verbosity 0
+          & "$neu\Kontorfreund.exe" selbsttest
       - name: Archiv packen
         if: runner.os != 'Windows'
         run: tar -czf "dist/Kontorfreund-$VERSION-${{ matrix.system }}-$(uname -m).tar.gz" -C dist Kontorfreund

@@ -25,3 +25,6 @@ OrdnerAendern=&Ändern …
 Schritt0=Willkommen
 Schritt1=Installation
 Schritt2=Fertig
+FruehereEntfernen=Die frühere Version aus Ihrem Benutzerordner wird entfernt …
+FruehereEntfernt=Die frühere Version aus Ihrem Benutzerordner ist entfernt. Ihre Daten bleiben unverändert.
+FruehereGeblieben=Die frühere Version in Ihrem Benutzerordner ließ sich nicht entfernen. Bitte deinstallieren Sie sie in den Windows-Einstellungen unter „Apps“. Ihre Daten bleiben unverändert.
