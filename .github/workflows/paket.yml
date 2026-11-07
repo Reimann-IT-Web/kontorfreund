@@ -99,6 +99,7 @@ jobs:
           $neu = "$env:ProgramFiles\Kontorfreund"
           $eintrag = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{52BF44B4-6F13-4902-8F7A-13F8263453E4}_is1"
           $start = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+          if (-not (Test-Path $start)) { New-Item $start | Out-Null }
           function Installieren($datei) {
             $lauf = Start-Process -Wait -PassThru $datei -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"
             if ($lauf.ExitCode) { throw "$datei endete mit $($lauf.ExitCode)." }
