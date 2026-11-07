@@ -125,6 +125,7 @@ jobs:
             }
           }
           if (-not (Test-Path "$env:LOCALAPPDATA\Kontorfreund\db.sqlite3")) { throw "Die Daten fehlen." }
+          & "$neu\Kontorfreund.exe" migrate --verbosity 0
           & "$neu\Kontorfreund.exe" selbsttest
       - name: Archiv packen
         if: runner.os != 'Windows'
