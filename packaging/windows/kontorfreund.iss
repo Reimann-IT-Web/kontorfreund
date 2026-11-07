@@ -2,7 +2,7 @@
 ;
 ;   iscc /DVersion=0.1.0 packaging\windows\kontorfreund.iss
 ;
-; Installiert für alle Benutzer nach C:\Program Files und braucht dafür
+; Installiert für alle Benutzer, vorgegeben nach C:\Program Files, und braucht dafür
 ; Administratorrechte; Kontorfreund selbst läuft ohne sie. Die Daten liegen je Benutzer
 ; getrennt in %LOCALAPPDATA%\Kontorfreund (siehe kontorfreund.py) und bleiben bei
 ; Update und Deinstallation erhalten.
@@ -82,6 +82,7 @@ const
 
 var
   Schritte: array[0..2] of TNewStaticText;
+  Ordner: TNewStaticText;
   Breite: Integer;
 
 function AddFontResourceEx(Datei: String; Art: DWORD; Rest: Cardinal): Integer;
@@ -111,20 +112,20 @@ end;
 procedure Ueberschrift(Text: TNewStaticText);
 begin
   Text.Font.Name := SCHRIFT;
-  Text.Font.Size := 17;
+  Text.Font.Height := -Stelle(20);
   Text.Font.Style := [fsBold];
 end;
 
 procedure Fliesstext(Text: TNewStaticText);
 begin
   Text.Font.Name := SCHRIFT;
-  Text.Font.Size := 10;
+  Text.Font.Height := -Stelle(12);
 end;
 
 procedure Liste(Text: TNewCheckListBox);
 begin
   Text.Font.Name := SCHRIFT;
-  Text.Font.Size := 10;
+  Text.Font.Height := -Stelle(12);
 end;
 
 procedure LinkOeffnen(Sender: TObject);
@@ -144,7 +145,7 @@ begin
     Schritte[I].Caption := CustomMessage('Schritt' + IntToStr(I));
     Schritte[I].StyleElements := Schritte[I].StyleElements - [seFont];
     Schritte[I].Font.Name := SCHRIFT;
-    Schritte[I].Font.Size := 11;
+    Schritte[I].Font.Height := -Stelle(13);
     Schritte[I].Left := Stelle(34);
     Schritte[I].Top := Stelle(101 + I * 24);
     Schritte[I].BringToFront;
@@ -200,6 +201,33 @@ begin
   Result := Oben + Vorn.Height;
 end;
 
+procedure OrdnerZeigen;
+begin
+  Ordner.Caption := MinimizePathName(WizardForm.DirEdit.Text, Ordner.Font, Breite - Ordner.Left - Stelle(84));
+end;
+
+// Die Ordner-Seite selbst bleibt ausgeblendet, ihr Dialog und ihr Feld gelten aber weiter.
+procedure OrdnerAendern(Sender: TObject);
+begin
+  WizardForm.DirBrowseButton.OnClick(WizardForm.DirBrowseButton);
+  OrdnerZeigen;
+end;
+
+procedure OrdnerZeileAnlegen(Oben: Integer);
+var
+  Vorn: TNewStaticText;
+  Aendern: TNewButton;
+begin
+  Vorn := Zeile(CustomMessage('OrdnerName'), 0, Oben + Stelle(3));
+  Ordner := Zeile('', Vorn.Width + ScaleX(4), Oben + Stelle(3));
+  OrdnerZeigen;
+  Aendern := TNewButton.Create(WizardForm);
+  Aendern.Parent := WizardForm.SelectTasksPage;
+  Aendern.SetBounds(Breite - Stelle(72), Oben, Stelle(72), Stelle(22));
+  Aendern.Caption := CustomMessage('OrdnerAendern');
+  Aendern.OnClick := @OrdnerAendern;
+end;
+
 procedure HinweisAnlegen;
 var
   Hinweis: TNewStaticText;
@@ -231,11 +259,12 @@ begin
   WizardForm.InnerNotebook.SetBounds(Stelle(LINKS), Stelle(84), Breite, WizardForm.CancelButton.Top - Stelle(84 + 12));
   Hoehe := WizardForm.InnerNotebook.Height;
 
-  // Erste Seite: Hinweise und die eine Frage auf einen Blick statt auf zwei Seiten.
+  // Erste Seite: Hinweise, Speicherort und Desktop-Symbol auf einen Blick statt auf drei Seiten.
   WizardForm.SelectTasksLabel.Visible := False;
-  WizardForm.TasksList.SetBounds(0, Hoehe - Stelle(26), Breite, Stelle(26));
+  WizardForm.TasksList.SetBounds(0, Hoehe - Stelle(24), Breite, Stelle(24));
   Liste(WizardForm.TasksList);
   HinweisAnlegen;
+  OrdnerZeileAnlegen(Hoehe - Stelle(50));
 
   // Die Dateinamen flackern beim Entpacken nur vorbei, der Balken rückt an ihre Stelle.
   WizardForm.FilenameLabel.Visible := False;

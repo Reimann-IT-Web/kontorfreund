@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.34.0 – 07.11.2026
+
+- Den Speicherort des Programms können Sie jetzt auf der ersten Seite des Installationsprogramms ändern. Vorgegeben bleibt `C:\Program Files\Kontorfreund`. Ihre Daten liegen davon unabhängig weiter im Benutzerordner.
+
 ## 0.33.0 – 07.11.2026
 
 - Das Installationsprogramm sieht jetzt aus wie Kontorfreund selbst: links die Seitenleiste mit den Schritten, rechts der Inhalt, in den Farben und der Schrift des Programms, hell oder dunkel wie Ihr Windows. Statt mehrerer Seiten gibt es eine Startseite mit den Hinweisen zu Urheber und Lizenz und der Frage nach dem Desktop-Symbol, ein Klick auf „Installieren“ genügt. Die Adressen von Quellcode und Internetauftritt lassen sich anklicken.

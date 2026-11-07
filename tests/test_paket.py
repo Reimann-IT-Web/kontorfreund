@@ -41,6 +41,15 @@ def test_internetadresse_steht_im_installer_unter_dem_quellcode():
     )
 
 
+def test_speicherort_ist_waehlbar_und_programme_ist_die_vorgabe():
+    skript = (
+        Path(settings.BASE_DIR) / "packaging" / "windows" / "kontorfreund.iss"
+    ).read_text(encoding="utf-8")
+
+    assert "DefaultDirName={autopf}\\Kontorfreund\n" in skript
+    assert "WizardForm.DirBrowseButton.OnClick" in skript
+
+
 @pytest.mark.parametrize(
     ("plattform", "umgebung", "erwartet"),
     [
