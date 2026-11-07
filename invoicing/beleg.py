@@ -133,6 +133,7 @@ def absender_daten(firma):
             "ust_id",
             "email",
             "telefon",
+            "internetadresse",
             "iban",
             "bank",
             "unterschrift_text",
@@ -407,6 +408,7 @@ def briefkopf(a):
                 for z in (
                     f"Telefon {a['telefon']}" if a["telefon"] else "",
                     a["email"],
+                    a["internetadresse"],
                 )
                 if z
             ],

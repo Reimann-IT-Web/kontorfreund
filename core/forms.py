@@ -60,6 +60,7 @@ class FirmendatenForm(forms.ModelForm):
             "kleinunternehmer",
             "email",
             "telefon",
+            "internetadresse",
             "iban",
             "bank",
             "mail_server",
@@ -70,6 +71,10 @@ class FirmendatenForm(forms.ModelForm):
         ]
         widgets = {
             "telefon": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
+            # Kein type="url": Der Browser lehnte sonst „beispiel.de“ ab, das Formular ergänzt https://.
+            "internetadresse": forms.TextInput(
+                attrs={"inputmode": "url", "autocomplete": "url"}
+            ),
             "plz": forms.TextInput(attrs=PLZ_ATTRS),
             "ort": forms.TextInput(
                 attrs={"data-ort": "", "autocomplete": "address-level2"}
@@ -86,6 +91,7 @@ class FirmendatenForm(forms.ModelForm):
             "kleinunternehmer": "Dann weist Kontorfreund keine Umsatzsteuer aus und druckt den Hinweis nach § 19 UStG.",
             "iban": "Erscheint in der Fußzeile und im GiroCode.",
             "email": "Absender beim Versand von Rechnungen.",
+            "internetadresse": "Steht auf jedem Beleg in der Fußzeile unter Telefon und E-Mail.",
             "mail_server": "Steht in der Hilfe Ihres E-Mail-Anbieters, z. B. smtp.ionos.de.",
             "mail_benutzer": "Meist Ihre vollständige E-Mail-Adresse.",
         }

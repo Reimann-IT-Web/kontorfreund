@@ -20,6 +20,8 @@ from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing import versand
 from invoicing.beleg import (
+    absender_daten,
+    briefkopf,
     druckdaten,
     grussformel,
     leistungszeit,
@@ -870,3 +872,53 @@ def test_position_beginnt_nie_ohne_ihren_ersten_eintrag(client, firma, kunde, da
         seiten = seitentexte(setzen(druck))
         for teil in ("2 Wartung", "2,5 Std.", "Eintrag0 "):
             assert ("Wartung" in seiten[0]) == (teil in seiten[0]), (anzahl, teil)
+
+
+@pytest.mark.parametrize(
+    "modell, adresse",
+    [
+        (Rechnung, "invoicing:pdf"),
+        (Angebot, "angebote:pdf"),
+        (Auftragsbestaetigung, "auftraege:pdf"),
+    ],
+)
+def test_internetadresse_steht_in_der_fusszeile(client, firma, modell, adresse):
+    firma.internetadresse = "https://muster-it.test"
+    firma.save()
+
+    entwurf = client.get(reverse(adresse, args=[modell.objects.create().pk]))
+
+    text = PdfReader(BytesIO(entwurf.content)).pages[0].extract_text()
+    assert "post@muster.test\nhttps://muster-it.test" in text
+
+
+def test_ohne_internetadresse_bleibt_die_fusszeile_wie_sie_war(firma):
+    assert briefkopf(absender_daten(firma))["fuss"][1] == ["post@muster.test"]
+
+
+def test_internetadresse_ohne_https_wird_ergaenzt(client, firma):
+    einstellungen_absenden(client, firma, internetadresse="muster-it.test")
+
+    assert Firmendaten.laden().internetadresse == "https://muster-it.test"
+    assert 'inputmode="url"' in client.get(reverse("core:einstellungen")).text
+
+
+def test_ungueltige_internetadresse_wird_abgelehnt(client, firma):
+    einstellungen_absenden(client, firma, internetadresse="keine adresse")
+
+    assert Firmendaten.laden().internetadresse == ""
+
+
+def test_festgeschriebener_beleg_behaelt_seine_internetadresse(
+    client, firma, kunde, daten
+):
+    firma.internetadresse = "https://alt.test"
+    firma.save()
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    rechnung = Rechnung.objects.get()
+
+    firma.internetadresse = "https://neu.test"
+    firma.save()
+
+    assert rechnung.beleg["absender"]["internetadresse"] == "https://alt.test"
+    assert "https://alt.test" in seitentext(daten / rechnung.datei)

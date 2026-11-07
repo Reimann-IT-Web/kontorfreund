@@ -71,6 +71,7 @@
     <div class="form-grid">
       {% include "core/feld.html" with f=form.email optional=True %}
       {% include "core/feld.html" with f=form.telefon optional=True %}
+      {% include "core/feld.html" with f=form.internetadresse optional=True breit=True %}
       {% include "core/feld.html" with f=form.iban optional=True %}
       {% include "core/feld.html" with f=form.bank optional=True %}
     </div>

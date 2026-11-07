@@ -50,7 +50,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 ## B-6 PDF
 
 - Erzeugt mit Typst als PDF/A-3b.
-- Briefpapier: Logo, Akzentfarbe, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt), Anschriftfeld nach DIN 5008.
+- Briefpapier: Logo, Akzentfarbe, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt, auf Wunsch Internetadresse), Anschriftfeld nach DIN 5008.
 - Unterschrift: Bild und Text aus den Firmendaten am Ende von Rechnung, Angebot, Auftragsbestätigung und Mahnung, mit dem Schlusstext auf einer Seite. Steht der Name im Text unter der Unterschrift, entfällt beim Drucken die gleiche Zeile am Ende des Schlusstexts.
 - Seitenwechsel: Eine Position bleibt auf einer Seite. Ist sie höher als 60 mm, trennt die Seite nur zwischen zwei Zeilen der Beschreibung, und die Bezeichnung bleibt bei der ersten Zeile. Nur eine Zeile, die selbst höher als 60 mm ist, darf reißen.
 

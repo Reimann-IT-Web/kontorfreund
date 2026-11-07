@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.32.0 – 07.11.2026
+
+- Unter Einstellungen gibt es bei „Kontakt und Bank“ das neue Feld „Internetadresse“. Ist es ausgefüllt, steht die Adresse in der Fußzeile von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen unter Telefon und E-Mail, auch im Auskunftsbrief nach der DSGVO. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.31.5 – 07.11.2026
 
 - Das Installationsprogramm nennt unter dem Link zum Quellcode jetzt auch die Internetadresse https://it-lsg-reimann.de.

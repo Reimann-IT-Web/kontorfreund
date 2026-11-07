@@ -50,6 +50,7 @@ class Firmendaten(models.Model):
     )
     email = models.EmailField("E-Mail", blank=True)
     telefon = models.CharField("Telefon", max_length=50, blank=True)
+    internetadresse = models.URLField("Internetadresse", blank=True)
     iban = models.CharField(
         "IBAN", max_length=42, blank=True, validators=[iban_pruefen]
     )
