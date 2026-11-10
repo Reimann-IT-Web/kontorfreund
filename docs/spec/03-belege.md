@@ -53,6 +53,9 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 - Briefpapier: Logo, Akzentfarbe, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt, auf Wunsch Internetadresse), Anschriftfeld nach DIN 5008.
 - Unterschrift: Bild und Text aus den Firmendaten am Ende von Rechnung, Angebot, Auftragsbestätigung und Mahnung, mit dem Schlusstext auf einer Seite. Steht der Name im Text unter der Unterschrift, entfällt beim Drucken die gleiche Zeile am Ende des Schlusstexts.
 - Seitenwechsel: Eine Position bleibt auf einer Seite. Ist sie höher als 60 mm, trennt die Seite nur zwischen zwei Zeilen der Beschreibung, und die Bezeichnung bleibt bei der ersten Zeile. Nur eine Zeile, die selbst höher als 60 mm ist, darf reißen.
+- Schluss: Schlusstext und Unterschrift bleiben bis 60 mm Höhe auf einer Seite, und der Zahlungshinweis wechselt mit ihnen die Seite, damit Gruß und Name nie allein auf der letzten Seite stehen. Ein längerer Schluss trennt nur zwischen zwei Zeilen; die letzten beiden Zeilen mit Text (Gruß und Name) bleiben beisammen und bei der Unterschrift.
+- Zahlungshinweis: Ohne eigenen Text druckt die Rechnung Zahlungsziel, Bankverbindung und Verwendungszweck im festen Wortlaut. Ein eigener Text in den Firmendaten ersetzt diese Zeilen, mit den Platzhaltern {betrag}, {nummer}, {datum}, {faellig}, {iban} und {bank}; unbekannte Platzhalter lehnt das Formular ab. Skonto und Verzugshinweis stehen weiter darunter. Der Text wird beim Festschreiben eingefroren. Stornorechnung, Rechnungskorrektur und Mahnung behalten ihren eigenen Text.
+- Menge: Die Einheit steht hinter der Zahl. Eine Position oder ein Artikel „ohne Einheit“ zeigt nur die Zahl; die E-Rechnung nimmt dann den Code C62 (Einheit).
 
 ## B-7 E-Rechnung erzeugen
 

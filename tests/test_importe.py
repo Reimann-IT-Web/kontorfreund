@@ -384,6 +384,18 @@ def test_probelauf_artikel(inhaber):
     assert nr_rabatt == 7 and "Einzelpreis" in rabatt[0]
 
 
+def test_artikel_ausdruecklich_ohne_einheit(inhaber):
+    inhalt = "Artikel;Einheit;VK netto\nWebinar;ohne;69\nSeminar;-;99\nKurs;;49\n"
+
+    bericht = uebernahme.pruefen(_import(inhaber, "artikel", inhalt.encode()))
+
+    assert [(a.bezeichnung, a.einheit) for a in bericht.neu] == [
+        ("Webinar", ""),
+        ("Seminar", ""),
+        ("Kurs", "Stück"),
+    ]
+
+
 def test_ablauf_im_browser(client, inhaber):
     inhalt = "Firma;PLZ;Ort;E-Mail\nBäckerei Korn;01067;Dresden;info@korn.test\nHof Ahorn;;Bonn;\n".encode()
 

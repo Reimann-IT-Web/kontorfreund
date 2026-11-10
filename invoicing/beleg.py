@@ -4,6 +4,7 @@ import base64
 import calendar
 import hashlib
 import json
+import re
 from datetime import date
 from decimal import Decimal
 from io import BytesIO
@@ -37,6 +38,14 @@ ABRECHNUNG = "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
 VERZUGSHINWEIS = (
     "Zahlen Sie nicht innerhalb von 30 Tagen nach Fälligkeit und Zugang dieser "
     "Rechnung, kommen Sie nach § 286 Abs. 3 BGB auch ohne Mahnung in Verzug."
+)
+# Eigener Zahlungshinweis aus den Firmendaten: nur diese Platzhalter werden ersetzt.
+ZAHLUNG_PLATZHALTER = ("betrag", "nummer", "datum", "faellig", "iban", "bank")
+# Entspricht dem Text, den Kontorfreund ohne eigenen Hinweis druckt.
+ZAHLUNG_BEISPIEL = (
+    "Zahlbar ohne Abzug bis zum {faellig}.\n"
+    "Bitte überweisen Sie den Betrag auf folgendes Konto: {bank}, IBAN {iban}\n"
+    "Verwendungszweck: Rechnung {nummer}"
 )
 
 VORLAGE = Path(__file__).parent / "typst" / "rechnung.typ"
@@ -252,6 +261,7 @@ def beleg_daten(rechnung, firma, nummer):
         "betreff": rechnung.betreff,
         "kopftext": rechnung.kopftext,
         "fusstext": rechnung.fusstext,
+        "zahlungstext": firma.zahlungstext,
         "girocode": bool(rechnung.girocode and firma.iban),
         "absender": absender_daten(firma),
         "empfaenger": empfaenger_daten(k, rechnung.anschrift),
@@ -310,25 +320,31 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
         info.append((art, b["referenz"]))
 
     iban = iban_lesbar(a["iban"])
-    zahlung = [
-        f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
-        "Einen bereits gezahlten Betrag erhalten Sie zurück."
-        if storno
-        else f"Der Betrag der Rechnung {korrektur['nummer']} mindert sich damit um "
-        f"{euro(-Decimal(b['brutto']))}. Haben Sie bereits mehr gezahlt, "
-        "erhalten Sie den Unterschied zurück."
-        if korrektur
-        else "Zahlbar sofort ohne Abzug."
-        if b["zahlungsziel"] == 0
-        else f"Zahlbar ohne Abzug bis zum {datum_de(b['faellig'])}."
-    ]
+    eigener = b.get("zahlungstext", "").strip()  # ältere Belege kennen ihn nicht
+    if storno:
+        zahlung = [
+            f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
+            "Einen bereits gezahlten Betrag erhalten Sie zurück."
+        ]
+    elif korrektur:
+        zahlung = [
+            f"Der Betrag der Rechnung {korrektur['nummer']} mindert sich damit um "
+            f"{euro(-Decimal(b['brutto']))}. Haben Sie bereits mehr gezahlt, "
+            "erhalten Sie den Unterschied zurück."
+        ]
+    elif eigener:
+        zahlung = zahlungshinweis(eigener, b)
+    elif b["zahlungsziel"] == 0:
+        zahlung = ["Zahlbar sofort ohne Abzug."]
+    else:
+        zahlung = [f"Zahlbar ohne Abzug bis zum {datum_de(b['faellig'])}."]
     if skonto := b.get("skonto"):
         zahlung.append(
             f"Bei Zahlung bis zum {datum_de(skonto['bis'])} ziehen Sie "
             f"{zahl(skonto['prozent'])} % Skonto ab ({euro(skonto['betrag'])}) "
             f"und überweisen {euro(skonto['zahlbetrag'])}."
         )
-    if iban and not (storno or korrektur):
+    if iban and not (storno or korrektur or eigener):
         konto = ", ".join(z for z in (a["bank"], f"IBAN {iban}") if z)
         zahlung.append(f"Bitte überweisen Sie den Betrag auf folgendes Konto: {konto}")
         if b["nummer"]:
@@ -370,6 +386,28 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
 
 def iban_lesbar(iban):
     return " ".join(iban[i : i + 4] for i in range(0, len(iban), 4))
+
+
+def unbekannte_platzhalter(text):
+    """Namen in geschweiften Klammern, die der Zahlungshinweis nicht kennt."""
+    namen = dict.fromkeys(re.findall(r"\{([^{}]*)\}", text))
+    return [n for n in namen if n not in ZAHLUNG_PLATZHALTER]
+
+
+def zahlungshinweis(text, b):
+    """Eigener Zahlungshinweis mit den Angaben des Belegs, als Zeilen."""
+    a = b["absender"]
+    werte = {
+        "betrag": euro(b["brutto"]),
+        "nummer": b["nummer"] or "(wird vergeben)",
+        "datum": datum_de(b["datum"]),
+        "faellig": datum_de(b["faellig"]),
+        "iban": iban_lesbar(a["iban"]),
+        "bank": a["bank"],
+    }
+    for name in ZAHLUNG_PLATZHALTER:
+        text = text.replace("{" + name + "}", werte[name])
+    return text.strip().splitlines()
 
 
 def briefkopf(a):

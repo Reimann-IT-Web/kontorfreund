@@ -27,6 +27,7 @@ from invoicing.beleg import (
     leistungszeit,
     schlusstext,
     setzen,
+    zahlungshinweis,
 )
 from invoicing.forms import dezimal
 from invoicing.models import Position, Rechnung
@@ -922,3 +923,171 @@ def test_festgeschriebener_beleg_behaelt_seine_internetadresse(
 
     assert rechnung.beleg["absender"]["internetadresse"] == "https://alt.test"
     assert "https://alt.test" in seitentext(daten / rechnung.datei)
+
+
+def test_gruss_und_name_wechseln_mit_dem_zahlungshinweis_die_seite(
+    client, firma, kunde, daten
+):
+    client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, fusstext="Mit freundlichen Grüßen\r\n\r\nMara Beispiel"),
+    )
+    druck = druckdaten(Rechnung.objects.get().beleg)
+    gewechselt = False
+
+    for anzahl in range(40):  # schiebt den Schluss über das Seitenende
+        druck["kopftext"] = [["Einleitung"] * anzahl]
+        seiten = seitentexte(setzen(druck))
+        seite = next(s for s in seiten if "Mit freundlichen Grüßen" in s)
+        assert "Grüßen Mara Beispiel" in seite, anzahl
+        assert "Bitte überweisen Sie" in seite, anzahl
+        gewechselt |= seite != seiten[0]
+    assert gewechselt
+
+
+LANGER_SCHLUSS = [f"Anfang{i} " + "Hinweis " * 100 + f"Ende{i}" for i in range(3)]
+
+
+@pytest.mark.parametrize(
+    "fusstext",
+    [
+        # Absätze, wie Kontorfreund sie vorgibt
+        [[z] for z in (*LANGER_SCHLUSS, "Mit freundlichen Grüßen", "Mara Beispiel")],
+        # Zeilen mit Leerzeilen, wie der Browser sie schickt (\r\n)
+        [
+            [
+                *(z for a in LANGER_SCHLUSS for z in (a, "")),
+                "Mit freundlichen Grüßen",
+                "",
+                "Mara Beispiel",
+            ]
+        ],
+    ],
+    ids=["absaetze", "browser"],
+)
+def test_langer_schluss_trennt_nur_zwischen_zeilen(
+    client, firma, kunde, daten, fusstext
+):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    druck = druckdaten(Rechnung.objects.get().beleg)
+    druck["fusstext"] = fusstext
+    getrennt = False
+
+    for anzahl in range(0, 50, 2):
+        druck["kopftext"] = [["Einleitung"] * anzahl]
+        seiten = seitentexte(setzen(druck))
+        for i in range(3):
+            assert any(f"Anfang{i} " in s and f" Ende{i}" in s for s in seiten), (
+                anzahl,
+                i,
+            )
+        seite = next(s for s in seiten if "Mit freundlichen Grüßen" in s)
+        assert "Grüßen Mara Beispiel" in seite, anzahl
+        # Der Schluss wechselt nicht als Ganzes, sonst bliebe viel Platz leer.
+        getrennt |= "Anfang0 " not in seite
+    assert getrennt
+
+
+def einstellungen_mit_zahlungstext(client, firma, text):
+    return einstellungen_absenden(client, firma, bank="Musterbank", zahlungstext=text)
+
+
+def test_eigener_zahlungshinweis_mit_platzhaltern(client, firma, kunde, daten):
+    einstellungen_mit_zahlungstext(
+        client,
+        firma,
+        "Bitte überweisen Sie {betrag} mit Angabe der Rechnungsnummer {nummer}\r\n"
+        "bis zum {faellig} an {bank}, IBAN {iban}. Rechnung vom {datum}.",
+    )
+    client.post(
+        reverse("invoicing:neu"), formular(kunde, skonto_prozent="2", skonto_tage="7")
+    )
+    rechnung = Rechnung.objects.get()
+
+    firma = Firmendaten.laden()
+    firma.zahlungstext = ""
+    firma.save()
+
+    assert rechnung.beleg["zahlungstext"].startswith("Bitte überweisen Sie {betrag}")
+    text = seitentext(daten / rechnung.datei)
+    assert (
+        "Bitte überweisen Sie 2.360,00 € mit Angabe der Rechnungsnummer 260001 "
+        "bis zum 12.11.2026 an Musterbank, IBAN DE02 1203 0000 0000 2020 51. "
+        "Rechnung vom 29.10.2026."
+    ) in text
+    assert "Skonto" in text  # steht weiter unter dem eigenen Hinweis
+    assert "Zahlbar ohne Abzug" not in text and "Verwendungszweck" not in text
+
+
+def test_zahlungshinweis_im_entwurf_ohne_nummer():
+    b = {
+        "absender": {"iban": "DE02120300000000202051", "bank": ""},
+        "brutto": "69.00",
+        "nummer": "",
+        "datum": "2026-11-10",
+        "faellig": "2026-11-24",
+    }
+
+    zeilen = zahlungshinweis("\r\nRechnung {nummer}\r\n\r\n{betrag} {unbekannt}\r\n", b)
+
+    assert zeilen == ["Rechnung (wird vergeben)", "", "69,00 € {unbekannt}"]
+
+
+def test_ohne_eigenen_zahlungshinweis_bleibt_der_text(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+
+    text = seitentext(daten / Rechnung.objects.get().datei)
+
+    assert "Zahlbar ohne Abzug bis zum 12.11.2026." in text
+    assert "Verwendungszweck: Rechnung 260001" in text
+
+
+def test_storno_druckt_keinen_eigenen_zahlungshinweis(client, firma, kunde, daten):
+    einstellungen_mit_zahlungstext(client, firma, "Bitte {betrag} überweisen.")
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    original = Rechnung.objects.get()
+
+    client.post(reverse("invoicing:stornieren", args=[original.pk]))
+
+    storno = Rechnung.objects.get(storno_zu=original)
+    text = seitentext(daten / storno.datei)
+    assert "nicht mehr zu bezahlen" in text and "Bitte" not in text
+
+
+def test_unbekannter_platzhalter_wird_abgelehnt(client, firma):
+    antwort = einstellungen_mit_zahlungstext(
+        client, firma, "Bitte {Betrag} bis {frist} zahlen."
+    )
+
+    assert (
+        "Diese Platzhalter kennt Kontorfreund nicht: {Betrag}, {frist}." in antwort.text
+    )
+    assert Firmendaten.laden().zahlungstext == ""
+    seite = client.get(reverse("core:einstellungen")).text
+    assert 'placeholder="Zahlbar ohne Abzug bis zum {faellig}.' in seite
+
+
+def test_menge_ohne_einheit(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde, einheit=["", "Stück"]))
+
+    rechnung = Rechnung.objects.get()
+    assert rechnung.positionen.get().einheit == ""
+    inhalt = (daten / rechnung.datei).read_bytes()
+    text = seitentexte(inhalt)[0]
+    assert "29,5 80,00 €" in text and "Std." not in text
+    xml = PdfReader(BytesIO(inhalt)).attachments["factur-x.xml"][0].decode()
+    assert 'unitCode="C62">29.5' in xml
+
+
+def test_editor_zeigt_ohne_einheit(client, firma, kunde):
+    rechnung = Rechnung.objects.create(kontakt=kunde)
+    rechnung.positionen.create(
+        nr=1, bezeichnung="Webinar", menge=1, einheit="", preis=69
+    )
+
+    seite = client.get(reverse("invoicing:bearbeiten", args=[rechnung.pk])).text
+
+    assert '<option value="" selected>ohne</option>' in seite
+    # Neue Positionen beginnen weiter mit „Stück“.
+    vorlage = seite.split('<template id="position-vorlage">')[1].split("</template>")[0]
+    assert " selected" not in vorlage and vorlage.index("Stück") < vorlage.index("ohne")

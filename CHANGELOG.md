@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.36.0 – 10.11.2026
+
+- Gruß und Name reißen am Seitenende nicht mehr auseinander. Passt der Schluss einer Rechnung, eines Angebots, einer Auftragsbestätigung oder Mahnung nicht mehr auf die Seite, wechselt er samt Zahlungshinweis auf die nächste. So steht dort nie nur der Name oder nur der Gruß. Ein sehr langer Text nach den Positionen (über 6 cm) trennt nur zwischen zwei Zeilen; Gruß und Name bleiben beisammen. Belege ohne Seitenwechsel bleiben pixelgleich, schon festgeschriebene Belege unverändert.
+- Neu: ein eigener Zahlungshinweis unter Einstellungen › Kontakt und Bank. Er ersetzt auf Rechnungen die Zeilen „Zahlbar ohne Abzug …“, „Bitte überweisen Sie …“ und „Verwendungszweck …“. Platzhalter: {betrag}, {nummer}, {datum}, {faellig}, {iban} und {bank}. Leer bleibt der bisherige Text. Skonto und der Hinweis auf Zahlungsverzug stehen weiter darunter; Stornorechnung, Rechnungskorrektur und Mahnung behalten ihren Text.
+- Neu: die Einheit „ohne“ für Positionen und Artikel. Auf dem Beleg steht dann nur die Menge, etwa „1“ statt „1 Stück“. Der Import von Artikeln versteht „ohne“ und „-“.
+
 ## 0.35.0 – 07.11.2026
 
 - Neu: eine portable Fassung für Windows, `Kontorfreund-windows-portabel.zip`. Entpacken, etwa auf einen USB-Stick, und `Kontorfreund.exe` starten, ohne Installation und ohne Administratorrechte. Alle Daten liegen im Ordner „Daten“ neben dem Programm, nichts im Benutzerordner. Sie läuft unter http://127.0.0.1:8766/, damit sie sich nicht mit einer installierten Fassung auf demselben Rechner vermischt; dort bleiben Sie in beiden zugleich angemeldet. Den Start beim Anmelden an Windows bietet sie nicht an. Die Hilfe nennt in der portablen Fassung den Ordner der Daten und wie ein Update geht.

@@ -55,6 +55,8 @@ class Firmendaten(models.Model):
         "IBAN", max_length=42, blank=True, validators=[iban_pruefen]
     )
     bank = models.CharField("Bank", max_length=100, blank=True)
+    # Leer druckt die Rechnung Zahlungsziel und Bankverbindung im eigenen Wortlaut.
+    zahlungstext = models.TextField("Zahlungshinweis auf Rechnungen", blank=True)
     # In der Datenbank statt als Datei, damit es mit jeder Sicherung erhalten bleibt.
     logo = models.BinaryField("Logo", blank=True, default=b"")
     unterschrift = models.BinaryField("Unterschrift", blank=True, default=b"")

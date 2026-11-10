@@ -1,12 +1,23 @@
 from django import forms
 
 from contacts.forms import PLZ_ATTRS
-from invoicing.beleg import logo_lesbar
+from invoicing.beleg import (
+    ZAHLUNG_BEISPIEL,
+    ZAHLUNG_PLATZHALTER,
+    logo_lesbar,
+    unbekannte_platzhalter,
+)
 
 from .models import Firmendaten
 
 BILD_GROESSE = 1024 * 1024
 BILDARTEN = ".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
+PLATZHALTER_TEXT = (
+    ", ".join("{" + n + "}" for n in ZAHLUNG_PLATZHALTER[:-1])
+    + " und {"
+    + ZAHLUNG_PLATZHALTER[-1]
+    + "}"
+)
 
 
 def bilddatei_lesen(datei, name):
@@ -63,6 +74,7 @@ class FirmendatenForm(forms.ModelForm):
             "internetadresse",
             "iban",
             "bank",
+            "zahlungstext",
             "mail_server",
             "mail_port",
             "mail_verschluesselung",
@@ -83,6 +95,9 @@ class FirmendatenForm(forms.ModelForm):
                 render_value=False, attrs={"autocomplete": "new-password"}
             ),
             "unterschrift_text": forms.Textarea(attrs={"rows": 2}),
+            "zahlungstext": forms.Textarea(
+                attrs={"rows": 3, "placeholder": ZAHLUNG_BEISPIEL}
+            ),
         }
         help_texts = {
             "marke": "Steht klein unter dem Firmennamen neben dem Logo, z. B. Ihr Markenname.",
@@ -92,6 +107,8 @@ class FirmendatenForm(forms.ModelForm):
             "iban": "Erscheint in der Fußzeile und im GiroCode.",
             "email": "Absender beim Versand von Rechnungen.",
             "internetadresse": "Steht auf jedem Beleg in der Fußzeile unter Telefon und E-Mail.",
+            "zahlungstext": "Ersetzt auf Rechnungen die Zeilen unter dem Rechnungsbetrag. "
+            f"Platzhalter: {PLATZHALTER_TEXT}. Leer lassen für den Text im Beispiel.",
             "mail_server": "Steht in der Hilfe Ihres E-Mail-Anbieters, z. B. smtp.ionos.de.",
             "mail_benutzer": "Meist Ihre vollständige E-Mail-Adresse.",
         }
@@ -106,6 +123,17 @@ class FirmendatenForm(forms.ModelForm):
     def clean_mail_passwort(self):
         # Ein leeres Feld behält das gespeicherte Passwort; es wird nie zurück an den Browser geschickt.
         return self.cleaned_data["mail_passwort"] or self.instance.mail_passwort
+
+    def clean_zahlungstext(self):
+        text = self.cleaned_data["zahlungstext"].strip()
+        if unbekannt := unbekannte_platzhalter(text):
+            namen = ", ".join("{" + n + "}" for n in unbekannt)
+            raise forms.ValidationError(
+                f"{'Diesen Platzhalter' if len(unbekannt) == 1 else 'Diese Platzhalter'} "
+                f"kennt Kontorfreund nicht: {namen}. "
+                f"Möglich sind {PLATZHALTER_TEXT}."
+            )
+        return text
 
     def clean_logo_datei(self):
         return bilddatei_lesen(self.cleaned_data["logo_datei"], "Das Logo")

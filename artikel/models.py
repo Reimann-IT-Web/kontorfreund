@@ -15,11 +15,13 @@ class Artikel(models.Model):
     nummer = models.PositiveIntegerField("Nummer", unique=True, editable=False)
     bezeichnung = models.CharField("Bezeichnung", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)
+    # Ohne Einheit zeigt der Beleg nur die Menge.
     einheit = models.CharField(
         "Einheit",
         max_length=20,
-        choices=[(e, e) for e in EINHEIT_CODE],
+        choices=[(e, e) for e in EINHEIT_CODE] + [("", "ohne Einheit")],
         default="Stück",
+        blank=True,
     )
     preis = models.DecimalField(
         "Einzelpreis",

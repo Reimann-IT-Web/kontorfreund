@@ -114,6 +114,11 @@ EINHEITEN = {e.casefold(): e for e in EINHEIT_CODE} | {
     "pauschal": "Pauschale",
     "psch.": "Pauschale",
     "pausch.": "Pauschale",
+    # Ausdrücklich ohne Einheit; eine leere Zelle bleibt „Stück“.
+    "ohne": "",
+    "ohne einheit": "",
+    "-": "",
+    "–": "",
 }
 # Deutsch: Punkte für Tausender, Komma vor den Cent. Englisch nur, wenn eindeutig.
 DEUTSCH = re.compile(r"-?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?")
@@ -371,12 +376,12 @@ def _artikel(imp, zeilen, bericht):
 def _einheit(text, meldungen):
     if not text:
         return "Stück"
-    if einheit := EINHEITEN.get(text.casefold()):
+    if (einheit := EINHEITEN.get(text.casefold())) is not None:
         return einheit
     meldungen.append(
         f"Einheit: „{text}“ gibt es in Kontorfreund nicht. Möglich sind "
-        + ", ".join(list(EINHEIT_CODE)[:-1])
-        + f" und {list(EINHEIT_CODE)[-1]}."
+        + ", ".join(EINHEIT_CODE)
+        + " oder „ohne“."
     )
     return "Stück"
 

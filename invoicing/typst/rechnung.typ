@@ -8,6 +8,8 @@
 #let leise = rgb("#61686c")
 #let linie = rgb("#d5d2cb")
 #let zeilen(liste) = liste.join(linebreak())
+#let rand = (left: 25mm, right: 20mm, top: 20mm, bottom: 34mm)
+#let satzbreite = 210mm - rand.left - rand.right
 
 #set document(title: d.titel, author: d.absender_name)
 #set text(
@@ -20,7 +22,7 @@
 #set par(leading: 0.62em, spacing: 1.1em)
 #set page(
   paper: "a4",
-  margin: (left: 25mm, right: 20mm, top: 20mm, bottom: 34mm),
+  margin: rand,
   background: {
     // Falz- und Lochmarken
     for (y, laenge) in ((105mm, 4mm), (148.5mm, 6mm), (210mm, 4mm)) {
@@ -182,8 +184,27 @@
   #d.steuerhinweis
 ]
 
+// Unterschrift: Quer- wie Hochformat passen in 60 × 16 mm.
+#let unterschrift = d.unterschrift != none or d.unterschrift_text.len() > 0
+#let signatur = {
+  if d.unterschrift != none {
+    context {
+      let groesse = measure(image(bytes(d.unterschrift)))
+      let faktor = calc.min(60mm / groesse.width, 16mm / groesse.height)
+      image(bytes(d.unterschrift), width: groesse.width * faktor)
+    }
+  }
+  if d.unterschrift_text.len() > 0 { par(zeilen(d.unterschrift_text)) }
+}
+#let schluss = {
+  for absatz in d.fusstext { par(zeilen(absatz)) }
+  if unterschrift { signatur }
+}
+
 #v(2mm)
-#block(breakable: false, grid(
+// Der Zahlungshinweis wechselt mit dem Schluss die Seite, damit Gruß und Name nie allein auf der
+// letzten Seite stehen.
+#block(breakable: false, sticky: d.fusstext.len() > 0 or unterschrift, grid(
   columns: if d.girocode != none { (1fr, 24mm) } else { (1fr,) },
   column-gutter: 6mm,
   align: (left + top, center + top),
@@ -200,18 +221,35 @@
 ))
 
 #v(2mm)
-// Gruß und Unterschrift bleiben auf einer Seite. Quer- wie Hochformat passen in 60 × 16 mm.
-#let unterschrift = d.unterschrift != none or d.unterschrift_text.len() > 0
-#block(above: 1.1em, breakable: not unterschrift, {
-  for absatz in d.fusstext { par(zeilen(absatz)) }
-  if unterschrift {
-    if d.unterschrift != none {
-      context {
-        let groesse = measure(image(bytes(d.unterschrift)))
-        let faktor = calc.min(60mm / groesse.width, 16mm / groesse.height)
-        image(bytes(d.unterschrift), width: groesse.width * faktor)
-      }
+// Schlusstext und Unterschrift bleiben bis 60 mm Höhe auf einer Seite. Ein längerer Schluss trennt wie
+// eine lange Position nur zwischen zwei Zeilen; die letzten beiden Zeilen mit Text (Gruß und Name)
+// bleiben beisammen und bei der Unterschrift. Leere Zeilen behalten ihre Höhe: Aus dem Browser kommen
+// Absätze als Zeilen mit einer Leerzeile dazwischen.
+#context if measure(schluss, width: satzbreite).height <= 60mm {
+  block(above: 1.1em, breakable: false, schluss)
+} else {
+  let liste = ()
+  for (i, absatz) in d.fusstext.enumerate() {
+    for (j, zeile) in absatz.enumerate() {
+      liste.push((zeile, if j > 0 { par.leading } else if i > 0 { par.spacing } else { 1.1em }))
     }
-    if d.unterschrift_text.len() > 0 { par(zeilen(d.unterschrift_text)) }
   }
-})
+  let gefuellt = range(liste.len()).filter(k => liste.at(k).first() != "")
+  let letzte = gefuellt.at(-1, default: liste.len())
+  let gruss = gefuellt.at(-2, default: letzte)
+  {
+    set block(spacing: par.leading)
+    for (k, (zeile, abstand)) in liste.enumerate() {
+      let inhalt = if zeile == "" { hide[x] } else { zeile }
+      block(
+        above: abstand,
+        breakable: measure(inhalt, width: satzbreite).height > 60mm,
+        sticky: gruss <= k and (k < letzte or unterschrift),
+        inhalt,
+      )
+    }
+  }
+  if unterschrift {
+    block(above: 1.1em, breakable: measure(signatur, width: satzbreite).height > 60mm, signatur)
+  }
+}

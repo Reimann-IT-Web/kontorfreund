@@ -7,7 +7,7 @@
   <td class="num"><input class="num" name="menge" type="text" inputmode="decimal" value="{% if p %}{{ p.menge|zahl }}{% elif rechnung.ist_korrektur %}-1{% else %}1{% endif %}" aria-label="Menge"></td>
   <td>
     <select name="einheit" aria-label="Einheit">
-      {% for e in einheiten %}<option{% if e == p.einheit %} selected{% endif %}>{{ e }}</option>{% endfor %}
+      {% for e in einheiten %}<option value="{{ e }}"{% if p and e == p.einheit %} selected{% endif %}>{{ e|default:"ohne" }}</option>{% endfor %}
     </select>
   </td>
   <td class="num"><input class="num" name="preis" type="text" inputmode="decimal" value="{% if p %}{{ p.preis|zahl:2 }}{% endif %}" placeholder="0,00" aria-label="Einzelpreis in Euro"></td>

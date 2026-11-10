@@ -49,6 +49,20 @@ def test_artikel_anlegen_und_aendern(client):
     assert artikel.preis == Decimal("1300.00") and artikel.beschreibung == ""
 
 
+def test_artikel_ohne_einheit(client):
+    neu = client.get(reverse("artikel:neu")).text
+    assert '<option value="Stück" selected>' in neu
+    assert '<option value="">ohne Einheit</option>' in neu
+
+    anlegen(client, bezeichnung="Webinar Grundlagen", einheit="", preis="69")
+
+    assert Artikel.objects.get().einheit == ""
+    liste = client.get(reverse("artikel:liste")).text
+    assert "69,00 €</span></td>" in liste
+    rechnung = client.get(reverse("invoicing:neu")).text
+    assert 'data-einheit="" data-preis="69,00">69,00 €</option>' in rechnung
+
+
 @pytest.mark.parametrize("preis", ["-5", "zehn", ""])
 def test_ungueltiger_preis(client, preis):
     antwort = anlegen(client, preis=preis)

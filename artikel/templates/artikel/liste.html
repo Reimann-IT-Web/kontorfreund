@@ -47,7 +47,7 @@
           <a class="cell-title" href="{% url 'artikel:bearbeiten' a.pk %}">{{ a.bezeichnung }}</a>
           {% if a.beschreibung %}<span class="cell-sub">{{ a.beschreibung|linebreaksbr }}</span>{% endif %}
         </td>
-        <td class="num"><span class="amount">{{ a.preis|euro }}</span> <span class="muted">/ {{ a.einheit }}</span></td>
+        <td class="num"><span class="amount">{{ a.preis|euro }}</span>{% if a.einheit %} <span class="muted">/ {{ a.einheit }}</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

@@ -107,7 +107,7 @@
             <summary class="btn btn-sm">{% icon "box" %}Artikel einfügen{% icon "chevron-down" %}</summary>
             <ul class="menu-list" aria-label="Artikel">
               {% for a in artikel %}
-              <li><button type="button" data-artikel data-bezeichnung="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}"><span>{{ a.bezeichnung }}</span><span class="menu-meta">{{ a.preis|euro }} / {{ a.einheit }}</span></button></li>
+              <li><button type="button" data-artikel data-bezeichnung="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}"><span>{{ a.bezeichnung }}</span><span class="menu-meta">{{ a.preis|euro }}{% if a.einheit %} / {{ a.einheit }}{% endif %}</span></button></li>
               {% endfor %}
             </ul>
           </details>

@@ -27,7 +27,8 @@ from .models import Rechnung
 
 logger = logging.getLogger(__name__)
 
-EINHEITEN = ["Stück", "Std.", "Tag", "Monat", "Pauschale"]
+# Leer heißt „ohne“: Der Beleg zeigt nur die Zahl, die E-Rechnung den Code C62.
+EINHEITEN = ["Stück", "Std.", "Tag", "Monat", "Pauschale", ""]
 
 
 def liste(request):
