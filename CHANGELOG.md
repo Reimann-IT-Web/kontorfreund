@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.38.1 – 11.11.2026
+
+- Die Suche oben (Strg+K) findet jetzt auch Rechnungen, Angebote und Auftragsbestätigungen, über Nummer, Empfänger, Ansprechpartner, Ort und Datum; je Belegart die neuesten 200. Adressen findet sie auch über den Ansprechpartner und die Straße. Das hilft, wenn viele Firmen gleich heißen, etwa „Betreuung“.
+- Neu in der Suche: „In allen Adressen suchen“ führt mit dem Suchbegriff in die Adressliste. Die schnelle Suche kennt bis zu 500 Adressen, die Adressliste durchsucht alle. Sie findet jetzt auch die Straße.
+- Die Empfängerauswahl in Rechnung, Angebot und Auftragsbestätigung zeigt Ansprechpartner und Ort, etwa „Betreuung – Lena Brandt, Alzey (K-0012)“, statt nur den Firmennamen.
+- Die Hilfe erklärt die Suche und warum die E-Mail an einen Kunden auch bei Ihnen ankommt: „Kopie an mich“ schickt eine Blindkopie an Ihre eigene Adresse.
+
 ## 0.38.0 – 11.11.2026
 
 - Neu: Kontorfreund sagt Bescheid, wenn es eine neue Version gibt. Die Übersicht fragt einmal, ob es danach suchen soll; erst nach Ihrem Ja fragt es einmal am Tag bei GitHub nach, wo die Installationspakete liegen. GitHub sieht dabei nur die IP-Adresse Ihres Rechners, Kontorfreund schickt weder seine Version noch eine Kennung oder Daten. Gibt es eine neue Version, steht auf der Übersicht ein Hinweis.

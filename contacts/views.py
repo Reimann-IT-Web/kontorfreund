@@ -152,6 +152,7 @@ def liste(request):
             Q(anzeigename__icontains=q)
             | Q(vorname__icontains=q)
             | Q(nachname__icontains=q)
+            | Q(strasse__icontains=q)
             | Q(ort__icontains=q)
             | Q(email__icontains=q)
             | Q(

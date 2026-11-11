@@ -79,12 +79,23 @@ if (palette) {
     }
   };
 
+  // Steht immer zuletzt: führt mit dem Suchbegriff in die Adressliste, die alle Adressen
+  // durchsucht, auch die über die ersten 500 hinaus.
+  const alle = palette.querySelector("[data-palette-alle]");
+
   const filtern = () => {
-    const suche = normal(eingabe.value.trim());
+    const begriff = eingabe.value.trim();
+    const suche = normal(begriff);
     treffer.forEach((li) => {
+      if (li === alle) return;
       li.hidden = suche !== "" && !normal(li.textContent).includes(suche);
     });
-    leer.hidden = sichtbare().length > 0;
+    if (alle) {
+      alle.hidden = begriff === "";
+      alle.querySelector("a").href = `${alle.dataset.paletteAlle}?q=${encodeURIComponent(begriff)}`;
+      alle.querySelector("[data-palette-begriff]").textContent = begriff ? `„${begriff}“` : "";
+    }
+    leer.hidden = sichtbare().some((li) => li !== alle);
     markieren(0);
   };
 

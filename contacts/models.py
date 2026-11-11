@@ -204,6 +204,16 @@ class Kontakt(models.Model):
         return " ".join(t for t in [self.titel, self.vorname, self.nachname] if t)
 
     @property
+    def auswahlname(self):
+        """Für die Empfängerauswahl, z. B. „Betreuung – Lena Brandt, Alzey (K-0012)“.
+
+        Ansprechpartner und Ort unterscheiden Firmen, die gleich heißen.
+        """
+        zusatz = ", ".join(t for t in [self.ansprechpartner, self.ort] if t)
+        name = f"{self.anzeigename} – {zusatz}" if zusatz else self.anzeigename
+        return f"{name} ({self.kundennummer})"
+
+    @property
     def kategorien_text(self):
         return ", ".join(k.name for k in self.kategorien.all())
 

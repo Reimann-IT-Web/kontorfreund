@@ -43,7 +43,7 @@
             <select id="kontakt" name="kontakt"{% if rechnung.ist_korrektur %} disabled{% endif %}>
               <option value="">Adresse wählen …</option>
               {% for k in kontakte %}
-                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}" data-verbraucher="{{ k.ist_verbraucher|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.anzeigename }} ({{ k.kundennummer }})</option>
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}" data-verbraucher="{{ k.ist_verbraucher|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.auswahlname }}</option>
               {% endfor %}
             </select>
             {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}

@@ -3,9 +3,12 @@ from datetime import date
 from django.conf import settings
 from django.urls import reverse
 
+from angebote.models import Angebot
 from archive.models import Pruefung
 from artikel.models import Artikel
+from auftraege.models import Auftragsbestaetigung
 from contacts.models import Kontakt
+from invoicing.models import Rechnung
 from wiedervorlagen.models import Wiedervorlage
 
 from . import firmen
@@ -149,14 +152,19 @@ def navigation(request):
         }
         for t in THEMEN
     ]
+    # Bei Firmen gehört der Ansprechpartner dazu: Heißen viele Firmen gleich
+    # (etwa „Betreuung“), findet man die Adresse nur über ihn oder die Straße.
     suchindex += [
         {
             "titel": k.anzeigename,
-            "info": " · ".join(t for t in [k.kundennummer, k.ort] if t),
+            "info": " · ".join(
+                t for t in [k.kundennummer, k.ansprechpartner, k.strasse, k.ort] if t
+            ),
             "url": f"{liste}?q={k.kundennummer}&offen={k.pk}",
         }
         for k in kontakte[:500]
     ]
+    suchindex += _belege()
     suchindex += [
         {
             "titel": a.bezeichnung,
@@ -172,3 +180,40 @@ def navigation(request):
         "mehrere_firmen": mehrere,
         "ablage_befunde": befunde,
     }
+
+
+# Je Belegart die neuesten; ältere stehen im Verlauf der Adresse.
+BELEGE_IM_INDEX = 200
+
+
+def _belege():
+    """Rechnungen, Angebote und Auftragsbestätigungen für die Suche (Spezifikation G-2).
+
+    Gefunden werden sie über Nummer, Empfänger, Ansprechpartner, Ort und Datum.
+    Belege gesperrter Adressen fehlen wie die Adressen selbst.
+    """
+    eintraege = []
+    for modell, art, url in [
+        (Rechnung, None, "invoicing:bearbeiten"),
+        (Angebot, "Angebot", "angebote:bearbeiten"),
+        (Auftragsbestaetigung, "Auftragsbestätigung", "auftraege:bearbeiten"),
+    ]:
+        belege = (
+            modell.objects.select_related("kontakt")
+            .exclude(kontakt__gesperrt_am__isnull=False)
+            .order_by("-datum", "-pk")[:BELEGE_IM_INDEX]
+        )
+        for b in belege:
+            name = art or b.bezeichnung
+            k = b.kontakt
+            empfaenger = [k.anzeigename, k.ansprechpartner, k.ort] if k else []
+            eintraege.append(
+                {
+                    "titel": f"{name} {b.nummer}" if b.nummer else f"{name} (Entwurf)",
+                    "info": " · ".join(
+                        t for t in [*empfaenger, f"{b.datum:%d.%m.%Y}"] if t
+                    ),
+                    "url": reverse(url, args=[b.pk]),
+                }
+            )
+    return eintraege

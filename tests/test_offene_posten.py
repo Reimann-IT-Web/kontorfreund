@@ -137,10 +137,13 @@ def test_teilzahlung_und_rest(client, firma, firmenkunde):
     r = frisch(rechnung)
     assert r.offen == 0
     assert r.zahlstand == "bezahlt"
-    assert rechnung.nummer not in client.get(reverse("zahlungen:liste")).text
+    # Im Kontext statt im Seitentext: Die Suche (Strg+K) nennt jede Rechnung.
+    assert r not in client.get(reverse("zahlungen:liste")).context["rechnungen"]
     assert (
-        rechnung.nummer
-        in client.get(reverse("zahlungen:liste") + "?zeigen=bezahlt").text
+        r
+        in client.get(reverse("zahlungen:liste"), {"zeigen": "bezahlt"}).context[
+            "rechnungen"
+        ]
     )
     assert "Bezahlt" in client.get(reverse("invoicing:liste")).text
 

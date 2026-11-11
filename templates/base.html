@@ -97,17 +97,23 @@
       <label class="palette-field">
         {% icon "search" %}
         <span class="visually-hidden">Suchbegriff</span>
-        <input type="search" name="suchbegriff" placeholder="Name, Nummer oder Ort eingeben" autocomplete="off" role="combobox" aria-controls="treffer-liste" aria-expanded="true" aria-autocomplete="list" data-palette-input>
+        <input type="search" name="suchbegriff" placeholder="Name, Nummer, Straße oder Ort eingeben" autocomplete="off" role="combobox" aria-controls="treffer-liste" aria-expanded="true" aria-autocomplete="list" data-palette-input>
         <kbd>Esc</kbd>
       </label>
+      <p class="palette-empty muted" data-palette-empty hidden>Keine Treffer. Prüfen Sie die Schreibweise oder suchen Sie nach einer Nummer wie K-0012.</p>
       <ul class="palette-list" id="treffer-liste" role="listbox" aria-label="Treffer">
         {% for eintrag in suchindex %}
           <li id="treffer-{{ forloop.counter }}" role="option" aria-selected="false" data-palette-item>
             <a href="{{ eintrag.url }}"><span>{{ eintrag.titel }}</span><span class="muted">{{ eintrag.info }}</span></a>
           </li>
         {% endfor %}
+        {% if suchindex %}
+          {# Die Liste oben enthält höchstens 500 Adressen; die Adressliste durchsucht alle. #}
+          <li id="treffer-adressen" role="option" aria-selected="false" data-palette-item data-palette-alle="{% url 'contacts:liste' %}" hidden>
+            <a href="{% url 'contacts:liste' %}"><span>In allen Adressen suchen</span><span class="muted" data-palette-begriff></span></a>
+          </li>
+        {% endif %}
       </ul>
-      <p class="palette-empty muted" data-palette-empty hidden>Keine Treffer. Prüfen Sie die Schreibweise oder suchen Sie nach einer Nummer wie K-0012.</p>
     </form>
   </dialog>
   {% endblock %}
