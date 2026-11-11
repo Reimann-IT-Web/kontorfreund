@@ -45,8 +45,21 @@ class Firmendaten(models.Model):
     ort = models.CharField("Ort", max_length=100, blank=True)
     steuernummer = models.CharField("Steuernummer", max_length=30, blank=True)
     ust_id = models.CharField("USt-IdNr.", max_length=20, blank=True)
-    kleinunternehmer = models.BooleanField(
-        "Ich bin Kleinunternehmer nach § 19 UStG", default=True
+
+    # Die Werte sind zugleich Steuerfälle der Belege (invoicing.models.Rechnung.Steuerfall).
+    class Umsatzsteuer(models.TextChoices):
+        KLEINUNTERNEHMER = "kleinunternehmer", "Kleinunternehmer nach § 19 UStG"
+        REGEL = "regel", "Umsatzsteuer ausweisen (19 %)"
+        STEUERFREI = "steuerfrei", "Steuerfreie Leistungen nach § 4 UStG"
+
+    umsatzsteuer = models.CharField(
+        "Umsatzsteuer",
+        max_length=20,
+        choices=Umsatzsteuer.choices,
+        default=Umsatzsteuer.KLEINUNTERNEHMER,
+    )
+    steuerfrei_hinweis = models.CharField(
+        "Hinweis auf die Steuerbefreiung", max_length=200, blank=True
     )
     email = models.EmailField("E-Mail", blank=True)
     telefon = models.CharField("Telefon", max_length=50, blank=True)
@@ -106,6 +119,11 @@ class Firmendaten(models.Model):
             and self.ort
             and (self.steuernummer or self.ust_id)
         )
+
+    @property
+    def kleinunternehmer(self):
+        """Nur dann gelten die Umsatzgrenzen nach § 19 UStG (Übersicht, Editor)."""
+        return self.umsatzsteuer == self.Umsatzsteuer.KLEINUNTERNEHMER
 
     @property
     def logo_bild(self):

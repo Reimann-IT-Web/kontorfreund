@@ -342,6 +342,8 @@ if (rechnung) {
     kleinunternehmer: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
     regel: "",
     "13b": "Steuerschuldnerschaft des Leistungsempfängers.",
+    // Wortlaut aus den Firmendaten, bei der Korrektur der des Originals.
+    steuerfrei: rechnung.dataset.steuerfrei || "",
   };
   const PRUEFPUNKT = {
     empfaenger: "Empfänger mit Anschrift",
@@ -351,6 +353,7 @@ if (rechnung) {
     zeitraum: "Leistungszeitraum",
     entgelt: "Rechnungsbetrag",
     xrechnung: "Angaben für die XRechnung",
+    steuer: "Hinweis auf die Steuerbefreiung",
   };
   // Rechnungskorrektur: nur Minderungen (negative Mengen), höchstens um den offenen Betrag.
   const korrektur = rechnung.dataset.korrektur;
@@ -464,6 +467,9 @@ if (rechnung) {
     const steuerhinweis = rechnung.querySelector("[data-tax-note]");
     steuerhinweis.textContent = STEUERHINWEIS[fall];
     steuerhinweis.hidden = !STEUERHINWEIS[fall];
+    // Steuerfrei verlangt einen Hinweis auf die Befreiung (§ 14 Abs. 4 S. 1 Nr. 8 UStG).
+    const steuerOk = fall !== "steuerfrei" || Boolean(STEUERHINWEIS.steuerfrei);
+    rechnung.querySelector("[data-steuerfrei-fehlt]").hidden = steuerOk;
 
     // Fälligkeit der Rechnung bzw. Gültigkeit des Angebots; die Auftragsbestätigung hat keine Frist.
     const datum = feld("datum").valueAsDate;
@@ -512,6 +518,7 @@ if (rechnung) {
       zeitraum: Boolean(von) && (!bis || bis >= von),
       entgelt: korrektur ? summe < 0 && -summe <= Number(korrektur) : summe > 0,
       xrechnung: !xrechnung || rechnung.dataset.xrechnungAbsender === "1",
+      steuer: steuerOk,
     });
   };
 

@@ -28,9 +28,14 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 | Regelbesteuerung | 19 %, 7 % oder 0 % je Position, Summe je Steuersatz | – |
 | Kleinunternehmer (§ 19 UStG) | keine Umsatzsteuer | Hinweis auf die Steuerbefreiung nach § 19 UStG |
 | Steuerschuldnerschaft des Leistungsempfängers (§ 13b UStG) | keine Umsatzsteuer, USt-IdNr. des Kunden nötig | „Steuerschuldnerschaft des Leistungsempfängers“ (§ 14a Abs. 5 UStG) |
+| Steuerfreie Leistung (§ 4 UStG, etwa Nr. 14 Heilbehandlung oder Nr. 21 Unterricht und Bildung) | keine Umsatzsteuer | Hinweis auf die Steuerbefreiung (§ 14 Abs. 4 S. 1 Nr. 8 UStG), Wortlaut aus den Firmendaten |
 
-- Der Steuerfall wird aus den Firmendaten vorbelegt (Kleinunternehmer ja/nein) und ist je Beleg änderbar.
+- Der Steuerfall wird aus den Firmendaten vorbelegt und ist je Beleg änderbar: „steuerfrei“, wenn dort „Meine Leistungen sind in der Regel steuerfrei“ angekreuzt ist, sonst nach Kleinunternehmer ja/nein.
+- Steuerfreie Leistungen: Den Hinweis tragen Sie einmal in den Firmendaten ein, z. B. „Umsatzsteuerfrei nach § 4 Nr. 21 UStG“. Welche Befreiung gilt, entscheidet der Nutzer, das Programm prüft sie nicht. Ohne Hinweis lässt sich ein steuerfreier Beleg nicht festschreiben oder fertigstellen (B-5 Nr. 8). Der Wortlaut wird beim Festschreiben eingefroren; Stornorechnung und Rechnungskorrektur übernehmen ihn vom Original. Gilt für Rechnung, Angebot und Auftragsbestätigung.
+- E-Rechnung bei steuerfreien Leistungen: Umsatzsteuer-Kategorie E (befreit), Satz 0 %, der Hinweis als Befreiungsgrund (BT-120). Einen Befreiungscode (BT-121) setzt das Programm nicht, weil es die Rechtsgrundlage nicht kennt.
+- Ein Steuerfall gilt für den ganzen Beleg. Belege mit steuerfreien und steuerpflichtigen Positionen zugleich kommen erst mit den Steuersätzen je Position.
 - Umsatzgrenzen nach § 19 UStG (seit 2025): Vorjahr höchstens 25.000 €, laufendes Jahr höchstens 100.000 €. Das Programm zeigt den Jahresumsatz und warnt ab 80 % jeder Grenze. Würde eine Rechnung die 100.000-€-Grenze überschreiten, weist es vor dem Festschreiben darauf hin, dass bereits dieser Umsatz der Regelbesteuerung unterliegt.
+- Steuerfreie Rechnungen zählen nicht zu diesem Umsatz: § 19 Abs. 2 Nr. 1 UStG zieht die Umsätze nach § 4 Nr. 8 Buchst. i, Nr. 9 Buchst. b und Nr. 11 bis 29 vom Gesamtumsatz ab. Die Hilfe nennt die Ausnahme: Umsätze nach § 4 Nr. 8 Buchst. a bis h, Nr. 9 Buchst. a und Nr. 10 zählen mit, wenn sie keine Hilfsumsätze sind; diese rechnet der Nutzer selbst hinzu.
 - Beträge werden mit `Decimal` berechnet: Positionsbeträge auf 2 Nachkommastellen, die Steuer je Steuersatz aus der Summe der Positionen (Rechenregeln nach EN 16931).
 - Die vereinfachten Angaben für Kleinbetragsrechnungen und Kleinunternehmer (§§ 33, 34a UStDV) sind erlaubt, standardmäßig gibt das Programm aber alle Angaben aus.
 

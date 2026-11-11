@@ -75,6 +75,16 @@ def _anschrift(firma):
     return f"{firma.strasse}\n{firma.plz} {firma.ort}".strip()
 
 
+def _umsatzsteuer(firma):
+    # Wortlaut der ersten beiden wie vor der Auswahl, damit keine neue Fassung entsteht.
+    if firma.kleinunternehmer:
+        return "Kleinunternehmer nach § 19 UStG"
+    if firma.umsatzsteuer == firma.Umsatzsteuer.STEUERFREI:
+        hinweis = f" mit dem Hinweis „{firma.steuerfrei_hinweis}“"
+        return f"Steuerfreie Leistungen nach § 4 UStG{hinweis if firma.steuerfrei_hinweis else ''}"
+    return "Regelbesteuerung"
+
+
 def betriebssystem():
     if platform.system() == "Darwin":
         return f"macOS {platform.mac_ver()[0]}".strip()
@@ -163,12 +173,7 @@ def verfahren():
                     ("Anschrift", _anschrift(firma)),
                     ("Steuernummer", firma.steuernummer),
                     ("USt-IdNr.", firma.ust_id),
-                    (
-                        "Umsatzsteuer",
-                        "Kleinunternehmer nach § 19 UStG"
-                        if firma.kleinunternehmer
-                        else "Regelbesteuerung",
-                    ),
+                    ("Umsatzsteuer", _umsatzsteuer(firma)),
                 ),
                 antwort(angaben, "taetigkeit"),
             ),

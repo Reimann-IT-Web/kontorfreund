@@ -18,7 +18,7 @@
   </div>
 </div>
 
-<form class="editor" id="angebot-form" method="post" data-invoice data-beleg="angebot" data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-adressen="{% url 'contacts:liste' %}" novalidate>
+<form class="editor" id="angebot-form" method="post" data-invoice data-beleg="angebot" data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-adressen="{% url 'contacts:liste' %}" data-steuerfrei="{{ firma.steuerfrei_hinweis }}" novalidate>
   {% csrf_token %}
   <div class="editor-main">
     <nav class="steps" aria-label="Schritte">
@@ -148,6 +148,7 @@
         <li data-check="datum">{% icon "check" %}{% icon "alert" %}<span>Angebotsdatum</span></li>
         <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
         <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>Angebotsbetrag</span></li>
+        <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer<span data-steuerfrei-fehlt hidden> – {% include "invoicing/einstellungen_ergaenzen.html" %}</span></span></li>
       </ul>
       <p class="small check-message" data-check-message role="status"></p>
       <button class="btn btn-primary btn-block" type="button" data-submit disabled>{% icon "lock" %}Fertigstellen …</button>

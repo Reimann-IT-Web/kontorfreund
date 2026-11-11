@@ -117,7 +117,7 @@ def test_inhalt_folgt_den_einstellungen(firma):
     assert "§ 19 UStG" in texte(VERFAHREN)
     assert "Versand von Belegen per E-Mail" not in texte(DATENSCHUTZ)
     assert "Belege aus dem bisherigen Programm" not in texte(VERFAHREN)
-    firma.kleinunternehmer = False
+    firma.umsatzsteuer = "regel"
     firma.email = "post@muster.test"
     firma.mail_server = "smtp.muster.test"
     firma.save()

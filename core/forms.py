@@ -68,7 +68,8 @@ class FirmendatenForm(forms.ModelForm):
             "ort",
             "steuernummer",
             "ust_id",
-            "kleinunternehmer",
+            "umsatzsteuer",
+            "steuerfrei_hinweis",
             "email",
             "telefon",
             "internetadresse",
@@ -95,6 +96,10 @@ class FirmendatenForm(forms.ModelForm):
                 render_value=False, attrs={"autocomplete": "new-password"}
             ),
             "unterschrift_text": forms.Textarea(attrs={"rows": 2}),
+            "umsatzsteuer": forms.RadioSelect,
+            "steuerfrei_hinweis": forms.TextInput(
+                attrs={"placeholder": "Umsatzsteuerfrei nach § 4 Nr. 21 UStG"}
+            ),
             "zahlungstext": forms.Textarea(
                 attrs={"rows": 3, "placeholder": ZAHLUNG_BEISPIEL}
             ),
@@ -103,7 +108,8 @@ class FirmendatenForm(forms.ModelForm):
             "marke": "Steht klein unter dem Firmennamen neben dem Logo, z. B. Ihr Markenname.",
             "unterschrift_text": "Zum Beispiel Ihr Name und in der zweiten Zeile Ihre Funktion.",
             "steuernummer": "Steht auf jeder Rechnung. Alternativ genügt die USt-IdNr.",
-            "kleinunternehmer": "Dann weist Kontorfreund keine Umsatzsteuer aus und druckt den Hinweis nach § 19 UStG.",
+            "steuerfrei_hinweis": "Steht auf jedem Beleg mit steuerfreien Leistungen. "
+            "Welche Befreiung für Sie gilt, klären Sie am besten mit Ihrem Steuerberater.",
             "iban": "Erscheint in der Fußzeile und im GiroCode.",
             "email": "Absender beim Versand von Rechnungen.",
             "internetadresse": "Steht auf jedem Beleg in der Fußzeile unter Telefon und E-Mail.",
@@ -123,6 +129,22 @@ class FirmendatenForm(forms.ModelForm):
     def clean_mail_passwort(self):
         # Ein leeres Feld behält das gespeicherte Passwort; es wird nie zurück an den Browser geschickt.
         return self.cleaned_data["mail_passwort"] or self.instance.mail_passwort
+
+    def clean_steuerfrei_hinweis(self):
+        return self.cleaned_data["steuerfrei_hinweis"].strip()
+
+    def clean(self):
+        daten = super().clean()
+        if daten.get(
+            "umsatzsteuer"
+        ) == Firmendaten.Umsatzsteuer.STEUERFREI and not daten.get(
+            "steuerfrei_hinweis"
+        ):
+            self.add_error(
+                "steuerfrei_hinweis",
+                "Bitte tragen Sie ein, welcher Hinweis auf steuerfreien Belegen stehen soll.",
+            )
+        return daten
 
     def clean_zahlungstext(self):
         text = self.cleaned_data["zahlungstext"].strip()

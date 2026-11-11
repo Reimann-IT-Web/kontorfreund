@@ -28,7 +28,7 @@ from segno import helpers as qr
 from contacts.models import ist_leitweg_id
 from core.templatetags.kf import euro, zahl
 
-from .models import Rechnung, runden
+from .models import Rechnung, runden, steuerhinweis
 
 # XRechnung 3.0 in der Syntax CII; gültig ist Version 3.0.2, Version 4.0 erst ab 2027.
 XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
@@ -93,6 +93,9 @@ KATEGORIE = {
         "Steuerschuldnerschaft des Leistungsempfängers",
         "VATEX-EU-AE",
     ),
+    # Befreiungsgrund (BT-120) ist der Hinweis des Belegs. Einen VATEX-Code setzt
+    # Kontorfreund nicht, weil es die Rechtsgrundlage der Befreiung nicht kennt.
+    Rechnung.Steuerfall.STEUERFREI: ("E", Decimal("0"), None, ""),
 }
 
 
@@ -228,6 +231,14 @@ def skonto_daten(rechnung, brutto):
     }
 
 
+def beleg_steuerhinweis(rechnung, firma):
+    """Storno und Korrektur behalten den eingefrorenen Hinweis ihres Originals."""
+    original = rechnung.storno_zu or rechnung.korrektur_zu
+    if original and original.beleg and original.steuerfall == rechnung.steuerfall:
+        return original.beleg.get("steuerhinweis", "")
+    return steuerhinweis(rechnung.steuerfall, firma)
+
+
 def beleg_daten(rechnung, firma, nummer):
     """Alle Angaben des Belegs. Beim Festschreiben eingefroren, danach nie neu berechnet."""
     netto, ust, brutto = rechnung.summen()
@@ -255,7 +266,7 @@ def beleg_daten(rechnung, firma, nummer):
         if rechnung.leistung_bis
         else "",
         "steuerfall": rechnung.steuerfall,
-        "steuerhinweis": rechnung.steuerhinweis,
+        "steuerhinweis": beleg_steuerhinweis(rechnung, firma),
         "referenz": rechnung.kaeuferreferenz,
         "xrechnung": bool(k and k.xrechnung),
         "betreff": rechnung.betreff,
@@ -540,6 +551,8 @@ def zugferd(b):
     if e["land"] not in LAND_CODE or (lieferung and lieferung["land"] not in LAND_CODE):
         return None
     kategorie, satz, grund, grund_code = KATEGORIE[b["steuerfall"]]
+    if grund is None:
+        grund = b["steuerhinweis"]
     xrechnung = b.get("xrechnung", False)
 
     doc = Document()

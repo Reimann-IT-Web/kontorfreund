@@ -23,7 +23,7 @@
   </div>
 </div>
 
-<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-xrechnung-absender="{% if firma.telefon and firma.email and firma.iban %}1{% else %}0{% endif %}" data-adressen="{% url 'contacts:liste' %}"{% if rechnung.ist_korrektur %} data-korrektur="{{ rechnung.korrektur_zu.korrigierter_betrag|stringformat:'s' }}"{% endif %} novalidate>
+<form class="editor" id="rechnung-form" method="post" data-invoice data-absender="{{ firma.vollstaendig|yesno:'1,0' }}" data-xrechnung-absender="{% if firma.telefon and firma.email and firma.iban %}1{% else %}0{% endif %}" data-adressen="{% url 'contacts:liste' %}" data-steuerfrei="{% if rechnung.ist_korrektur %}{{ rechnung.korrektur_zu.beleg.steuerhinweis }}{% else %}{{ firma.steuerfrei_hinweis }}{% endif %}"{% if rechnung.ist_korrektur %} data-korrektur="{{ rechnung.korrektur_zu.korrigierter_betrag|stringformat:'s' }}"{% endif %} novalidate>
   {% csrf_token %}
   <div class="editor-main">
     <nav class="steps" aria-label="Schritte">
@@ -192,7 +192,7 @@
         <li data-check="leistung">{% icon "check" %}{% icon "alert" %}<span>Menge und Art der Leistung</span></li>
         <li data-check="zeitraum">{% icon "check" %}{% icon "alert" %}<span>Leistungszeitraum</span></li>
         <li data-check="entgelt">{% icon "check" %}{% icon "alert" %}<span>{% if rechnung.ist_korrektur %}Korrekturbetrag, höchstens {{ rechnung.korrektur_zu.korrigierter_betrag|euro }}{% else %}Rechnungsbetrag{% endif %}</span></li>
-        <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer</span></li>
+        <li data-check="steuer">{% icon "check" %}{% icon "alert" %}<span>Hinweis zur Umsatzsteuer<span data-steuerfrei-fehlt hidden> – {% include "invoicing/einstellungen_ergaenzen.html" %}</span></span></li>
         <li data-check="xrechnung" hidden>{% icon "check" %}{% icon "alert" %}<span>Für die XRechnung: Ihre Telefonnummer, E-Mail-Adresse und IBAN{% if not firma.telefon or not firma.email or not firma.iban %} – {% include "invoicing/einstellungen_ergaenzen.html" %}{% endif %}</span></li>
       </ul>
       <p class="small check-message" data-check-message role="status"></p>

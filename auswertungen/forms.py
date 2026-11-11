@@ -17,6 +17,7 @@ class DatevForm(forms.ModelForm):
             "erloes_kleinunternehmer",
             "erloes_regel",
             "erloes_13b",
+            "erloes_steuerfrei",
         ]
         widgets = {
             "beraternummer": ZAHL,
@@ -25,6 +26,7 @@ class DatevForm(forms.ModelForm):
             "erloes_kleinunternehmer": ZAHL,
             "erloes_regel": ZAHL,
             "erloes_13b": ZAHL,
+            "erloes_steuerfrei": ZAHL,
         }
         help_texts = {
             "beraternummer": "Vier bis sieben Ziffern, von Ihrem Steuerberater.",

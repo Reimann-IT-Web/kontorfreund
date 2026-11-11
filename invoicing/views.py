@@ -58,9 +58,8 @@ def neu(request):
         lieferanschrift=kontakt.anschrift_fuer(Anschrift.Art.LIEFERUNG)
         if kontakt
         else None,
-        steuerfall=Rechnung.Steuerfall.KLEINUNTERNEHMER
-        if firma.kleinunternehmer
-        else Rechnung.Steuerfall.REGEL,
+        # Die Auswahl in den Firmendaten ist zugleich der Steuerfall.
+        steuerfall=firma.umsatzsteuer,
         kopftext=f"{beleg.briefanrede(kontakt)}\n\n"
         "vielen Dank für Ihren Auftrag. Ich berechne Ihnen folgende Leistungen:",
         fusstext=beleg.grussformel(firma),

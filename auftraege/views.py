@@ -19,7 +19,6 @@ from core.models import Firmendaten
 from invoicing import beleg as rechnungsbeleg
 from invoicing import versand
 from invoicing.forms import VersandForm, positionen_lesen
-from invoicing.models import Rechnung
 from invoicing.views import EINHEITEN
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
@@ -56,9 +55,8 @@ def neu(request):
         lieferanschrift=kontakt.anschrift_fuer(Anschrift.Art.LIEFERUNG)
         if kontakt
         else None,
-        steuerfall=Rechnung.Steuerfall.KLEINUNTERNEHMER
-        if firma.kleinunternehmer
-        else Rechnung.Steuerfall.REGEL,
+        # Die Auswahl in den Firmendaten ist zugleich der Steuerfall.
+        steuerfall=firma.umsatzsteuer,
         kopftext=beleg.kopftext(kontakt),
         fusstext=beleg.fusstext(firma),
     )

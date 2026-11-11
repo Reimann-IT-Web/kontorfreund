@@ -29,6 +29,23 @@ def summen(positionen, steuerfall):
     return netto, ust, netto + ust
 
 
+def steuerhinweis(steuerfall, firma):
+    """Pflichthinweis zur Umsatzsteuer; bei steuerfreien Leistungen aus den Firmendaten."""
+    if steuerfall == Rechnung.Steuerfall.STEUERFREI:
+        return firma.steuerfrei_hinweis.strip()
+    return Rechnung.STEUERHINWEIS[steuerfall]
+
+
+def hinweis_fehlt(steuerfall, firma):
+    """Ohne Hinweis auf die Befreiung fehlt eine Pflichtangabe (§ 14 Abs. 4 S. 1 Nr. 8 UStG)."""
+    return steuerfall == Rechnung.Steuerfall.STEUERFREI and not steuerhinweis(
+        steuerfall, firma
+    )
+
+
+HINWEIS_FEHLT = "Hinweis auf die Steuerbefreiung"
+
+
 class Festgeschrieben(ValidationError):
     """Festgeschriebene Rechnungen sind unveränderbar (GoBD).
 
@@ -50,7 +67,9 @@ class Rechnung(models.Model):
         KLEINUNTERNEHMER = "kleinunternehmer", "§ 19 – Kleinunternehmer, keine USt"
         REGEL = "regel", "19 % Umsatzsteuer ausweisen"
         UMKEHR = "13b", "§ 13b – Kunde schuldet die Steuer"
+        STEUERFREI = "steuerfrei", "§ 4 – steuerfreie Leistung, keine USt"
 
+    # Steuerfreie Leistungen: Wortlaut aus Firmendaten.steuerfrei_hinweis (steuerhinweis()).
     STEUERHINWEIS = {
         Steuerfall.KLEINUNTERNEHMER: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
         Steuerfall.REGEL: "",
@@ -330,10 +349,6 @@ class Rechnung(models.Model):
             dateien.append((f"{name}.xml", self.xml_datei, "application/xml"))
         return dateien
 
-    @property
-    def steuerhinweis(self):
-        return self.STEUERHINWEIS[self.steuerfall]
-
     def summen(self):
         """(netto, ust, brutto) aus den Positionen, kaufmännisch gerundet."""
         return summen(self.positionen.all(), self.steuerfall)
@@ -365,6 +380,9 @@ class Rechnung(models.Model):
                 fehlt.append(f"Korrekturbetrag (höchstens {euro(hoechstens)})")
         elif brutto <= 0:
             fehlt.append("Rechnungsbetrag")
+        # Die Korrektur übernimmt den Hinweis des Originals (beleg.beleg_daten).
+        if not self.ist_korrektur and hinweis_fehlt(self.steuerfall, firma):
+            fehlt.append(HINWEIS_FEHLT)
         if self.kontakt and self.kontakt.xrechnung:
             fehlt += self._fehlt_fuer_xrechnung(firma)
         return fehlt

@@ -59,10 +59,19 @@
     <div class="form-grid">
       {% include "core/feld.html" with f=form.steuernummer %}
       {% include "core/feld.html" with f=form.ust_id optional=True %}
-      <label class="choice field-wide">
-        {{ form.kleinunternehmer }}
-        <span><strong>{{ form.kleinunternehmer.label }}</strong><br><span class="muted">{{ form.kleinunternehmer.help_text }}</span></span>
-      </label>
+      <fieldset class="field field-wide" id="umsatzsteuer">
+        <legend>Umsatzsteuer auf Ihren Belegen</legend>
+        <div>
+          {% for wahl in form.umsatzsteuer %}
+          <label class="choice">
+            {{ wahl.tag }}
+            <span><strong>{{ wahl.choice_label }}</strong><br><span class="muted">{% if wahl.data.value == "kleinunternehmer" %}Keine Umsatzsteuer, auf jedem Beleg der Hinweis nach § 19 UStG. Kontorfreund zeigt Ihren Umsatz im Vergleich zu den Grenzen von 25.000 € und 100.000 € und warnt rechtzeitig.{% elif wahl.data.value == "regel" %}Kontorfreund weist auf jedem Beleg 19 % Umsatzsteuer aus.{% else %}Zum Beispiel Unterricht, Bildung oder Heilbehandlung. Keine Umsatzsteuer, auf jedem Beleg steht Ihr Hinweis auf die Befreiung.{% endif %}</span></span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="hint">Gilt für neue Rechnungen, Angebote und Auftragsbestätigungen. Im Beleg selbst können Sie die Umsatzsteuer jederzeit ändern.</p>
+      </fieldset>
+      {% include "core/feld.html" with f=form.steuerfrei_hinweis optional=True breit=True %}
     </div>
   </section>
 

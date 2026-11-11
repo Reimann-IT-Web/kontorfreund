@@ -507,7 +507,7 @@ def test_passwort_bleibt_bei_leerem_feld(client, firma):
         reverse("core:einstellungen"),
         {
             **werte,
-            "kleinunternehmer": "on",
+            "umsatzsteuer": "kleinunternehmer",
             "mail_port": "587",
             "mail_verschluesselung": "starttls",
             "mail_passwort": "",
@@ -533,7 +533,7 @@ def einstellungen_absenden(client, firma, **mehr):
         reverse("core:einstellungen"),
         {
             **werte,
-            "kleinunternehmer": "on",
+            "umsatzsteuer": "kleinunternehmer",
             "mail_port": "587",
             "mail_verschluesselung": "starttls",
             **mehr,

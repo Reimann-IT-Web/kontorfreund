@@ -30,7 +30,7 @@ from invoicing.beleg import (
     setzen,
 )
 from invoicing.models import Position as Rechnungsposition
-from invoicing.models import Rechnung
+from invoicing.models import Rechnung, steuerhinweis
 
 from .models import Auftragsbestaetigung, Position
 
@@ -66,7 +66,7 @@ def beleg_daten(auftrag, firma, nummer):
         else "",
         "angebot": auftrag.angebot.nummer if auftrag.angebot else "",
         "steuerfall": auftrag.steuerfall,
-        "steuerhinweis": auftrag.steuerhinweis,
+        "steuerhinweis": steuerhinweis(auftrag.steuerfall, firma),
         "betreff": auftrag.betreff,
         "kopftext": auftrag.kopftext,
         "fusstext": auftrag.fusstext,

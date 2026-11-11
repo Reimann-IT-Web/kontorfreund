@@ -24,7 +24,7 @@ def firma():
     f.plz = "55116"
     f.ort = "Mainz"
     f.steuernummer = "12/345/67890"
-    f.kleinunternehmer = True
+    f.umsatzsteuer = "kleinunternehmer"
     f.save()
     return f
 

@@ -28,7 +28,7 @@ from invoicing.beleg import (
     setzen,
 )
 from invoicing.models import Position as Rechnungsposition
-from invoicing.models import Rechnung
+from invoicing.models import Rechnung, steuerhinweis
 
 from .models import Angebot
 
@@ -52,7 +52,7 @@ def beleg_daten(angebot, firma, nummer):
         "datum": angebot.datum.isoformat(),
         "gueltig_bis": angebot.gueltig_bis.isoformat(),
         "steuerfall": angebot.steuerfall,
-        "steuerhinweis": angebot.steuerhinweis,
+        "steuerhinweis": steuerhinweis(angebot.steuerfall, firma),
         "betreff": angebot.betreff,
         "kopftext": angebot.kopftext,
         "fusstext": angebot.fusstext,

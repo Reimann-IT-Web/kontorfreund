@@ -25,6 +25,7 @@ STEUER = {
     Rechnung.Steuerfall.KLEINUNTERNEHMER: "§ 19 UStG",
     Rechnung.Steuerfall.REGEL: "19 %",
     Rechnung.Steuerfall.UMKEHR: "§ 13b UStG",
+    Rechnung.Steuerfall.STEUERFREI: "steuerfrei",
 }
 STAND = {
     "bezahlt": "bezahlt",

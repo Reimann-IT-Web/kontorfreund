@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.37.0 – 11.11.2026
+
+- Neu: steuerfreie Leistungen nach § 4 UStG, etwa für Unterricht, Bildung oder Heilbehandlung. Rechnungen, Angebote und Auftragsbestätigungen haben dafür bei „Umsatzsteuer“ den Steuerfall „§ 4 – steuerfreie Leistung“. Auf dem Beleg steht dann Ihr eigener Hinweis auf die Befreiung, etwa „Umsatzsteuerfrei nach § 4 Nr. 21 UStG“; Sie tragen ihn einmal in den Einstellungen ein. Ohne ihn lässt sich ein steuerfreier Beleg nicht festschreiben. Die E-Rechnung kennzeichnet die Leistung als steuerbefreit und nennt Ihren Hinweis als Grund; Stornorechnung und Rechnungskorrektur übernehmen den Hinweis des Originals. Der DATEV-Export bucht auf 8100 (SKR 03) bzw. 4100 (SKR 04).
+- In den Einstellungen wird aus dem Kästchen „Ich bin Kleinunternehmer“ eine Auswahl: Kleinunternehmer nach § 19 UStG, Umsatzsteuer ausweisen (19 %) oder steuerfreie Leistungen. Sie bestimmt den Steuerfall neuer Belege. Nach dem Update steht dort, was Sie bisher angekreuzt hatten; als Kleinunternehmer sehen Sie die Umsatzgrenzen wie gewohnt.
+- Steuerfreie Rechnungen zählen nicht mehr zum Umsatz für die Kleinunternehmergrenzen, wie es § 19 Abs. 2 UStG für die meisten Befreiungen vorsieht.
+
 ## 0.36.0 – 10.11.2026
 
 - Gruß und Name reißen am Seitenende nicht mehr auseinander. Passt der Schluss einer Rechnung, eines Angebots, einer Auftragsbestätigung oder Mahnung nicht mehr auf die Seite, wechselt er samt Zahlungshinweis auf die nächste. So steht dort nie nur der Name oder nur der Gruß. Ein sehr langer Text nach den Positionen (über 6 cm) trennt nur zwischen zwei Zeilen; Gruß und Name bleiben beisammen. Belege ohne Seitenwechsel bleiben pixelgleich, schon festgeschriebene Belege unverändert.

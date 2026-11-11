@@ -9,11 +9,13 @@ ERLOESKONTEN = {
         Rechnung.Steuerfall.KLEINUNTERNEHMER: 8195,
         Rechnung.Steuerfall.REGEL: 8400,
         Rechnung.Steuerfall.UMKEHR: 8337,
+        Rechnung.Steuerfall.STEUERFREI: 8100,
     },
     "04": {
         Rechnung.Steuerfall.KLEINUNTERNEHMER: 4185,
         Rechnung.Steuerfall.REGEL: 4400,
         Rechnung.Steuerfall.UMKEHR: 4337,
+        Rechnung.Steuerfall.STEUERFREI: 4100,
     },
 }
 # Personenkonten bei vierstelligen Sachkonten.
@@ -80,6 +82,9 @@ class Datev(models.Model):
     )
     erloes_regel = _erloeskonto("Erlöskonto 19 % USt", Rechnung.Steuerfall.REGEL)
     erloes_13b = _erloeskonto("Erlöskonto § 13b UStG", Rechnung.Steuerfall.UMKEHR)
+    erloes_steuerfrei = _erloeskonto(
+        "Erlöskonto steuerfreie Leistungen", Rechnung.Steuerfall.STEUERFREI
+    )
 
     class Meta:
         verbose_name = "DATEV-Einstellungen"
@@ -106,6 +111,7 @@ class Datev(models.Model):
             Rechnung.Steuerfall.KLEINUNTERNEHMER: self.erloes_kleinunternehmer,
             Rechnung.Steuerfall.REGEL: self.erloes_regel,
             Rechnung.Steuerfall.UMKEHR: self.erloes_13b,
+            Rechnung.Steuerfall.STEUERFREI: self.erloes_steuerfrei,
         }[steuerfall]
         return eigenes or ERLOESKONTEN[self.kontenrahmen][steuerfall]
 

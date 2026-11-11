@@ -42,6 +42,7 @@ FAELLE = [
     ("regel", "regel", {}, {}),
     ("skonto", "regel", {}, SKONTO),
     ("13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}, {}),
+    ("steuerfrei", "steuerfrei", {}, {}),
     (
         "xrechnung-leitweg",
         "kleinunternehmer",
@@ -53,6 +54,12 @@ FAELLE = [
         "regel",
         {"kaeuferreferenz": "Kostenstelle 4711", "xrechnung": True},
         SKONTO,
+    ),
+    (
+        "xrechnung-steuerfrei",
+        "steuerfrei",
+        {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
+        {},
     ),
     # An die Rechnungsanschrift, mit Lieferanschrift (K-1); siehe weitere_anschriften.
     (
@@ -135,6 +142,7 @@ def rechnungen(client, settings, unterschrift):
     f.email = "post@muster.test"
     f.telefon = "06131 123456"
     f.iban = "DE02120300000000202051"
+    f.steuerfrei_hinweis = "Umsatzsteuerfrei nach § 4 Nr. 21 UStG"
     # Durchsichtiger Grund: Mustang prüft damit auch das PDF/A samt Bild.
     f.unterschrift = unterschrift
     f.unterschrift_text = "Max Muster\nInhaber"

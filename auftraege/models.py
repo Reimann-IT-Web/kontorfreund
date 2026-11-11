@@ -7,7 +7,7 @@ from django.db.models import Q
 
 from angebote.models import Angebot
 from contacts.models import Anschrift, Kontakt
-from invoicing.models import Rechnung, runden, summen
+from invoicing.models import HINWEIS_FEHLT, Rechnung, hinweis_fehlt, runden, summen
 
 
 class Fertiggestellt(ValidationError):
@@ -173,10 +173,6 @@ class Auftragsbestaetigung(models.Model):
         return "versendet" if self.versendet_am else "offen"
 
     @property
-    def steuerhinweis(self):
-        return Rechnung.STEUERHINWEIS[self.steuerfall]
-
-    @property
     def anhaenge(self):
         """Dateien für den Versand: (Dateiname, Pfad im Datenordner, MIME-Typ)."""
         return [
@@ -200,6 +196,8 @@ class Auftragsbestaetigung(models.Model):
             fehlt.append("Menge und Art der Leistung")
         if self.summen()[2] <= 0:
             fehlt.append("Auftragssumme")
+        if hinweis_fehlt(self.steuerfall, firma):
+            fehlt.append(HINWEIS_FEHLT)
         # Die Ausführung ist freiwillig, aber wenn, dann ein gültiger Zeitraum.
         if self.leistung_bis and (
             not self.leistung_von or self.leistung_bis < self.leistung_von

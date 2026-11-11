@@ -17,7 +17,7 @@ def test_firmendaten_speichern(client):
             "plz": "55116",
             "ort": "Mainz",
             "steuernummer": "26/123/45678",
-            "kleinunternehmer": "on",
+            "umsatzsteuer": "kleinunternehmer",
             "iban": GUELTIGE_IBAN,
             "mail_port": "587",
             "mail_verschluesselung": "starttls",

@@ -7,7 +7,10 @@
 
 Umsatz eines Jahres: übernommene Altbelege (Betrag wie gedruckt, als Kleinunternehmer
 ohne Umsatzsteuer) plus festgeschriebene Rechnungen netto; Stornos und Korrekturen
-sind negativ und mindern.
+sind negativ und mindern. Steuerfreie Rechnungen zählen nicht: § 19 Abs. 2 Nr. 1
+UStG zieht die Umsätze nach § 4 Nr. 8 Buchst. i, Nr. 9 Buchst. b und Nr. 11 bis 29
+vom Gesamtumsatz ab. Die übrigen Befreiungen (§ 4 Nr. 8 Buchst. a bis h, Nr. 9
+Buchst. a, Nr. 10) zählen mit, außer bei Hilfsumsätzen; das nennt die Hilfe.
 """
 
 from decimal import Decimal
@@ -27,9 +30,13 @@ def umsatz(jahr):
     alt = Altbeleg.objects.filter(
         art__in=Altbeleg.UMSATZWIRKSAM, datum__year=jahr
     ).aggregate(s=Sum("betrag"))["s"]
-    neu = Rechnung.objects.filter(
-        status=Rechnung.Status.FESTGESCHRIEBEN, datum__year=jahr
-    ).aggregate(s=Sum("netto"))["s"]
+    neu = (
+        Rechnung.objects.filter(
+            status=Rechnung.Status.FESTGESCHRIEBEN, datum__year=jahr
+        )
+        .exclude(steuerfall=Rechnung.Steuerfall.STEUERFREI)
+        .aggregate(s=Sum("netto"))["s"]
+    )
     return (alt or Decimal("0.00")) + (neu or Decimal("0.00"))
 
 
