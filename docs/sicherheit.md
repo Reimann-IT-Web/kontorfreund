@@ -130,7 +130,7 @@ Felder:
 | Zwei-Faktor-Anmeldung | TOTP, HMAC-SHA1 (RFC 6238) | 160-Bit-Geheimnis je Benutzer | Datenbank |
 | Belege, Fassungen, Inhalt der Sicherung | SHA-256 | – | Datenbank, Inhaltsverzeichnis der Sicherung |
 | Zufall | `secrets` (CSPRNG des Betriebssystems) | – | – |
-| Verbindungen nach außen | TLS 1.2 oder neuer, Zertifikat geprüft | Zertifikate des Betriebssystems | Telegram, SMTP |
+| Verbindungen nach außen | TLS 1.2 oder neuer, Zertifikat geprüft | Zertifikate des Betriebssystems | Telegram, SMTP, GitHub (Update-Suche) |
 
 Umgang mit den Schlüsseln:
 
@@ -143,11 +143,12 @@ Umgang mit den Schlüsseln:
 
 - Browser und Server: HTTP über `127.0.0.1:8765`, nur auf diesem Rechner.
 - Telegram Bot API (`api.telegram.org`, HTTPS): nur wenn der Inhaber einen Bot einrichtet. Der Rechner steht fest im Code; Umleitungen gelten als Fehler.
+- GitHub-API (`api.github.com`, HTTPS, `core/updates.py`): nur wenn der Inhaber die Suche nach neuen Versionen einschaltet (höchstens einmal am Tag) oder „Jetzt nach Updates suchen“ klickt. Fester Rechner, Umleitungen gelten als Fehler, gelesen wird höchstens 1 MiB. Die Anfrage trägt keine Version und keine Kennung. Die Antwort ist fremder Text: Version nur als 1.2.3, Neuerungen ohne Markup und mit Autoescaping, Links baut das Programm aus Version und festem Paketnamen.
 - SMTP-Server: nur wenn der Inhaber einen einträgt, für den Versand von Rechnungen; nur mit STARTTLS oder SSL/TLS.
 - Zweiter Speicherort für Sicherungen: ein Ordner, den der Inhaber wählt.
 - Startprogramm und Server: Prozesse auf demselben Rechner, verbunden über Umgebungsvariablen und den Rückgabewert.
 
-Es gibt keine Telemetrie und keine Update-Prüfung. Schriften, Skripte, Bilder und Postleitzahlen liegen im Programm.
+Es gibt keine Telemetrie. Die Suche nach neuen Versionen ist aus, bis der Inhaber zustimmt, und lädt oder installiert nichts. Schriften, Skripte, Bilder und Postleitzahlen liegen im Programm.
 
 ## Schutzbedürftige Daten (14.1.1 und 14.1.2)
 
@@ -229,7 +230,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 1.1.1 | 2 | erfüllt | Eingaben | Django dekodiert Adresse und Formulare genau einmal; das Programm dekodiert nichts ein zweites Mal. |
 | 1.1.2 | 2 | erfüllt | Kodieren zuletzt | Django-Vorlagen kodieren beim Ausgeben; Typst bekommt die Daten als JSON (`sys.inputs`), XML entsteht mit drafthorse/lxml. |
 | 1.2.1 | 1 | erfüllt | HTML | Automatisches Escaping in allen Vorlagen. Kein `|safe` und kein `mark_safe`; `format_html` nur für die festen Symbole (`core/templatetags/kf.py`). Dateinamen in `Content-Disposition` über Django (RFC 6266). |
-| 1.2.2 | 1 | erfüllt | Adressen | Links entstehen mit `{% url %}`/`reverse`, Werte darin mit `urlencode`. Weiterleitungen nur auf eigene Adressen (`url_has_allowed_host_and_scheme`). Der einzige Link nach außen (Telegram) beginnt fest mit `https://t.me/`. |
+| 1.2.2 | 1 | erfüllt | Adressen | Links entstehen mit `{% url %}`/`reverse`, Werte darin mit `urlencode`. Weiterleitungen nur auf eigene Adressen (`url_has_allowed_host_and_scheme`). Links nach außen beginnen fest: Telegram mit `https://t.me/`, Updates mit `https://github.com/Reimann-IT-Web/kontorfreund/releases/` und einer Version nur aus Ziffern. |
 | 1.2.3 | 1 | erfüllt | JavaScript | Keine Inline-Skripte (CSP). Daten kommen über `data-`-Attribute (escaped) oder `JsonResponse` ins Skript. |
 | 1.2.4 | 1 | erfüllt | SQL | Nur das Django-ORM; kein `raw`, `extra` oder eigener Cursor. `PRAGMA integrity_check` beim Wiederherstellen ist ein fester Text. |
 | 1.2.5 | 1 | erfüllt | Betriebssystem | `subprocess` nur mit Argumentliste und nur für das eigene Programm (`kontorfreund.py`), nie `shell=True`. |
@@ -242,7 +243,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 1.3.3 | 2 | erfüllt | Gefährliche Ziele | Dateinamen für die Ablage werden bereinigt und gekürzt und bekommen einen Zufallsvorsatz (`historie/models.py`); alle Textfelder haben eine Höchstlänge. |
 | 1.3.4 | 2 | erfüllt | SVG | Logo und Unterschrift als SVG erscheinen nur als `<img>` (Daten-URL) und im PDF über Typst, beides ohne Skripte. SVG-Dateien an Adressen gibt es nur als Download mit `Content-Security-Policy: sandbox`. |
 | 1.3.5 | 2 | entfällt | Markdown, CSS, XSL | Benutzer liefern keine Vorlagen, Stile oder Markdown. |
-| 1.3.6 | 2 | erfüllt | SSRF | Ausgehend nur Telegram mit festem Rechner im Code und der SMTP-Server, den der Inhaber selbst einträgt. Keine Adresse aus Eingaben anderer Benutzer. |
+| 1.3.6 | 2 | erfüllt | SSRF | Ausgehend nur Telegram und die GitHub-API mit festem Rechner im Code und der SMTP-Server, den der Inhaber selbst einträgt. Keine Adresse aus Eingaben anderer Benutzer. |
 | 1.3.7 | 2 | erfüllt | Vorlagen | Vorlagen nur aus den Dateien des Programms, nie aus Daten. |
 | 1.3.8 | 2 | entfällt | JNDI | Kein Java. |
 | 1.3.9 | 2 | entfällt | memcache | Kein memcache. |
@@ -472,7 +473,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 12.1.3 | 2 | entfällt | mTLS | Keine Client-Zertifikate. |
 | 12.2.1 | 1 | D-3 | TLS nach außen | Am Einzelplatz ist nichts von außen erreichbar (nur 127.0.0.1). |
 | 12.2.2 | 1 | D-3 | Zertifikate | Wie V12.2.1. |
-| 12.3.1 | 2 | erfüllt | Verbindungen verschlüsselt | Telegram nur über HTTPS; SMTP nur mit STARTTLS oder SSL/TLS, ohne Verschlüsselung lässt sich kein Server eintragen. Zum Browser siehe V12.2.1. |
+| 12.3.1 | 2 | erfüllt | Verbindungen verschlüsselt | Telegram und GitHub nur über HTTPS; SMTP nur mit STARTTLS oder SSL/TLS, ohne Verschlüsselung lässt sich kein Server eintragen. Zum Browser siehe V12.2.1. |
 | 12.3.2 | 2 | erfüllt | Zertifikate prüfen | `urllib` und Djangos SMTP-Versand prüfen Zertifikat und Namen (`ssl.create_default_context`). |
 | 12.3.3 | 2 | entfällt | Interne Dienste | Ein Prozess mit SQLite-Datei, keine internen Dienste. |
 | 12.3.4 | 2 | entfällt | Interne Zertifikate | Wie V12.3.3. |
@@ -485,7 +486,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 13.2.1 | 2 | entfällt | Dienstkonten | Keine Dienste untereinander; SQLite ist eine Datei. |
 | 13.2.2 | 2 | erfüllt | Wenig Rechte | Läuft als normaler Benutzer ohne Administratorrechte. Nur die Installation braucht sie; das Programm liegt in `C:\Program Files` und kann seine eigenen Dateien nicht ändern. |
 | 13.2.3 | 2 | entfällt | Standard-Zugangsdaten | Keine Zugangsdaten zwischen Teilen des Programms. |
-| 13.2.4 | 2 | erfüllt | Erlaubte Ziele | Ausgehend nur Telegram (fester Rechner) und der SMTP-Server des Inhabers. |
+| 13.2.4 | 2 | erfüllt | Erlaubte Ziele | Ausgehend nur Telegram und GitHub (feste Rechner) und der SMTP-Server des Inhabers. |
 | 13.2.5 | 2 | erfüllt | Laden von außen | Das Programm lädt nichts nach; Dateien nur aus Programm- und Datenordner. |
 | 13.3.1 | 2 | begründet | Geheimnisse | Nichts im Quellcode oder Paket. `SECRET_KEY` und Sicherungsschlüssel als Dateien im Datenordner (nur für den eigenen Benutzer lesbar), TOTP-Geheimnisse, Telegram-Bot-Schlüssel und SMTP-Kennwort in der Datenbank. Kein Schlüsseltresor: Am Einzelplatz schützt das Benutzerkonto des Betriebssystems, Sicherungen sind verschlüsselt. |
 | 13.3.2 | 2 | erfüllt | Zugriff auf Geheimnisse | Nur der Inhaber erreicht die Einstellungen; Bot-Schlüssel und SMTP-Kennwort gehen nie zurück an den Browser und fehlen in Protokoll und Exporten. |
@@ -520,7 +521,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 15.2.2 | 2 | erfüllt | Verfügbarkeit | Wie im Abschnitt „Aufwendige Funktionen“. |
 | 15.2.3 | 2 | erfüllt | Nichts Überflüssiges | Tests, Werkzeuge und Dokumentation fehlen im Paket; kein Django-Admin; Debug aus. |
 | 15.3.1 | 1 | erfüllt | Nur nötige Felder | Die einzige Antwort in JSON (Orte zur PLZ) enthält nur die Orte. |
-| 15.3.2 | 2 | erfüllt | Keine Umleitungen | Telegram-Anfragen folgen keiner Umleitung (`benachrichtigungen/telegram.py`). |
+| 15.3.2 | 2 | erfüllt | Keine Umleitungen | Anfragen an Telegram und GitHub folgen keiner Umleitung (`benachrichtigungen/telegram.py`, `core/updates.py`). |
 | 15.3.3 | 2 | erfüllt | Mass Assignment | Jedes Formular nennt seine Felder; keins mit `__all__` oder `exclude`. |
 | 15.3.4 | 2 | entfällt | IP-Adresse | Das Programm wertet die IP-Adresse nicht aus; am Einzelplatz ist sie immer 127.0.0.1. Für den Netzwerkbetrieb neu bewerten (D-3). |
 | 15.3.5 | 2 | erfüllt | Typen | Formulare wandeln in feste Typen; Zahlen aus Adressen nur nach `isdigit()`; Geheimnisse mit `compare_digest`. |
@@ -545,7 +546,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 16.4.2 | 2 | begründet | Geschützt | Im Programm lässt sich das Protokoll weder ändern noch löschen (einzige Ausnahme: Schwärzen nach Art. 17 DSGVO), sehen darf es nur der Inhaber. Wer das Windows-Konto benutzt, könnte die Datenbankdatei ändern; dagegen hilft nur der Schutz des Rechners. |
 | 16.4.3 | 2 | begründet | Getrennt gespeichert | Kein Protokollserver am Einzelplatz. Das Protokoll ist in jeder verschlüsselten Sicherung, auf Wunsch auch am zweiten Speicherort. |
 | 16.5.1 | 2 | erfüllt | Allgemeine Fehlerseite | Ohne Debug zeigt Django nur „Server Error (500)“; Einzelheiten nur im Fehlerprotokoll. |
-| 16.5.2 | 2 | erfüllt | Ausfall nach außen | Ohne Telegram oder SMTP arbeitet das Programm weiter und meldet den Fehler; Orte zur PLZ liegen im Programm. |
+| 16.5.2 | 2 | erfüllt | Ausfall nach außen | Ohne Telegram, SMTP oder GitHub arbeitet das Programm weiter und meldet den Fehler; Orte zur PLZ liegen im Programm. |
 | 16.5.3 | 2 | erfüllt | Sicher scheitern | Fehler brechen die Transaktion ab; ohne Recht gibt es 403, nie die Daten; eine Sicherung wird vor dem Einspielen ganz geprüft. |
 
 ### V17 WebRTC

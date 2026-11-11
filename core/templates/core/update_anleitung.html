@@ -1,0 +1,10 @@
+{% comment %}Wie ein Update geht, je nach Art der Installation (core.updates.art).{% endcomment %}
+{% if art == "portabel" %}
+<p>Beenden Sie Kontorfreund, entpacken Sie die neue portable Fassung in einen neuen Ordner und verschieben Sie den Ordner „Daten“ aus dem alten dorthin. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+{% elif art == "macos" or art == "linux" %}
+<p>Beenden Sie Kontorfreund, entpacken Sie das neue Archiv und ersetzen Sie damit den bisherigen Ordner „Kontorfreund“. Ihre Daten liegen im Benutzerordner und bleiben, wo sie sind. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+{% elif art == "quellcode" %}
+<p>Holen Sie den neuen Stand auf demselben Weg, auf dem Sie Kontorfreund eingerichtet haben, und bringen Sie die Datenbank mit <code>migrate</code> auf den neuen Stand. Vorher entsteht eine Sicherung, wenn die Datensicherung eingerichtet ist.</p>
+{% else %}
+<p>Beenden Sie Kontorfreund und starten Sie das neue Installationsprogramm. Windows fragt dabei nach Ihrer Bestätigung. Ihre Daten bleiben, wo sie sind. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
+{% endif %}

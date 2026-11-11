@@ -1,7 +1,7 @@
 {% extends "core/hilfe/thema.html" %}
 
 {% block anleitung %}
-<p>Einstellungen, Benutzer, Benachrichtigungen und Firmen sieht nur der Inhaber. „Mein Konto“ hat jeder.</p>
+<p>Einstellungen, Benutzer, Benachrichtigungen, Firmen und Updates sieht nur der Inhaber. „Mein Konto“ hat jeder.</p>
 
 <h2 id="firmendaten">Firmendaten</h2>
 <p>Unter <a href="{% url 'core:einstellungen' %}">Einstellungen</a> stehen die Angaben, die als Absender auf jedem Beleg erscheinen:</p>
@@ -42,6 +42,10 @@
 
 <h2 id="firmen">Mehrere Firmen</h2>
 <p>Führen Sie mehr als eine Firma, legen Sie unter Einstellungen › „Firmen“ mit „Weitere Firma anlegen“ eine weitere an. Jede hat eigene Adressen, Rechnungen, Nummernkreise, Benutzer und Datensicherung. In der neuen Firma legen Sie zuerst ein Konto an, tragen die Firmendaten ein und richten die Datensicherung ein. Gewechselt wird mit „Firma wechseln“ in der Seitenleiste oder schon auf der Anmeldeseite; Kontorfreund startet dabei kurz neu.</p>
+
+<h2 id="updates">Updates</h2>
+<p>Unter Einstellungen › „Updates“ steht, welche Version von Kontorfreund installiert ist. „Jetzt nach Updates suchen“ fragt bei GitHub, wo die Installationspakete liegen, ob es eine neuere gibt. Mit „Einschalten“ sucht Kontorfreund einmal am Tag von selbst; beim ersten Mal fragt die Übersicht, ob Sie das möchten. GitHub sieht dabei die IP-Adresse Ihres Rechners, sonst nichts: Kontorfreund schickt weder seine Version noch eine Kennung oder Ihre Daten.</p>
+<p>Gibt es eine neue Version, steht auf der Übersicht ein Hinweis. Unter „Updates“ finden Sie dann die Neuerungen und den Download des Pakets, das zu Ihrer Installation passt. Installiert wird nichts von selbst; wie das Update geht, steht direkt darunter. Vor der Umstellung der Datenbank entsteht wie bei jedem Update eine Sicherung, wenn die Datensicherung eingerichtet ist.</p>
 
 <h2 id="protokoll">Protokoll</h2>
 <p>Das <a href="{% url 'protokoll:liste' %}">Protokoll</a> in der Seitenleiste verzeichnet, wer wann etwas angelegt, geändert oder gelöscht hat, mit altem und neuem Wert, dazu jede Anmeldung und jede Abweichung in der Ablage. Niemand kann Einträge ändern oder löschen.</p>

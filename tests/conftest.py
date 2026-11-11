@@ -5,6 +5,7 @@ from django.test import Client
 from PIL import Image, ImageDraw
 
 from archive import pruefung
+from core import updates
 from konten.models import Benutzer
 
 
@@ -19,6 +20,17 @@ def datenordner(tmp_path, settings):
 def ohne_taegliche_pruefung(monkeypatch):
     """Die tägliche Prüfung der Ablage liefe sonst nach Anfragen in einem eigenen Thread."""
     monkeypatch.setattr(pruefung, "bei_bedarf", lambda: None)
+
+
+def _kein_netz(*args, **kwargs):
+    raise OSError("Tests fragen nicht bei GitHub an.")
+
+
+@pytest.fixture(autouse=True)
+def ohne_update_suche(monkeypatch):
+    """Keine Anfrage an GitHub und kein Thread nach Anfragen; tests/test_updates.py ersetzt beides."""
+    monkeypatch.setattr(updates, "bei_bedarf", lambda: None)
+    monkeypatch.setattr(updates, "_oeffnen", _kein_netz)
 
 
 @pytest.fixture

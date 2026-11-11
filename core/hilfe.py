@@ -74,7 +74,7 @@ THEMEN = [
     {
         "slug": "einstellungen",
         "titel": "Einstellungen und Benutzer",
-        "kurz": "Firmendaten, E-Mail-Versand, Konten, Telegram und mehrere Firmen.",
+        "kurz": "Firmendaten, E-Mail-Versand, Konten, Telegram, mehrere Firmen, Updates.",
         "icon": "settings",
     },
     {

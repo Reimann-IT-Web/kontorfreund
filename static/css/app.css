@@ -2016,6 +2016,11 @@ input:disabled {
   color: var(--accent);
 }
 
+/* Knöpfe unter dem Text, etwa die Frage nach der Update-Suche auf der Übersicht */
+.callout .actions {
+  margin-top: var(--s3);
+}
+
 .sticky {
   position: sticky;
   top: 5.25rem;

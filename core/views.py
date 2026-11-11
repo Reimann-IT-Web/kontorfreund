@@ -22,7 +22,7 @@ from wiedervorlagen.models import DEMNAECHST, Wiedervorlage
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
 
-from . import firmen
+from . import firmen, updates
 from . import umsatz as umsaetze
 from .forms import FirmendatenForm
 from .hilfe import THEMEN
@@ -95,6 +95,9 @@ def start(request):
             "grenz_hinweise": umsaetze.hinweise(jahr) if firma.kleinunternehmer else [],
             "naechstes_jahr": jahr + 1,
             "fristen": fristen.hinweis() if request.user.ist_inhaber else None,
+            # Nur der Inhaber entscheidet über die Suche und installiert (D-7).
+            "update": updates.hinweis() if request.user.ist_inhaber else None,
+            "update_fragen": request.user.ist_inhaber and updates.suchen() is None,
         },
     )
 
@@ -113,6 +116,58 @@ def einstellungen(request):
     )
 
 
+def _jetzt_suchen(request):
+    try:
+        updates.pruefen()
+    except updates.Fehler as fehler:
+        messages.error(request, str(fehler))
+        return
+    neu = updates.hinweis()
+    if neu:
+        messages.success(request, f"Kontorfreund {neu['version']} ist erschienen.")
+    else:
+        messages.success(
+            request, f"Sie haben die neueste Version, Kontorfreund {settings.VERSION}."
+        )
+
+
+@nur_inhaber
+def updates_seite(request):
+    """Installierte Version, Hinweis auf neuere und die tägliche Suche (D-7)."""
+    if request.method == "POST":
+        aktion = request.POST.get("aktion")
+        if aktion == "ja":
+            updates.festlegen(True)
+            _jetzt_suchen(request)
+        elif aktion == "nein":
+            updates.festlegen(False)
+            messages.success(
+                request,
+                "Kontorfreund sucht nicht nach neuen Versionen. Unter Einstellungen › "
+                "Updates können Sie das jederzeit ändern.",
+            )
+        elif aktion == "jetzt":
+            _jetzt_suchen(request)
+        # Von der Frage auf der Übersicht geht es dorthin zurück.
+        if request.POST.get("zurueck") == "start":
+            return redirect("core:start")
+        return redirect("core:updates")
+    stand = updates.stand()
+    return render(
+        request,
+        "core/updates.html",
+        {
+            "bereich": "einstellungen",
+            "suchen": updates.suchen(),
+            "neu": updates.hinweis(),
+            "art": updates.art(),
+            "gesucht": updates.zeit(stand.get("gesucht")),
+            "versucht": updates.zeit(stand.get("versucht")),
+            "fehler": stand.get("fehler") or "",
+        },
+    )
+
+
 def hilfe(request, thema=None):
     if thema is None:
         return render(
@@ -122,6 +177,7 @@ def hilfe(request, thema=None):
                 "bereich": "hilfe",
                 "themen": THEMEN,
                 "portabel": settings.PORTABEL,
+                "art": updates.art(),
                 "datenordner": settings.HAUPTORDNER,
             },
         )

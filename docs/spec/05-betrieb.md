@@ -42,6 +42,15 @@ Entwurf – wird vor Beginn von Phase 4 verfeinert und erneut freigegeben.
   - Datenträgerüberlassung: Export eines Zeitraums als CSV mit Beschreibungsdatei `index.xml` nach dem Beschreibungsstandard der Finanzverwaltung, dazu alle Beleg-PDFs und -XMLs.
 - Archivexport: alle Belege und Daten in Formaten, die ohne das Programm lesbar bleiben (PDF/A, XML, CSV). So bleibt die Aufbewahrung auch nach einem Programmwechsel gesichert.
 
+## D-7 Neue Versionen
+
+- Kontorfreund sucht nur nach neuen Versionen, wenn der Inhaber zugestimmt hat (Grundsatz: keine Verbindungen zu Dritten, die der Nutzer nicht selbst einrichtet). Die Übersicht fragt ihn einmal danach. Unter Einstellungen › Updates lässt sich die Suche jederzeit ein- und ausschalten.
+- Ist sie eingeschaltet, fragt Kontorfreund höchstens einmal am Tag bei GitHub nach der neuesten Version; dort liegen die Installationspakete. GitHub sieht dabei die IP-Adresse. Kontorfreund überträgt weder seine Version noch eine Kennung oder Daten.
+- „Jetzt nach Updates suchen“ geht jederzeit, auch bei ausgeschalteter Suche.
+- Gibt es eine neuere Version, zeigt die Übersicht dem Inhaber einen Hinweis. Unter Einstellungen › Updates stehen die installierte Version, die Neuerungen aus dem Änderungsprotokoll und der Download des passenden Pakets (Windows-Installation, portable Fassung, macOS, Linux). Ohne passendes Paket, etwa aus dem Quellcode, verlinkt die Seite das Release.
+- Kontorfreund lädt und installiert nichts von selbst. Installiert wird wie bisher von Hand (D-3); die Sicherung vor der Migration bleibt (D-2).
+- Ohne Internet oder bei einem Fehler arbeitet das Programm normal weiter, die Seite Updates nennt den Fehler.
+
 ## Abnahme Phase 4
 
 - Neuinstallation und Wiederherstellung einer Sicherung gelingen auf frischen Systemen mit Windows, macOS und Linux.

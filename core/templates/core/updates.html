@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Updates{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li aria-current="page">Updates</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Updates</h1>
+    <p class="muted">Installiert ist {{ marke }} {{ version }}.</p>
+  </div>
+  <form class="actions" method="post">
+    {% csrf_token %}
+    <button class="btn" type="submit" name="aktion" value="jetzt">{% icon "restore" %}Jetzt nach Updates suchen</button>
+  </form>
+</div>
+
+{% if fehler %}
+<p class="callout" role="alert">{% icon "alert" %}<span><strong>Die letzte Suche hat nicht geklappt</strong>{% if versucht %} ({{ versucht|date:"d.m.Y H:i" }}){% endif %}. {{ fehler }}</span></p>
+{% endif %}
+
+{% if neu %}
+<section class="form stack" aria-labelledby="t-neu">
+  <div>
+    <h2 class="form-title" id="t-neu">Kontorfreund {{ neu.version }} ist erschienen</h2>
+    <p class="muted">{% if neu.datum %}Veröffentlicht am {{ neu.datum|date:"d.m.Y" }}. {% endif %}Sie nutzen {{ version }}.</p>
+  </div>
+  {% if neu.neuerungen %}
+  <div class="hilfe">
+    <p>Neu in dieser Version:</p>
+    <ul>{% for punkt in neu.neuerungen %}<li>{{ punkt }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <p class="actions">
+    {% if neu.download %}<a class="btn btn-primary" href="{{ neu.download }}">{% icon "download" %}{{ neu.paket }} herunterladen</a>{% endif %}
+    <a class="btn" href="{{ neu.seite }}" target="_blank" rel="noopener noreferrer">{% if neu.download %}Alle Pakete auf GitHub{% else %}{% icon "download" %}Zum Download auf GitHub{% endif %}</a>
+  </p>
+  <div class="hilfe small muted">{% include "core/update_anleitung.html" %}</div>
+</section>
+{% elif gesucht %}
+<p class="callout">{% icon "check" %}<span>Sie haben die neueste Version. Zuletzt gesucht am {{ gesucht|date:"d.m.Y \u\m H:i" }} Uhr.</span></p>
+{% endif %}
+
+<form class="form stack{% if neu %} abschnitt-danach{% endif %}" method="post" aria-labelledby="t-suche">
+  {% csrf_token %}
+  <div>
+    <h2 class="form-title" id="t-suche">Täglich nach neuen Versionen suchen</h2>
+    {% if suchen %}<span class="status status-ok">{% icon "check" %}Eingeschaltet</span>
+    {% elif suchen is False %}<span class="status">{% icon "x" %}Ausgeschaltet</span>{% endif %}
+  </div>
+  <p class="hilfe small muted">Eingeschaltet fragt Kontorfreund einmal am Tag bei GitHub nach, wo die Installationspakete liegen, ob es eine neue Version gibt. Dabei sieht GitHub die IP-Adresse dieses Rechners. Kontorfreund schickt weder seine Version noch eine Kennung oder Ihre Daten. Gibt es etwas Neues, sehen Sie es auf der Übersicht. Installiert wird nichts von selbst.</p>
+  <p class="actions">
+    {% if suchen %}
+    <button class="btn" type="submit" name="aktion" value="nein">{% icon "x" %}Ausschalten</button>
+    {% else %}
+    <button class="btn btn-primary" type="submit" name="aktion" value="ja">{% icon "check" %}Einschalten</button>
+    {% endif %}
+  </p>
+</form>
+{% endblock %}

@@ -114,11 +114,8 @@
   <details class="disclosure">
     <summary>Was passiert bei einem Update?</summary>
     <div class="hilfe">
-      {% if portabel %}
-      <p>Beenden Sie Kontorfreund, entpacken Sie die neue portable Fassung in einen neuen Ordner und verschieben Sie den Ordner „Daten“ aus dem alten dorthin. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
-      {% else %}
-      <p>Beenden Sie Kontorfreund und starten Sie das neue Installationsprogramm. Windows fragt dabei nach Ihrer Bestätigung. Ihre Daten bleiben, wo sie sind. Beim nächsten Start bringt Kontorfreund die Datenbank selbst auf den neuen Stand und sichert sie vorher, wenn die Datensicherung eingerichtet ist.</p>
-      {% endif %}
+      <p>Ob es eine neue Version gibt, sehen Sie unter <a href="{% url 'core:updates' %}">Einstellungen › Updates</a>. Auf Wunsch sucht Kontorfreund einmal am Tag selbst danach und meldet sich auf der Übersicht. <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#updates">Mehr dazu</a></p>
+      {% include "core/update_anleitung.html" %}
     </div>
   </details>
 
@@ -132,7 +129,7 @@
   <details class="disclosure">
     <summary>Braucht Kontorfreund das Internet?</summary>
     <div class="hilfe">
-      <p>Nein. Kontorfreund läuft auf Ihrem Rechner, auch die Orte zu den Postleitzahlen sind im Programm enthalten. Ins Internet geht es nur, wenn Sie Belege per E-Mail senden oder Benachrichtigungen über Telegram eingerichtet haben.</p>
+      <p>Nein. Kontorfreund läuft auf Ihrem Rechner, auch die Orte zu den Postleitzahlen sind im Programm enthalten. Ins Internet geht es nur, wenn Sie Belege per E-Mail senden, Benachrichtigungen über Telegram eingerichtet haben oder Kontorfreund nach neuen Versionen suchen lassen.</p>
     </div>
   </details>
 

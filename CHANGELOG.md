@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.38.0 – 11.11.2026
+
+- Neu: Kontorfreund sagt Bescheid, wenn es eine neue Version gibt. Die Übersicht fragt einmal, ob es danach suchen soll; erst nach Ihrem Ja fragt es einmal am Tag bei GitHub nach, wo die Installationspakete liegen. GitHub sieht dabei nur die IP-Adresse Ihres Rechners, Kontorfreund schickt weder seine Version noch eine Kennung oder Daten. Gibt es eine neue Version, steht auf der Übersicht ein Hinweis.
+- Neu: Einstellungen › Updates zeigt die installierte Version, die Neuerungen einer neuen Version und den Download des Pakets, das zu Ihrer Installation passt (Windows, portabel, macOS oder Linux), dazu wie das Update geht. „Jetzt nach Updates suchen“ geht jederzeit, die tägliche Suche lässt sich dort ein- und ausschalten. Installiert wird nichts von selbst.
+- Ist die Suche eingeschaltet, nennen Verfahrensdokumentation und Verzeichnis von Verarbeitungstätigkeiten sie. Ohne Ihr Ja bleibt alles wie bisher.
+
 ## 0.37.0 – 11.11.2026
 
 - Neu: steuerfreie Leistungen nach § 4 UStG, etwa für Unterricht, Bildung oder Heilbehandlung. Rechnungen, Angebote und Auftragsbestätigungen haben dafür bei „Umsatzsteuer“ den Steuerfall „§ 4 – steuerfreie Leistung“. Auf dem Beleg steht dann Ihr eigener Hinweis auf die Befreiung, etwa „Umsatzsteuerfrei nach § 4 Nr. 21 UStG“; Sie tragen ihn einmal in den Einstellungen ein. Ohne ihn lässt sich ein steuerfreier Beleg nicht festschreiben. Die E-Rechnung kennzeichnet die Leistung als steuerbefreit und nennt Ihren Hinweis als Grund; Stornorechnung und Rechnungskorrektur übernehmen den Hinweis des Originals. Der DATEV-Export bucht auf 8100 (SKR 03) bzw. 4100 (SKR 04).

@@ -23,6 +23,25 @@
 <p class="callout">{% icon "clock" %}<span>{% with b=fristen.0 a=fristen.1 %}{% if b %}Für {{ b }} Beleg{{ b|pluralize:"e" }} ist die Aufbewahrungsfrist abgelaufen{% if a %}, und {{ a }} gesperrte Adresse{{ a|pluralize:"n" }} {{ a|pluralize:"darf,dürfen" }} jetzt gelöscht werden{% endif %}.{% else %}{{ a }} gesperrte Adresse{{ a|pluralize:"n" }} {{ a|pluralize:"darf,dürfen" }} jetzt gelöscht werden.{% endif %}{% endwith %} Einmal im Jahr entscheiden Sie, ob das weg kann. <a href="{% url 'archive:fristen' %}">Ansehen und entscheiden</a></span></p>
 {% endif %}
 
+{% if update %}
+<p class="callout">{% icon "download" %}<span><strong>Kontorfreund {{ update.version }} ist erschienen.</strong> Sie nutzen {{ version }}. <a href="{% url 'core:updates' %}">Neuerungen und Download</a></span></p>
+{% endif %}
+
+{% if update_fragen %}
+<form class="callout" method="post" action="{% url 'core:updates' %}" id="update-frage">
+  {% csrf_token %}
+  <input type="hidden" name="zurueck" value="start">
+  {% icon "download" %}
+  <div>
+    <p><strong>Soll Kontorfreund einmal am Tag nachsehen, ob es eine neue Version gibt?</strong> Dazu fragt es bei GitHub nach, wo die Installationspakete liegen. GitHub sieht dabei die IP-Adresse dieses Rechners, sonst nichts. Installiert wird nichts von selbst; Sie können es unter Einstellungen › Updates jederzeit ändern.</p>
+    <p class="actions">
+      <button class="btn btn-sm btn-primary" type="submit" name="aktion" value="ja">Ja, nach Updates suchen</button>
+      <button class="btn btn-sm" type="submit" name="aktion" value="nein">Nein, danke</button>
+    </p>
+  </div>
+</form>
+{% endif %}
+
 <nav class="quickstart" aria-label="Schnellstart">
   <a class="btn btn-primary" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
   <a class="btn" href="{% url 'angebote:neu' %}">{% icon "file" %}Neues Angebot</a>

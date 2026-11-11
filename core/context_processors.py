@@ -131,6 +131,11 @@ def navigation(request):
                 "url": reverse("backups:uebersicht"),
             },
             {
+                "titel": "Updates",
+                "info": f"Installiert: Version {settings.VERSION}",
+                "url": reverse("core:updates"),
+            },
+            {
                 "titel": "Protokoll",
                 "info": "Wer wann was geändert hat",
                 "url": reverse("protokoll:liste"),

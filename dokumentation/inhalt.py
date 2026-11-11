@@ -18,6 +18,7 @@ from archive.models import Altbeleg
 from auswertungen.models import Datev
 from backups import sicherung
 from benachrichtigungen.models import Einstellung
+from core import updates
 from core.models import Firmendaten
 from konten.models import Benutzer
 from konten.sitzungen import HOECHSTENS
@@ -114,6 +115,42 @@ def _altbelege():
 
 def _benutzer():
     return list(Benutzer.objects.order_by("name", "email"))
+
+
+# Die Suche nach neuen Versionen (D-7) erscheint nur, wenn der Inhaber sie eingeschaltet hat.
+UPDATE_SUCHE = (
+    "Eingeschaltet ist die Suche nach neuen Versionen: Einmal am Tag fragt Kontorfreund "
+    "bei GitHub, wo die Installationspakete liegen, die neueste Version ab. Übertragen "
+    "wird dabei nur die IP-Adresse, installiert wird nichts von selbst."
+)
+
+
+def _internet():
+    if updates.suchen():
+        return (
+            "Kontorfreund läuft als Programm auf dem Rechner und wird im Browser "
+            "bedient. Es braucht keine Internetverbindung und sendet keine Daten an "
+            "den Hersteller. " + UPDATE_SUCHE
+        )
+    return (
+        "Kontorfreund läuft als Programm auf dem Rechner und wird im Browser "
+        "bedient. Es braucht keine Internetverbindung, sendet keine Daten an "
+        "den Hersteller und lädt keine Inhalte aus dem Internet nach."
+    )
+
+
+def _keine_uebermittlung():
+    if updates.suchen():
+        return (
+            "Keine Übermittlung an den Hersteller; aus dem Internet kommen nur Nummer "
+            "und Neuerungen der neuesten Version (Abfrage bei GitHub, vom Inhaber "
+            "eingeschaltet). Auch die Zuordnung von Postleitzahl und Ort geschieht auf "
+            "dem Rechner."
+        )
+    return (
+        "Keine Übermittlung an den Hersteller, keine Inhalte aus dem Internet; "
+        "auch die Zuordnung von Postleitzahl und Ort geschieht auf dem Rechner."
+    )
 
 
 def _zugang():
@@ -226,11 +263,7 @@ def verfahren():
                     ("Erreichbar", _zugang()),
                 ),
                 antwort(angaben, "rechner"),
-                absatz(
-                    "Kontorfreund läuft als Programm auf dem Rechner und wird im Browser "
-                    "bedient. Es braucht keine Internetverbindung, sendet keine Daten an "
-                    "den Hersteller und lädt keine Inhalte aus dem Internet nach."
-                ),
+                absatz(_internet()),
             ),
         ),
         abschnitt(
@@ -799,8 +832,7 @@ def datenschutz():
                     PRUEFER,
                     "Gesperrte Adressen erscheinen in keiner Liste und Suche und sind nur "
                     "für den Inhaber einsehbar.",
-                    "Keine Übermittlung an den Hersteller, keine Inhalte aus dem Internet; "
-                    "auch die Zuordnung von Postleitzahl und Ort geschieht auf dem Rechner.",
+                    _keine_uebermittlung(),
                 ),
             ),
             teil(
