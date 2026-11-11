@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Von Hand starten, etwa wenn ein Lauf bei einer Störung von GitHub hängen blieb.
+  workflow_dispatch:
 
 permissions:
   contents: read
