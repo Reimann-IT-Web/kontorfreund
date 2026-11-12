@@ -16,7 +16,7 @@ offene Wiedervorlagen erledigt.
 import json
 import tempfile
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -48,6 +48,7 @@ from invoicing.beleg import (
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen, schwaerzen
 from protokoll.models import Eintrag
+from vertraege.models import Vertrag
 from zahlungen.models import Mahnung, Zahlung
 
 from .forms import KontaktForm
@@ -165,6 +166,18 @@ def auskunft_daten(kontakt, alle, jetzt):
             }
             for e in entwuerfe(kontakt)
         ],
+        "Verträge": [
+            {
+                "Bezeichnung": v.bezeichnung,
+                "Betreff": v.betreff,
+                "Rhythmus": v.get_rhythmus_display(),
+                "Beginn": v.beginn,
+                "Ende": v.ende,
+                "Rabatt in Prozent": v.rabatt_prozent,
+                "Positionen": _positionen(v),
+            }
+            for v in kontakt.vertraege.prefetch_related("positionen")
+        ],
         "Zahlungen": [
             {
                 "Rechnung": z.rechnung.nummer,
@@ -272,6 +285,8 @@ def _hinweise(kontakt, daten, ende):
         arten.append("abgelegte Dateien")
     if daten["Wiedervorlagen"]:
         arten.append("Wiedervorlagen")
+    if daten["Verträge"]:
+        arten.append("Verträge über wiederkehrende Leistungen")
     empfaenger = (
         "Behörden wie das Finanzamt, wenn ein Gesetz es verlangt, etwa bei einer "
         "Betriebsprüfung"
@@ -394,6 +409,19 @@ def druckdaten(kontakt, daten, ende, jetzt, logo=b"", kopf=None):
                 rechts=[2],
             )
         )
+    if daten["Verträge"]:
+        abschnitte.append(
+            _tabelle(
+                "Verträge",
+                ["Bezeichnung", "Rhythmus", "Beginn", "Ende"],
+                [
+                    [zeilen(v["Bezeichnung"]), zeilen(v["Rhythmus"])]
+                    + [zeilen(v["Beginn"]), zeilen(v["Ende"] or "")]
+                    for v in daten["Verträge"]
+                ],
+                breit=[0],
+            )
+        )
     if daten["Wiedervorlagen"]:
         abschnitte.append(
             _tabelle(
@@ -505,6 +533,12 @@ def sperren(kontakt, benutzer):
         entwurf.delete()
     for w in kontakt.wiedervorlagen.filter(erledigt_am__isnull=True):
         w.erledigen(benutzer, ERLEDIGT)
+    # Verträge enden: Ab heute entsteht kein Entwurf mehr (B-10).
+    gestern = date.today() - timedelta(days=1)
+    for v in kontakt.vertraege.all():
+        if v.ende is None or v.ende > gestern:
+            v.ende = max(gestern, v.beginn - timedelta(days=1))
+            v.save(update_fields=["ende", "naechster"])
     kontakt.archiviert = True
     kontakt.gesperrt_am = timezone.now()
     kontakt.save(update_fields=["archiviert", "gesperrt_am", "geaendert"])
@@ -528,6 +562,7 @@ def umfang(kontakt, alle):
         (kontakt.vorgaenge.count(), "Eintrag im Verlauf", "Einträge im Verlauf"),
         (kontakt.dateien.count(), "Datei", "Dateien"),
         (kontakt.wiedervorlagen.count(), "Wiedervorlage", "Wiedervorlagen"),
+        (kontakt.vertraege.count(), "Vertrag", "Verträge"),
     ]
     return [_anzahl(n, e, m) for n, e, m in teile if n]
 
@@ -544,6 +579,7 @@ def loeschen(kontakt):
         *kontakt.vorgaenge.all(),
         *kontakt.dateien.all(),
         *kontakt.wiedervorlagen.all(),
+        *kontakt.vertraege.all(),
     ]
     geloescht = fristen.entfernen(
         [
@@ -555,6 +591,8 @@ def loeschen(kontakt):
             *kontakt.eingangsrechnungen.all(),
         ]
     )
+    # Verträge schützen die Adresse vor dem Löschen; ihre Rechnungen sind schon weg.
+    Vertrag.objects.filter(kontakt=kontakt).delete()
     # Über eine Abfrage: So behält `kontakt` seine Nummer fürs Schwärzen.
     Kontakt.objects.filter(pk=kontakt.pk).delete()
     schwaerzen([kontakt, *geloescht, *mit])

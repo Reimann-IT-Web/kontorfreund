@@ -1,5 +1,12 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Neu: Verträge für Rechnungen, die sich wiederholen, etwa Wartungsverträge. Unter Angebote & Rechnungen im Reiter „Verträge“ legen Sie einmal Empfänger, Positionen, Rhythmus (monatlich, vierteljährlich, halbjährlich oder jährlich), Beginn und Rabatt fest. Am ersten Tag jedes Zeitraums legt Kontorfreund den Rechnungsentwurf über den ganzen Zeitraum an. Zusatzstunden ergänzen Sie dort, dann schreiben Sie ihn wie gewohnt fest. Von selbst verschickt wird nichts.
+- Auf der Seite einer Rechnung macht „Als Vertrag wiederholen“ aus ihr einen Vertrag mit denselben Positionen.
+- Vor jeder Verlängerung erinnert Kontorfreund auf Wunsch mit einer Wiedervorlage, 2, 4 oder 8 Wochen vorher: Fortsetzung und Preis mit dem Kunden klären.
+- Die Telegram-Übersicht am Morgen nennt neue Entwürfe aus Verträgen, etwa „Neue Entwürfe: Wartung Server 276,00 €“.
+
 ## 0.43.0 – 12.11.2026
 
 - Neu: Rabatt in Prozent für Rechnungen, Angebote und Auftragsbestätigungen. Sie tragen ihn unter den Positionen ein, etwa 8 % für einen Wartungsvertrag mit halbjährlicher Zahlung. Er gilt für die Summe aller Positionen. Auf dem Beleg stehen Zwischensumme und Rabatt über dem Betrag, und auch die E-Rechnung (ZUGFeRD und XRechnung) weist ihn aus. Aus dem Angebot geht er in Auftragsbestätigung und Rechnung über; Stornorechnung und Rechnungskorrektur übernehmen ihn.

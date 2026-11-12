@@ -93,6 +93,16 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 - Täglich vergleicht das Programm die Prüfsummen. Wurde eine Datei außerhalb des Programms verändert oder gelöscht, erfährt der Inhaber es sofort und der Vorfall wird protokolliert.
 - Ablageort je Betriebsart: Einzelplatz auf dem eigenen Rechner, Netzwerk auf Server oder NAS, gehostet im Rechenzentrum in Deutschland. In jedem Fall gehören die Belege zur Datensicherung ([05-betrieb.md](05-betrieb.md), D-2).
 
+## B-10 Wiederkehrende Rechnungen (Verträge)
+
+- Ein Vertrag beschreibt eine Rechnung, die sich in festem Rhythmus wiederholt, etwa für eine Wartung: Empfänger, Bezeichnung (nur für den Nutzer), Betreff, Positionen, Rabatt in Prozent (B-2), Steuerfall, Zahlungsziel, Rhythmus (monatlich, vierteljährlich, halbjährlich, jährlich), Beginn des ersten Zeitraums und auf Wunsch ein Ende.
+- Abgerechnet wird im Voraus: Am ersten Tag jedes Zeitraums legt das Programm einen Rechnungsentwurf an. Leistungszeitraum ist der ganze Zeitraum, Rechnungsdatum der Tag, an dem der Entwurf entsteht. Lief das Programm am Stichtag nicht, entsteht der Entwurf beim nächsten Lauf; je Zeitraum genau einer, auch wenn mehrere Zeiträume nachzuholen sind.
+- Der Entwurf ist eine gewöhnliche Rechnung mit Verweis auf den Vertrag: Der Nutzer ergänzt etwa Zusatzstunden, prüft, schreibt fest und versendet. Festgeschrieben wird nie von selbst.
+- Änderungen am Vertrag gelten für die folgenden Entwürfe; vorhandene Entwürfe und Rechnungen bleiben, wie sie sind. Ein beendeter Vertrag erzeugt keine Entwürfe mehr. Ein Vertrag lässt sich löschen; seine Rechnungen bleiben und verlieren nur den Verweis.
+- Auf Wunsch (2, 4 oder 8 Wochen vorher, Vorgabe 4) legt das Programm vor jedem Zeitraum eine Wiedervorlage an der Adresse an: Fortsetzung und Preis mit dem Kunden klären. Einmal je Zeitraum; nicht, wenn der Vertrag erst nach diesem Tag angelegt wurde.
+- Sind Benachrichtigungen über Telegram eingerichtet, nennt die Tagesübersicht jeden neuen Entwurf einmal mit Bezeichnung des Vertrags und Betrag.
+- Wird eine Adresse gesperrt (D-1), enden ihre Verträge. Die Auskunft nennt sie, die Löschung entfernt sie mit.
+
 ## Abnahme Phase 2
 
 - Der KoSIT-Validator akzeptiert XRechnung und ZUGFeRD-XML für alle Testfälle: Regelbesteuerung, § 19, § 13b, Skonto, Rabatt, mehrere Steuersätze.

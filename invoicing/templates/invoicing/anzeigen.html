@@ -24,12 +24,14 @@
     {% elif rechnung.ist_korrektur %}<p class="muted">Korrigiert die <a href="{% url 'invoicing:bearbeiten' rechnung.korrektur_zu.pk %}">Rechnung {{ rechnung.korrektur_zu.nummer }}</a> vom {{ rechnung.korrektur_zu.datum|date:"d.m.Y" }}.</p>
     {% elif rechnung.storniert %}<p class="muted">Aufgehoben durch die <a href="{% url 'invoicing:bearbeiten' rechnung.stornorechnung.pk %}">Stornorechnung {{ rechnung.stornorechnung.nummer }}</a> vom {{ rechnung.stornorechnung.datum|date:"d.m.Y" }}.</p>{% endif %}
     {% if rechnung.angebot %}<p class="muted">Aus dem <a href="{% url 'angebote:bearbeiten' rechnung.angebot.pk %}">Angebot {{ rechnung.angebot.nummer }}</a> vom {{ rechnung.angebot.datum|date:"d.m.Y" }}.</p>{% endif %}
+    {% if rechnung.vertrag %}<p class="muted">Aus dem Vertrag <a href="{% url 'vertraege:bearbeiten' rechnung.vertrag.pk %}">{{ rechnung.vertrag }}</a>.</p>{% endif %}
     {% if rechnung.auftrag %}<p class="muted">Aus der <a href="{% url 'auftraege:bearbeiten' rechnung.auftrag.pk %}">Auftragsbestätigung {{ rechnung.auftrag.nummer }}</a> vom {{ rechnung.auftrag.datum|date:"d.m.Y" }}.</p>{% endif %}
     {% for k in korrekturen %}<p class="muted">{% if k.ist_entwurf %}Entwurf einer <a href="{% url 'invoicing:bearbeiten' k.pk %}">Rechnungskorrektur</a>, noch nicht festgeschrieben.{% else %}Korrigiert durch die <a href="{% url 'invoicing:bearbeiten' k.pk %}">Rechnungskorrektur {{ k.nummer }}</a> vom {{ k.datum|date:"d.m.Y" }} über <span class="amount">{{ k.brutto|euro }}</span>.{% endif %}</p>{% endfor %}
     {% if teilweise_korrigiert and not rechnung.storniert %}<p class="muted">Nach Korrektur zu zahlen: <span class="amount">{{ rechnung.korrigierter_betrag|euro }}</span></p>{% endif %}
   </div>
   <div class="actions">
-    {% if not rechnung.ist_storno and not rechnung.ist_korrektur %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>{% endif %}
+    {% if not rechnung.ist_storno and not rechnung.ist_korrektur %}<button class="btn" type="submit" form="kopieren-form">{% icon "file" %}Kopieren</button>
+    {% if not rechnung.vertrag %}<a class="btn" href="{% url 'vertraege:neu' %}?aus_rechnung={{ rechnung.pk }}">{% icon "clock" %}Als Vertrag wiederholen</a>{% endif %}{% endif %}
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}" target="_blank" rel="noopener">{% icon "eye" %}PDF öffnen</a>
     <a class="btn" href="{% url 'invoicing:pdf' rechnung.pk %}?herunterladen">{% icon "download" %}Herunterladen</a>
     {% if rechnung.xml_datei %}<a class="btn" href="{% url 'invoicing:xml' rechnung.pk %}">{% icon "download" %}XRechnung (XML)</a>{% endif %}

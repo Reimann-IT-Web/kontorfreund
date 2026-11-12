@@ -3,8 +3,9 @@
 - Tagesübersicht, einmal am Tag ab der eingestellten Uhrzeit: heute fällige
   Wiedervorlagen, wie viele überfällig sind, Rechnungen, die neu überfällig sind,
   Rechnungen, für die das nächste Mahnschreiben fällig ist (je Stufe einmal; verschickt
-  wird es nicht, das tut der Nutzer in den offenen Posten), und Eingangsrechnungen, die
-  bald zu zahlen sind. Steht nichts an, kommt nichts.
+  wird es nicht, das tut der Nutzer in den offenen Posten), neue Rechnungsentwürfe aus
+  Verträgen (B-10) und Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an,
+  kommt nichts.
 - Termine: Wiedervorlagen mit Uhrzeit, die eingestellte Zeit vorher.
 - Ablage: sobald die tägliche Prüfung eine Datei neu als fehlend oder verändert findet.
 
@@ -23,6 +24,8 @@ from archive.models import Pruefung
 from core.models import Firmendaten
 from core.templatetags.kf import euro
 from eingang.models import Eingangsrechnung
+from invoicing.models import Rechnung
+from vertraege import abrechnen
 from wiedervorlagen.models import Wiedervorlage
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
@@ -86,6 +89,15 @@ def tagesuebersicht(einstellung, jetzt):
     # Steht eine Rechnung schon unter „Zu mahnen“, nicht noch einmal als nicht bezahlt.
     gemahnt = {r.pk for r, _ in zu_mahnen}
     nicht_bezahlt = [r for r in rechnungen if r.pk not in gemahnt]
+    vertragsentwuerfe = [
+        r
+        for r in Rechnung.objects.filter(
+            vertrag__isnull=False, status=Rechnung.Status.ENTWURF
+        )
+        .select_related("vertrag")
+        .order_by("pk")
+        if not _gemeldet("entwurf", str(r.pk))
+    ]
     eingang = [
         e
         for e in Eingangsrechnung.objects.filter(
@@ -114,6 +126,13 @@ def tagesuebersicht(einstellung, jetzt):
                 [f"Rechnung {r.nummer} {euro(r.offen)} ({s})" for r, s in zu_mahnen]
             )
         )
+    if vertragsentwuerfe:
+        zeilen.append(
+            "Neue Entwürfe: "
+            + _aufzaehlen(
+                [f"{r.vertrag} {euro(r.summen()[2])}" for r in vertragsentwuerfe]
+            )
+        )
     if eingang:
         zeilen.append(
             "Zu zahlen: "
@@ -129,6 +148,7 @@ def tagesuebersicht(einstellung, jetzt):
         [("tag", heute.isoformat())]
         + [("rechnung", str(r.pk)) for r in rechnungen]
         + [("mahnstufe", f"{r.pk}:{s.stufe}") for r, s in zu_mahnen]
+        + [("entwurf", str(r.pk)) for r in vertragsentwuerfe]
         + [("eingang", str(e.pk)) for e in eingang],
     )
 
@@ -171,6 +191,8 @@ def erinnern(jetzt=None):
     if not einstellung.bereit:
         return
     jetzt = jetzt or timezone.localtime()
+    # Erst die fälligen Entwürfe anlegen, damit die Übersicht sie nennt.
+    abrechnen.faellige(jetzt.date())
     for nachricht in [
         *termine(einstellung, jetzt),
         tagesuebersicht(einstellung, jetzt),

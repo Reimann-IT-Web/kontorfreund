@@ -17,6 +17,7 @@ urlpatterns = [
     path("wiedervorlagen/", include("wiedervorlagen.urls")),
     path("rechnungen/", include("invoicing.urls")),
     path("angebote/", include("angebote.urls")),
+    path("vertraege/", include("vertraege.urls")),
     path("auftragsbestaetigungen/", include("auftraege.urls")),
     path("offene-posten/", include("zahlungen.urls")),
     path("artikel/", include("artikel.urls")),

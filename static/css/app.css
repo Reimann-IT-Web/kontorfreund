@@ -3134,6 +3134,10 @@ input[type="color"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .segmented-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   /* Adressen als gestapelte Zeilen: Nummer, Name, offener Betrag, Aufklappen. */
   .addresses,
   .addresses tbody {

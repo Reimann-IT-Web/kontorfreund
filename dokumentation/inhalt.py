@@ -272,7 +272,10 @@ def verfahren():
                 "Ausgangsrechnungen",
                 absatz(
                     "Eine Rechnung entsteht als Entwurf. Ein Entwurf hat noch keine Nummer "
-                    "und lässt sich frei ändern oder löschen; er zählt nicht als Beleg."
+                    "und lässt sich frei ändern oder löschen; er zählt nicht als Beleg. "
+                    "Für wiederkehrende Leistungen legt Kontorfreund aus einem Vertrag am "
+                    "Anfang jedes Zeitraums einen solchen Entwurf an; festgeschrieben wird "
+                    "er wie jeder andere vom Nutzer."
                 ),
                 absatz(
                     "Beim Festschreiben prüft Kontorfreund die Pflichtangaben nach § 14 "
@@ -803,8 +806,8 @@ def datenschutz():
                 "Arbeitsorganisation)",
                 "Inhaber; Personen, deren Namen im Titel einer Wiedervorlage stehen",
                 "Titel und Uhrzeit von Wiedervorlagen, Nummern und Beträge offener "
-                "Rechnungen mit fälliger Mahnstufe und fälliger Eingangsrechnungen; ohne "
-                "Namen von Kunden und Lieferanten",
+                "Rechnungen mit fälliger Mahnstufe und fälliger Eingangsrechnungen, "
+                "Bezeichnungen von Verträgen; ohne Namen von Kunden und Lieferanten",
                 "Telegram (Server auch außerhalb der EU)",
                 "Nachrichten liegen im Telegram-Konto des Inhabers; er löscht sie dort.",
             ),

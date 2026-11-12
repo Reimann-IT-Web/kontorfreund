@@ -35,6 +35,8 @@ from invoicing.models import Position as Rechnungsposition
 from invoicing.models import Rechnung
 from protokoll.erfassen import VERDECKT, _felder, _name, _wert
 from protokoll.models import Eintrag
+from vertraege.models import Position as Vertragsposition
+from vertraege.models import Vertrag
 from wiedervorlagen.models import Wiedervorlage
 from zahlungen.models import Mahnung, Zahlung
 
@@ -128,6 +130,20 @@ TABELLEN = [
         [("Gesamt", lambda p: zahl(p.gesamt, 2))],
     ),
     (
+        "vertraege.csv",
+        "Verträge für wiederkehrende Rechnungen",
+        Vertrag.objects.select_related("kontakt"),
+        ID + [("Kundennummer", _kunde)],
+        [("Nächster Entwurf am", lambda v: f"{v.naechster:%d.%m.%Y}")],
+    ),
+    (
+        "vertragspositionen.csv",
+        "Positionen der Verträge",
+        Vertragsposition.objects.select_related("vertrag"),
+        [("Vertrag-ID", lambda p: p.vertrag_id)],
+        [("Gesamt", lambda p: zahl(p.gesamt, 2))],
+    ),
+    (
         "rechnungen.csv",
         "Rechnungen, Stornorechnungen und Rechnungskorrekturen",
         Rechnung.objects.select_related("kontakt"),
@@ -135,6 +151,7 @@ TABELLEN = [
         [
             ("Storniert Rechnung-ID", lambda r: r.storno_zu_id),
             ("Korrigiert Rechnung-ID", lambda r: r.korrektur_zu_id),
+            ("Vertrag-ID", lambda r: r.vertrag_id),
             ("Festgeschrieben am", lambda r: _zeit(r.festgeschrieben_am)),
         ]
         + DATEI

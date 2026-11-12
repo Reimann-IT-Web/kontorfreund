@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Angebote &amp; Rechnungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Angebote &amp; Rechnungen</h1>
+    <p class="muted">Verträge für Rechnungen, die sich wiederholen, etwa eine Wartung. Am Anfang jedes Zeitraums legt Kontorfreund den Rechnungsentwurf an; Sie ergänzen, prüfen und schreiben ihn fest.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'invoicing:neu' %}">{% icon "plus" %}Neue Rechnung</a>
+    <a class="btn btn-primary" href="{% url 'vertraege:neu' %}">{% icon "clock" %}Neuer Vertrag</a>
+  </div>
+</div>
+
+{% include "invoicing/belegarten.html" %}
+
+{% if vertraege %}
+<div class="table-wrap">
+  <table class="table archive stapel">
+    <thead>
+      <tr>
+        <th scope="col">Vertrag</th>
+        <th scope="col">Kunde</th>
+        <th scope="col">Rhythmus</th>
+        <th scope="col">Nächster Entwurf</th>
+        <th scope="col" class="num">Je Zeitraum</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vertraege %}
+      <tr class="data-row">
+        <td><a href="{% url 'vertraege:bearbeiten' v.pk %}">{{ v.bezeichnung }}</a>{% if v.rabatt_prozent %}<br><span class="small muted">{{ v.rabatt_prozent|zahl }} % Rabatt</span>{% endif %}</td>
+        <td>{{ v.kontakt }}</td>
+        <td>{{ v.get_rhythmus_display }}</td>
+        <td class="docnr">{% if v.laeuft %}{{ v.naechster|date:"d.m.Y" }}{% else %}<span class="muted">beendet{% if v.ende %} zum {{ v.ende|date:"d.m.Y" }}{% endif %}</span>{% endif %}</td>
+        <td class="num"><span class="amount">{{ v.summen.2|euro }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <h2>Noch kein Vertrag</h2>
+  <p class="muted">Für eine Rechnung, die sich wiederholt, legen Sie einmal einen Vertrag an: Empfänger, Positionen, Rhythmus und Rabatt. Ab dann entsteht der Rechnungsentwurf von selbst. Schneller geht es aus einer früheren Rechnung mit „Als Vertrag wiederholen“.</p>
+  <p class="actions"><a class="btn btn-primary" href="{% url 'vertraege:neu' %}">{% icon "clock" %}Neuer Vertrag</a></p>
+</div>
+{% endif %}
+{% endblock %}

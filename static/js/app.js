@@ -712,3 +712,58 @@ if (firmaWarten) {
   };
   setTimeout(pruefen, 1500);
 }
+
+// Vertrag (B-10): Positionen hinzufügen und entfernen, Summen wie auf dem Entwurf.
+const vertrag = document.querySelector("form[data-vertrag]");
+if (vertrag) {
+  const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+  const zahl = (text) => {
+    const wert = Number(String(text).trim().replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(wert) ? wert : 0;
+  };
+  const cent = (wert) => Math.round(wert * 100) / 100;
+  const tbody = vertrag.querySelector("[data-positions]");
+  const vorlage = document.getElementById("position-vorlage");
+  const zeigen = (name, wert, sichtbar) => {
+    vertrag.querySelector(`[data-row-${name}]`).hidden = !sichtbar;
+    vertrag.querySelector(`[data-sum-${name}]`).textContent = euro.format(wert);
+  };
+  const rechnen = () => {
+    let summe = 0;
+    tbody.querySelectorAll("[data-position]").forEach((zeile, i) => {
+      zeile.querySelector("[data-pos-nr]").textContent = i + 1;
+      const menge = zahl(zeile.querySelector("[name=menge]").value);
+      const gesamt = cent(menge * zahl(zeile.querySelector("[name=preis]").value));
+      zeile.querySelector("[data-line-total]").textContent = euro.format(gesamt);
+      summe += gesamt;
+    });
+    const zwischen = cent(summe);
+    const prozent = zahl(vertrag.elements["vertrag-rabatt_prozent"].value);
+    const rabatt = cent((zwischen * prozent) / 100);
+    const netto = cent(zwischen - rabatt);
+    const regel = vertrag.elements["vertrag-steuerfall"].value === "regel";
+    const ust = regel ? cent(netto * 0.19) : 0;
+    zeigen("zwischen", zwischen, prozent > 0);
+    zeigen("rabatt", -rabatt, prozent > 0);
+    vertrag.querySelector("[data-rabatt-titel]").textContent = `Rabatt ${String(prozent).replace(".", ",")} %`;
+    zeigen("netto", netto, regel);
+    zeigen("ust", ust, regel);
+    vertrag.querySelector("[data-sum-total]").textContent = euro.format(cent(netto + ust));
+  };
+  vertrag.addEventListener("input", rechnen);
+  vertrag.addEventListener("change", rechnen);
+  vertrag.addEventListener("click", (e) => {
+    if (e.target.closest("[data-add-position]")) {
+      tbody.append(vorlage.content.cloneNode(true));
+      rechnen();
+      tbody.lastElementChild.querySelector("[name=bezeichnung]").focus();
+      return;
+    }
+    const entfernen = e.target.closest("[data-remove-position]");
+    if (entfernen && tbody.children.length > 1) {
+      entfernen.closest("tr").remove();
+      rechnen();
+    }
+  });
+  rechnen();
+}

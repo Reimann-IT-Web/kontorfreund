@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}{{ titel }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'vertraege:liste' %}">Verträge</a></li>
+    <li aria-current="page">{{ titel }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ titel }}</h1>
+    <p class="muted">Abgerechnet wird im Voraus: Am ersten Tag jedes Zeitraums legt Kontorfreund einen Rechnungsentwurf über den ganzen Zeitraum an. Zusätzliches wie Zusatzstunden tragen Sie dort ein.{% if vertrag.pk and vertrag.laeuft %} Nächster Entwurf am {{ vertrag.naechster|date:"d.m.Y" }}.{% endif %}</p>
+  </div>
+  {% if vertrag.pk %}
+  <div class="actions">
+    <form method="post" action="{% url 'vertraege:loeschen' vertrag.pk %}">{% csrf_token %}<button class="btn" type="submit" data-confirm="Vertrag „{{ vertrag.bezeichnung }}“ löschen? Seine Rechnungen und Entwürfe bleiben.">{% icon "x" %}Löschen</button></form>
+  </div>
+  {% endif %}
+</div>
+
+<form class="form" method="post" data-vertrag novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-vertrag">
+    <h2 class="form-title" id="t-vertrag">Vertrag</h2>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.bezeichnung %}
+      {% include "core/feld.html" with f=form.kontakt %}
+      {% include "core/feld.html" with f=form.rhythmus %}
+      {% include "core/feld.html" with f=form.beginn %}
+      {% include "core/feld.html" with f=form.ende optional=True %}
+      {% include "core/feld.html" with f=form.nachfragen %}
+      {% include "core/feld.html" with f=form.zahlungsziel %}
+      {% include "core/feld.html" with f=form.steuerfall %}
+      {% include "core/feld.html" with f=form.betreff optional=True %}
+    </div>
+    {% include "core/feld.html" with f=form.kopftext %}
+  </section>
+
+  <section class="form-section" aria-labelledby="t-positionen">
+    <h2 class="form-title" id="t-positionen">Positionen je Zeitraum</h2>
+    <div class="table-wrap">
+      <table class="table positions">
+        <thead>
+          <tr>
+            <th scope="col" class="col-pos">Pos.</th>
+            <th scope="col">Bezeichnung</th>
+            <th scope="col" class="num">Menge</th>
+            <th scope="col">Einheit</th>
+            <th scope="col" class="num">Einzelpreis</th>
+            <th scope="col" class="num">Gesamt</th>
+            <th scope="col"><span class="visually-hidden">Entfernen</span></th>
+          </tr>
+        </thead>
+        <tbody data-positions>
+          {% for p in positionen %}{% include "invoicing/position.html" %}{% empty %}{% include "invoicing/position.html" %}{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <template id="position-vorlage">{% include "invoicing/position.html" %}</template>
+    <div class="positions-foot">
+      <div class="stack">
+        <div class="actions positions-actions">
+          <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
+        </div>
+        {% include "invoicing/rabatt.html" %}
+      </div>
+      <dl class="totals">
+        <div data-row-zwischen hidden><dt>Zwischensumme</dt><dd class="amount" data-sum-zwischen></dd></div>
+        <div data-row-rabatt hidden><dt data-rabatt-titel>Rabatt</dt><dd class="amount" data-sum-rabatt></dd></div>
+        <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
+        <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
+        <div class="totals-sum"><dt>Je Zeitraum</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
+      </dl>
+    </div>
+    {% include "core/feld.html" with f=form.fusstext %}
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Vertrag speichern</button>
+    <a class="btn" href="{% url 'vertraege:liste' %}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

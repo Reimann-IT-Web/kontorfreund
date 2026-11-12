@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 from archive import pruefung
 from core import updates
 from konten.models import Benutzer
+from vertraege import abrechnen
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +21,12 @@ def datenordner(tmp_path, settings):
 def ohne_taegliche_pruefung(monkeypatch):
     """Die tägliche Prüfung der Ablage liefe sonst nach Anfragen in einem eigenen Thread."""
     monkeypatch.setattr(pruefung, "bei_bedarf", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def entwuerfe_aus_vertraegen_sofort(monkeypatch):
+    """Die erste Anfrage jedes Tests legt fällige Entwürfe an, wie nach dem Start."""
+    monkeypatch.setattr(abrechnen, "_naechste_suche", 0.0)
 
 
 def _kein_netz(*args, **kwargs):

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "invoicing",
     "angebote",
     "auftraege",
+    "vertraege",
     "zahlungen",
     "artikel",
     "archive",
@@ -96,6 +97,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "backups.middleware.taegliche_sicherung",
     "archive.middleware.taegliche_pruefung",
+    "vertraege.middleware.abrechnen",
     "core.middleware.update_suche",
 ]
 

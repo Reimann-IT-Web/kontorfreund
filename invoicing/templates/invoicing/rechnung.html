@@ -19,6 +19,7 @@
     {% endwith %}{% endif %}
     {% if rechnung.angebot %}<p class="muted">Aus dem <a href="{% url 'angebote:bearbeiten' rechnung.angebot.pk %}">Angebot {{ rechnung.angebot.nummer }}</a> vom {{ rechnung.angebot.datum|date:"d.m.Y" }}.{% if not rechnung.leistung_von %} Tragen Sie noch den Leistungszeitraum ein.{% endif %}</p>{% endif %}
     {% if rechnung.auftrag %}<p class="muted">Aus der <a href="{% url 'auftraege:bearbeiten' rechnung.auftrag.pk %}">Auftragsbestätigung {{ rechnung.auftrag.nummer }}</a> vom {{ rechnung.auftrag.datum|date:"d.m.Y" }}.{% if not rechnung.leistung_von %} Tragen Sie noch den Leistungszeitraum ein.{% endif %}</p>{% endif %}
+    {% if rechnung.vertrag %}<p class="muted">Aus dem Vertrag <a href="{% url 'vertraege:bearbeiten' rechnung.vertrag.pk %}">{{ rechnung.vertrag }}</a> für {{ rechnung.leistung_von|date:"d.m.Y" }} bis {{ rechnung.leistung_bis|date:"d.m.Y" }}. Ergänzen Sie Zusätzliches wie Zusatzstunden als weitere Position.</p>{% endif %}
     <p class="muted">Beim Festschreiben erhält die {{ rechnung.bezeichnung }} die Nummer {{ naechste_nummer }}. Bis dahin können Sie den Entwurf jederzeit ändern.</p>
   </div>
 </div>

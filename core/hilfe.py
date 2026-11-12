@@ -20,7 +20,8 @@ THEMEN = [
     {
         "slug": "rechnungen",
         "titel": "Rechnungen",
-        "kurz": "Schreiben, festschreiben, senden, stornieren und korrigieren.",
+        "kurz": "Schreiben, festschreiben, senden, stornieren und korrigieren; "
+        "wiederkehrende Rechnungen aus Verträgen.",
         "icon": "file",
     },
     {

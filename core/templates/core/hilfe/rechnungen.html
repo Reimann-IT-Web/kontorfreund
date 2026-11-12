@@ -30,7 +30,14 @@
 <p>Beides lässt sich nicht rückgängig machen. Ist eine Rechnung schon teilweise korrigiert, lässt sie sich nur noch weiter mindern.</p>
 
 <h2 id="kopieren">Wiederkehrende Rechnungen</h2>
-<p>Für eine Rechnung, die Sie regelmäßig ähnlich schreiben, etwa für einen Wartungsvertrag, öffnen Sie die letzte und klicken auf „Kopieren“. Es entsteht ein neuer Entwurf mit Empfänger und Positionen; Sie passen nur den Leistungszeitraum an.</p>
+<p>Für eine Rechnung, die sich in festem Rhythmus wiederholt, etwa für einen Wartungsvertrag, legen Sie einmal einen <a href="{% url 'vertraege:liste' %}">Vertrag</a> an: unter Angebote &amp; Rechnungen im Reiter „Verträge“ mit „Neuer Vertrag“, oder schneller auf der Seite einer früheren Rechnung mit „Als Vertrag wiederholen“. Sie tragen ein:</p>
+<ul>
+  <li><strong>Bezeichnung</strong>, nur für Sie, etwa „Wartung Server“. Sie steht auch in der Nachricht über Telegram, deshalb am besten ohne Namen des Kunden.</li>
+  <li><strong>Rhythmus</strong> (monatlich, vierteljährlich, halbjährlich oder jährlich) und den <strong>Beginn</strong> des ersten Zeitraums, etwa den 1. Januar.</li>
+  <li>Die <strong>Positionen je Zeitraum</strong>, zum Beispiel 6 Monate à 50 €, und auf Wunsch einen <strong>Rabatt</strong>, etwa 8 % bei halbjährlicher Zahlung.</li>
+</ul>
+<p>Abgerechnet wird im Voraus: Am ersten Tag jedes Zeitraums legt Kontorfreund einen Rechnungsentwurf über den ganzen Zeitraum an, mit Leistungszeitraum, Positionen und Rabatt. Zusatzstunden tragen Sie dort als weitere Position ein, dann prüfen, festschreiben und senden Sie ihn wie jede Rechnung. Von selbst festgeschrieben oder verschickt wird nichts. War Kontorfreund am Stichtag nicht geöffnet, entsteht der Entwurf beim nächsten Start. Sind <a href="{% url 'core:hilfe_thema' 'einstellungen' %}#telegram">Benachrichtigungen über Telegram</a> eingerichtet, meldet die Übersicht am Morgen „Neue Entwürfe: Wartung Server 276,00 €“.</p>
+<p>Fragen Sie Ihre Kunden vor jeder Verlängerung, ob es weitergehen soll? Unter „Vor jeder Verlängerung nachfragen“ legt Kontorfreund 2, 4 oder 8 Wochen vor jedem Zeitraum eine <a href="{% url 'core:hilfe_thema' 'wiedervorlagen' %}">Wiedervorlage</a> an: „Vertrag „Wartung Server“ ab 01.07.2027: Fortsetzung und Preis klären“. Ändern Sie Preis oder Positionen im Vertrag, gilt das ab dem nächsten Entwurf, etwa wenn ein Sonderpreis ausläuft. Endet der Vertrag, tragen Sie das Ende ein; danach entsteht kein Entwurf mehr. Für eine einzelne Rechnung, die einer früheren ähnelt, genügt „Kopieren“ auf deren Seite.</p>
 
 <h2 id="liste">Die Liste der Rechnungen</h2>
 <p>Unter <a href="{% url 'invoicing:liste' %}">Angebote &amp; Rechnungen</a> stehen alle Rechnungen mit Stand, darüber die Reiter für Angebote und Auftragsbestätigungen. Mit „Wiedervorlage“ auf der Seite einer Rechnung erinnern Sie sich an etwas, das noch zu tun ist.</p>

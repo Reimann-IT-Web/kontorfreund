@@ -148,6 +148,16 @@ class Rechnung(models.Model):
     rabatt_prozent = models.DecimalField(
         "Rabatt in Prozent", max_digits=5, decimal_places=2, default=0
     )
+    # Entwurf aus einem Vertrag (B-10); Kopien, Storno und Korrektur haben keinen.
+    vertrag = models.ForeignKey(
+        "vertraege.Vertrag",
+        verbose_name="Vertrag",
+        on_delete=models.SET_NULL,
+        related_name="rechnungen",
+        null=True,
+        blank=True,
+        editable=False,
+    )
     steuerfall = models.CharField(
         max_length=20, choices=Steuerfall.choices, default=Steuerfall.KLEINUNTERNEHMER
     )
@@ -205,7 +215,13 @@ class Rechnung(models.Model):
                 fields=["nummer"],
                 condition=~Q(nummer=""),
                 name="rechnungsnummer_eindeutig",
-            )
+            ),
+            # Je Vertrag und Zeitraum genau ein Entwurf, auch bei zwei Läufen zugleich.
+            models.UniqueConstraint(
+                fields=["vertrag", "leistung_von"],
+                condition=Q(vertrag__isnull=False),
+                name="eine_rechnung_je_vertragszeitraum",
+            ),
         ]
 
     def __str__(self):

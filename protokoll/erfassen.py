@@ -26,6 +26,7 @@ ERFASST = [
     "invoicing.Rechnung",
     "angebote.Angebot",
     "auftraege.Auftragsbestaetigung",
+    "vertraege.Vertrag",
     "artikel.Artikel",
     "zahlungen.Zahlung",
     "zahlungen.Mahnung",
