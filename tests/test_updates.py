@@ -310,6 +310,43 @@ def test_nur_fuer_den_inhaber(mitarbeiter, github):
     assert updates.suchen() is None
 
 
+def test_hinweis_in_der_kopfleiste_jeder_seite(client, mitarbeiter, github):
+    link = f'href="{reverse("core:updates")}"'
+    assert "update-hinweis" not in client.get(reverse("contacts:liste")).text
+
+    updates.pruefen()
+    for seite in ("contacts:liste", "invoicing:liste", "core:start"):
+        text = client.get(reverse(seite)).text
+        assert f"Update {NEU}</span>" in text
+        assert f'class="btn btn-sm update-hinweis topbar-end" {link}' in text
+    # Mitarbeiter installieren nicht und sehen ihn deshalb nicht.
+    assert "update-hinweis" not in mitarbeiter.get(reverse("contacts:liste")).text
+
+
+def test_kein_hinweis_ohne_neuere_version(client, github, settings):
+    github.antwort = release(tag=f"v{settings.VERSION}")
+    updates.pruefen()
+    assert "update-hinweis" not in client.get(reverse("core:start")).text
+
+
+def test_suchen_von_der_uebersicht(client, mitarbeiter, github):
+    seite = client.get(reverse("core:start")).text
+    assert 'name="aktion" value="jetzt"' in seite
+    assert (
+        'name="aktion" value="jetzt"' not in mitarbeiter.get(reverse("core:start")).text
+    )
+
+    antwort = client.post(
+        reverse("core:updates"), {"aktion": "jetzt", "zurueck": "start"}, follow=True
+    )
+    assert antwort.redirect_chain == [(reverse("core:start"), 302)]
+    assert f"Kontorfreund {NEU} ist erschienen." in antwort.text
+    assert f"Update {NEU}</span>" in antwort.text
+    # Auch ohne tägliche Suche: Gesucht wird nur auf diesen Klick.
+    assert updates.suchen() is None
+    assert len(github.anfragen) == 1
+
+
 def test_einstellungen_und_suche_fuehren_zur_seite(client):
     assert reverse("core:updates") in client.get(reverse("core:einstellungen")).text
     seite = client.get(reverse("core:updates")).text

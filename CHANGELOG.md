@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.40.0 – 12.11.2026
+
+- Neu: „Nach Updates suchen“ oben rechts auf der Übersicht. Ein Klick sieht sofort bei GitHub nach, ob es eine neue Version gibt, auch wenn die tägliche Suche ausgeschaltet ist; danach bleiben Sie auf der Übersicht. Bisher ging das nur unter Einstellungen › Updates.
+- Gibt es eine neue Version, steht oben rechts auf jeder Seite „Update“ mit der neuen Versionsnummer. Ein Klick führt zu Neuerungen und Download. Beides sieht nur der Inhaber.
+
 ## 0.39.0 – 12.11.2026
 
 - Neu: Einstellungen › „Briefkopf gestalten“. Auf einer eigenen Seite legen Sie fest, wie die erste Seite von Rechnungen, Angeboten, Auftragsbestätigungen, Mahnungen und der Auskunft nach der DSGVO beginnt. Oben zeigt eine Vorschau den Kopf mit Anschriftfeld, nach dem Speichern sofort mit Ihren Änderungen.

@@ -79,7 +79,10 @@
           <span>Adressen, Belege oder Bereiche suchen …</span>
           <kbd>Strg K</kbd>
         </button>
-        <button class="btn btn-ghost btn-icon topbar-end" type="button" data-theme-toggle aria-pressed="false">
+        {% if update_hinweis %}
+        <a class="btn btn-sm update-hinweis topbar-end" href="{% url 'core:updates' %}" title="Kontorfreund {{ update_hinweis.version }} ist erschienen, Sie nutzen {{ version }}. Neuerungen und Download">{% icon "download" %}<span>Update {{ update_hinweis.version }}</span></a>
+        {% endif %}
+        <button class="btn btn-ghost btn-icon{% if not update_hinweis %} topbar-end{% endif %}" type="button" data-theme-toggle aria-pressed="false">
           <span class="theme-icon-light">{% icon "moon" %}</span><span class="theme-icon-dark">{% icon "sun" %}</span>
           <span class="visually-hidden">Dunkles Design</span>
         </button>

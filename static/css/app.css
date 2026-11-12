@@ -554,6 +554,26 @@ kbd {
   margin-left: auto;
 }
 
+/* Neue Version bekannt: auf jeder Seite sichtbar, führt zu Neuerungen und Download. */
+.btn.update-hinweis {
+  flex: none;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn.update-hinweis:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  text-decoration: underline;
+}
+
+.update-hinweis + .btn {
+  margin-left: var(--s1);
+}
+
 .theme-icon-light {
   display: var(--icon-light);
 }

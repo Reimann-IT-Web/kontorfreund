@@ -11,7 +11,7 @@ from contacts.models import Kontakt
 from invoicing.models import Rechnung
 from wiedervorlagen.models import Wiedervorlage
 
-from . import firmen
+from . import firmen, updates
 from .hilfe import THEMEN
 from .models import Firmendaten
 from .navigation import NAVIGATION
@@ -184,6 +184,8 @@ def navigation(request):
         "firma": Firmendaten.laden(),
         "mehrere_firmen": mehrere,
         "ablage_befunde": befunde,
+        # Neuere Version für die Kopfleiste jeder Seite; nur der Inhaber installiert (D-7).
+        "update_hinweis": updates.hinweis() if request.user.ist_inhaber else None,
     }
 
 

@@ -9,6 +9,13 @@
     <h1>Guten Tag, {{ user.name }}</h1>
     <p class="muted">{% now "l, j. F Y" %}</p>
   </div>
+  {% if user.ist_inhaber %}
+  <form class="actions" method="post" action="{% url 'core:updates' %}">
+    {% csrf_token %}
+    <input type="hidden" name="zurueck" value="start">
+    <button class="btn btn-sm" type="submit" name="aktion" value="jetzt" title="Installiert ist {{ marke }} {{ version }}">{% icon "restore" %}Nach Updates suchen</button>
+  </form>
+  {% endif %}
 </div>
 
 {% if ablage_befunde %}
