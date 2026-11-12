@@ -22,6 +22,21 @@ def test_version_wie_in_pyproject():
     assert pyproject["project"]["version"] == settings.VERSION
 
 
+def test_jede_eigene_app_kommt_ins_paket():
+    """PyInstaller findet die Apps nur über die Liste in der Spec-Datei."""
+    spec = (Path(settings.BASE_DIR) / "packaging" / "kontorfreund.spec").read_text(
+        encoding="utf-8"
+    )
+    liste = re.search(r"APPS = \[(.*?)\]", spec, re.S).group(1)
+    im_paket = set(re.findall(r'"([a-z_]+)"', liste))
+    eigene = {
+        app.split(".")[0]
+        for app in settings.INSTALLED_APPS
+        if (Path(settings.BASE_DIR) / app.split(".")[0]).is_dir()
+    }
+    assert eigene <= im_paket
+
+
 def test_version_und_urheber_auf_der_hilfeseite(client):
     seite = client.get(reverse("core:hilfe")).content.decode()
     assert (
