@@ -1,6 +1,8 @@
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django import forms
+from django.utils import timezone
 
 from contacts.models import Kontakt
 
@@ -136,6 +138,25 @@ def anschriften_pruefen(form, daten):
         anschrift = daten.get(name)
         if anschrift and (not kontakt or anschrift.kontakt_id != kontakt.pk):
             form.add_error(name, "Diese Anschrift gehört zu einer anderen Adresse.")
+
+
+def datum_auf_heute(form):
+    """Ein Entwurf, der an einem späteren Tag geöffnet wird, zeigt das heutige Datum (B-8).
+
+    Gilt, wenn er vor heute zuletzt gespeichert wurde und auf einen früheren Tag datiert
+    ist. Übernommen wird das Datum erst mit dem Speichern. Wer heute bewusst ein früheres
+    Datum einträgt und speichert, behält es, bis der Entwurf an einem anderen Tag
+    wieder geöffnet wird.
+    """
+    entwurf, heute = form.instance, date.today()
+    if form.is_bound or not entwurf.pk or entwurf.datum >= heute:
+        return
+    if timezone.localtime(entwurf.geaendert).date() >= heute:
+        return
+    hinweis = f"Auf heute gesetzt, im Entwurf stand der {entwurf.datum:%d.%m.%Y}."
+    form.fields["datum"].help_text = hinweis
+    # Auch am Beleg, damit Nummer und Umsatzgrenzen im Editor zum Datum passen.
+    form.initial["datum"] = entwurf.datum = heute
 
 
 def positionen_lesen(post, korrektur=False, modell=Position):

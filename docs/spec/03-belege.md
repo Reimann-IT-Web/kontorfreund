@@ -80,6 +80,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 ## B-8 Festschreiben und Versand
 
 - „Festschreiben“ vergibt die Nummer, erzeugt PDF und XML, speichert beide mit SHA-256-Prüfsumme und sperrt den Beleg dauerhaft.
+- Ein Entwurf, der an einem späteren Tag wieder geöffnet wird, zeigt als Datum den heutigen Tag, damit er nicht mit dem Datum des Anlegens festgeschrieben wird; unter dem Feld steht das bisherige Datum. Übernommen wird es mit dem Speichern. Wer am selben Tag bewusst ein früheres Datum einträgt und speichert, behält es; ein Datum in der Zukunft bleibt. Gilt für Rechnung, Angebot und Auftragsbestätigung.
 - Versand per E-Mail über den eigenen Mailserver (SMTP, Zugangsdaten verschlüsselt gespeichert), mit Eintrag in der Kontakthistorie.
 - Alternativ Download zum Selbstversand oder Ausdrucken.
 

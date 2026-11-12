@@ -18,7 +18,7 @@ from contacts.models import Anschrift, Kontakt
 from core.models import Firmendaten
 from invoicing import beleg as rechnungsbeleg
 from invoicing import versand
-from invoicing.forms import VersandForm, positionen_lesen
+from invoicing.forms import VersandForm, datum_auf_heute, positionen_lesen
 from invoicing.views import EINHEITEN
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
@@ -94,6 +94,7 @@ def _editor(request, auftrag, firma):
             messages.error(request, "Bitte die markierten Angaben prüfen.")
     else:
         form = AuftragForm(instance=auftrag)
+        datum_auf_heute(form)
         positionen = list(auftrag.positionen.all()) if auftrag.pk else []
     kontakte = list(form.fields["kontakt"].queryset)
     for kontakt in kontakte:

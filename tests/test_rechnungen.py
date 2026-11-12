@@ -1,7 +1,7 @@
 """Rechnung schreiben, festschreiben und versenden – mit erfundenen Daten."""
 
 import hashlib
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from io import BytesIO
 
@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail.backends import locmem
 from django.urls import reverse
+from django.utils import timezone
 from pypdf import PdfReader
 
 from angebote.models import Angebot
@@ -742,6 +743,76 @@ def test_uebersicht_zeigt_entwuerfe_aller_belegarten_zuletzt_geaenderte_oben(
         < start.index(f'href="{reverse("auftraege:bearbeiten", args=[auftrag.pk])}"')
         < start.index(f'href="{reverse("angebote:bearbeiten", args=[angebot.pk])}"')
     )
+
+
+BELEGARTEN = [
+    (Rechnung, "invoicing:bearbeiten"),
+    (Angebot, "angebote:bearbeiten"),
+    (Auftragsbestaetigung, "auftraege:bearbeiten"),
+]
+
+
+def liegen_lassen(beleg, datum, gespeichert):
+    """Datum und letzte Änderung setzen, ohne dass auto_now sie überschreibt."""
+    type(beleg).objects.filter(pk=beleg.pk).update(datum=datum, geaendert=gespeichert)
+
+
+@pytest.mark.parametrize(("modell", "editor"), BELEGARTEN)
+def test_entwurf_von_gestern_zeigt_das_heutige_datum(client, kunde, modell, editor):
+    heute = date.today()
+    beleg = modell.objects.create(kontakt=kunde)
+    liegen_lassen(beleg, heute - timedelta(days=6), timezone.now() - timedelta(days=6))
+
+    antwort = client.get(reverse(editor, args=[beleg.pk]))
+
+    assert antwort.context["form"]["datum"].value() == heute
+    alt = f"{heute - timedelta(days=6):%d.%m.%Y}"
+    assert f"Auf heute gesetzt, im Entwurf stand der {alt}." in antwort.text
+    assert 'aria-describedby="datum_helptext"' in antwort.text
+    # Gespeichert wird erst mit dem Formular.
+    beleg.refresh_from_db()
+    assert beleg.datum == heute - timedelta(days=6)
+
+
+@pytest.mark.parametrize(
+    ("tage_zurueck", "gespeichert_vor"),
+    [
+        (3, timedelta(0)),  # heute bewusst zurückdatiert und gespeichert
+        (-2, timedelta(days=6)),  # auf einen späteren Tag datiert
+    ],
+)
+@pytest.mark.parametrize(("modell", "editor"), BELEGARTEN)
+def test_entwurf_behaelt_sein_datum(
+    client, kunde, modell, editor, tage_zurueck, gespeichert_vor
+):
+    datum = date.today() - timedelta(days=tage_zurueck)
+    beleg = modell.objects.create(kontakt=kunde)
+    liegen_lassen(beleg, datum, timezone.now() - gespeichert_vor)
+
+    antwort = client.get(reverse(editor, args=[beleg.pk]))
+
+    assert antwort.context["form"]["datum"].value() == datum
+    assert "Auf heute gesetzt" not in antwort.text
+
+
+def test_liegen_gebliebene_rechnung_wird_auf_heute_festgeschrieben(
+    client, firma, kunde, daten
+):
+    client.post(reverse("invoicing:neu"), formular(kunde, aktion="speichern"))
+    rechnung = Rechnung.objects.get()
+    liegen_lassen(rechnung, date(2026, 10, 29), timezone.now() - timedelta(days=6))
+    editor = client.get(reverse("invoicing:bearbeiten", args=[rechnung.pk]))
+    heute = editor.context["form"]["datum"].value()
+
+    client.post(
+        reverse("invoicing:bearbeiten", args=[rechnung.pk]),
+        formular(kunde, datum=f"{heute:%Y-%m-%d}"),
+    )
+
+    rechnung.refresh_from_db()
+    assert rechnung.status == Rechnung.Status.FESTGESCHRIEBEN
+    assert rechnung.datum == date.today()
+    assert rechnung.beleg["datum"] == date.today().isoformat()
 
 
 def seitentexte(inhalt):

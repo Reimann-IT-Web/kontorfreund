@@ -22,7 +22,7 @@ from core.templatetags.kf import euro
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
 from . import beleg, versand
-from .forms import RechnungForm, VersandForm, positionen_lesen
+from .forms import RechnungForm, VersandForm, datum_auf_heute, positionen_lesen
 from .models import Rechnung
 
 logger = logging.getLogger(__name__)
@@ -102,6 +102,7 @@ def _editor(request, rechnung, firma):
             messages.error(request, "Bitte die markierten Angaben prüfen.")
     else:
         form = RechnungForm(instance=rechnung)
+        datum_auf_heute(form)
         positionen = list(rechnung.positionen.all()) if rechnung.pk else []
     kontakte = list(form.fields["kontakt"].queryset)
     for kontakt in kontakte:
