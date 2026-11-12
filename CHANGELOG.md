@@ -1,5 +1,9 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Die Tagesübersicht über Telegram sagt jetzt, wann gemahnt werden sollte: „Zu mahnen: Rechnung 260012 450,00 € (Zahlungserinnerung)“, später ebenso für die 1. und 2. Mahnung. Wann eine Stufe fällig ist, stellen Sie wie bisher unter Offene Posten › „Mahnwesen einstellen“ ein. Jede Stufe kommt einmal. Verschickt wird nichts von selbst: Sie prüfen, ob das Geld schon da ist, und erstellen das Schreiben in den offenen Posten.
+
 ## 0.40.1 – 12.11.2026
 
 - Ein Entwurf bekommt beim Öffnen an einem späteren Tag das heutige Datum. Bisher blieb das Datum des Tages stehen, an dem Sie ihn angelegt hatten, und eine Rechnung konnte mit einem Datum von vor einer Woche festgeschrieben werden. Unter dem Feld steht das bisherige Datum, falls Sie es doch behalten möchten. Übernommen wird das neue Datum, sobald Sie speichern, die Vorschau ansehen oder festschreiben. Ein früheres Datum, das Sie am selben Tag bewusst eingetragen und gespeichert haben, bleibt, ebenso ein Datum in der Zukunft. Gilt auch für Angebote und Auftragsbestätigungen.

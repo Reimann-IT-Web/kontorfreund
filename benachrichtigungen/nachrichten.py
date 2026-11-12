@@ -1,8 +1,10 @@
 """Was über Telegram kommt und wann.
 
 - Tagesübersicht, einmal am Tag ab der eingestellten Uhrzeit: heute fällige
-  Wiedervorlagen, wie viele überfällig sind, Rechnungen, die neu überfällig sind, und
-  Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an, kommt nichts.
+  Wiedervorlagen, wie viele überfällig sind, Rechnungen, die neu überfällig sind,
+  Rechnungen, für die das nächste Mahnschreiben fällig ist (je Stufe einmal; verschickt
+  wird es nicht, das tut der Nutzer in den offenen Posten), und Eingangsrechnungen, die
+  bald zu zahlen sind. Steht nichts an, kommt nichts.
 - Termine: Wiedervorlagen mit Uhrzeit, die eingestellte Zeit vorher.
 - Ablage: sobald die tägliche Prüfung eine Datei neu als fehlend oder verändert findet.
 
@@ -23,6 +25,7 @@ from core.templatetags.kf import euro
 from eingang.models import Eingangsrechnung
 from wiedervorlagen.models import Wiedervorlage
 from zahlungen import mahnen
+from zahlungen.models import Mahnstufe
 
 from . import telegram
 from .models import Einstellung, Gemeldet
@@ -71,11 +74,18 @@ def tagesuebersicht(einstellung, jetzt):
     offen = _offen(einstellung)
     aufgaben = [_aufgabe(w) for w in offen.filter(faellig=heute)]
     ueberfaellig = offen.filter(faellig__lt=heute).count()
-    rechnungen = [
-        r
-        for r in mahnen.posten()
-        if r.ueberfaellig and not _gemeldet("rechnung", str(r.pk))
+    posten = mahnen.posten()
+    zu_mahnen = [
+        (r, stufe)
+        for r, stufe in mahnen.vorschlaege(posten, Mahnstufe.alle(), heute)
+        if not _gemeldet("mahnstufe", f"{r.pk}:{stufe.stufe}")
     ]
+    rechnungen = [
+        r for r in posten if r.ueberfaellig and not _gemeldet("rechnung", str(r.pk))
+    ]
+    # Steht eine Rechnung schon unter „Zu mahnen“, nicht noch einmal als nicht bezahlt.
+    gemahnt = {r.pk for r, _ in zu_mahnen}
+    nicht_bezahlt = [r for r in rechnungen if r.pk not in gemahnt]
     eingang = [
         e
         for e in Eingangsrechnung.objects.filter(
@@ -90,10 +100,19 @@ def tagesuebersicht(einstellung, jetzt):
         zeilen.append(
             f"Überfällig: {ueberfaellig} Wiedervorlage{'n' if ueberfaellig > 1 else ''}"
         )
-    if rechnungen:
+    if nicht_bezahlt:
         zeilen.append(
             "Nicht bezahlt: "
-            + _aufzaehlen([f"Rechnung {r.nummer} {euro(r.offen)}" for r in rechnungen])
+            + _aufzaehlen(
+                [f"Rechnung {r.nummer} {euro(r.offen)}" for r in nicht_bezahlt]
+            )
+        )
+    if zu_mahnen:
+        zeilen.append(
+            "Zu mahnen: "
+            + _aufzaehlen(
+                [f"Rechnung {r.nummer} {euro(r.offen)} ({s})" for r, s in zu_mahnen]
+            )
         )
     if eingang:
         zeilen.append(
@@ -109,6 +128,7 @@ def tagesuebersicht(einstellung, jetzt):
         f"{_kopf()}, {heute:%d.%m.}:\n" + "\n".join(zeilen) if zeilen else "",
         [("tag", heute.isoformat())]
         + [("rechnung", str(r.pk)) for r in rechnungen]
+        + [("mahnstufe", f"{r.pk}:{s.stufe}") for r, s in zu_mahnen]
         + [("eingang", str(e.pk)) for e in eingang],
     )
 

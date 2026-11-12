@@ -803,8 +803,8 @@ def datenschutz():
                 "Arbeitsorganisation)",
                 "Inhaber; Personen, deren Namen im Titel einer Wiedervorlage stehen",
                 "Titel und Uhrzeit von Wiedervorlagen, Nummern und Beträge offener "
-                "Rechnungen und fälliger Eingangsrechnungen; ohne Namen von Kunden und "
-                "Lieferanten",
+                "Rechnungen mit fälliger Mahnstufe und fälliger Eingangsrechnungen; ohne "
+                "Namen von Kunden und Lieferanten",
                 "Telegram (Server auch außerhalb der EU)",
                 "Nachrichten liegen im Telegram-Konto des Inhabers; er löscht sie dort.",
             ),

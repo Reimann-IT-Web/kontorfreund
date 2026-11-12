@@ -25,6 +25,7 @@ from invoicing.models import Rechnung
 from konten.models import Benutzer
 from protokoll.models import Eintrag
 from wiedervorlagen.models import Wiedervorlage
+from zahlungen.models import Mahnstufe, Mahnung
 
 pytestmark = pytest.mark.django_db
 
@@ -78,14 +79,19 @@ def gesendet(monkeypatch):
     return texte
 
 
-def ueberfaellige_rechnung(client, kunde):
-    vor_einem_monat = HEUTE - timedelta(days=30)
+def ueberfaellige_rechnung(client, kunde, tage=20):
+    """Rechnung über 160 € vom Tag vor `tage` Tagen, fällig nach 14 Tagen.
+
+    Mit den Vorgaben ist die Zahlungserinnerung 7 Tage nach Fälligkeit dran, bei
+    20 Tagen also morgen.
+    """
+    datum = HEUTE - timedelta(days=tage)
     client.post(
         reverse("invoicing:neu"),
         {
             "kontakt": kunde.pk,
-            "datum": vor_einem_monat.isoformat(),
-            "leistung_von": vor_einem_monat.isoformat(),
+            "datum": datum.isoformat(),
+            "leistung_von": datum.isoformat(),
             "zahlungsziel": "14",
             "steuerfall": "kleinunternehmer",
             "kopftext": "",
@@ -161,6 +167,48 @@ def test_rechnungen_nur_einmal_gemeldet(client, einstellung, kunde, gesendet):
     Gemeldet.objects.filter(anlass="tag").delete()
     nachrichten.erinnern(um(9))
     assert len(gesendet) == 1
+
+
+def test_faellige_mahnstufen_je_stufe_einmal(client, einstellung, kunde, gesendet):
+    # Seit 16 Tagen fällig: Die Zahlungserinnerung ist seit 9 Tagen dran.
+    rechnung = ueberfaellige_rechnung(client, kunde, tage=30)
+    nachrichten.erinnern(um(8))
+    assert gesendet == [
+        f"Muster IT, {HEUTE:%d.%m.}:\n"
+        f"Zu mahnen: Rechnung {rechnung.nummer} 160,00 € (Zahlungserinnerung)"
+    ]
+    # Nur unter „Zu mahnen“, nicht auch noch als nicht bezahlt, und am nächsten
+    # Tag nicht wieder.
+    Gemeldet.objects.filter(anlass="tag").delete()
+    nachrichten.erinnern(um(9))
+    assert len(gesendet) == 1
+    assert Mahnung.objects.count() == 0  # verschickt wird nichts von selbst
+
+    # Ist die Frist der Zahlungserinnerung um, kommt die 1. Mahnung.
+    Mahnung.objects.create(
+        rechnung=rechnung,
+        stufe=1,
+        datum=HEUTE - timedelta(days=9),
+        frist=HEUTE - timedelta(days=7),
+        offen=rechnung.offen,
+        gesamt=rechnung.offen,
+        datei="archiv/mahnungen/Zahlungserinnerung.pdf",
+        sha256="0" * 64,
+    )
+    Gemeldet.objects.filter(anlass="tag").delete()
+    nachrichten.erinnern(um(10))
+    assert gesendet[-1].endswith(
+        f"\nZu mahnen: Rechnung {rechnung.nummer} 160,00 € (1. Mahnung)"
+    )
+
+
+def test_mahnstufe_noch_nicht_faellig(client, einstellung, kunde, gesendet):
+    zahlungserinnerung = Mahnstufe.alle()[1]
+    zahlungserinnerung.abstand = 30
+    zahlungserinnerung.save()
+    ueberfaellige_rechnung(client, kunde, tage=30)
+    nachrichten.erinnern(um(8))
+    assert "Nicht bezahlt" in gesendet[0] and "Zu mahnen" not in gesendet[0]
 
 
 def test_viele_eintraege_werden_gekuerzt(einstellung, gesendet):
