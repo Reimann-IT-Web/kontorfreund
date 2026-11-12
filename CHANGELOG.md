@@ -1,5 +1,9 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Neu unter Offene Posten › „Mahnwesen einstellen“: „Verzugspauschale 40 € bei Firmenkunden“ für jede Stufe. Ist der Schalter an, ist der Haken für die Pauschale im Schreiben an Firmenkunden schon gesetzt. Für einen guten Stammkunden entfernen Sie ihn dort einfach. Privatkunden zahlen die Pauschale nie, das Gesetz sieht sie nur gegenüber Unternehmen vor. Bisher mussten Sie den Haken jedes Mal selbst setzen; ohne Änderung bleibt es dabei.
+
 ## 0.41.0 – 12.11.2026
 
 - Die Tagesübersicht über Telegram sagt jetzt, wann gemahnt werden sollte: „Zu mahnen: Rechnung 260012 450,00 € (Zahlungserinnerung)“, später ebenso für die 1. und 2. Mahnung. Wann eine Stufe fällig ist, stellen Sie wie bisher unter Offene Posten › „Mahnwesen einstellen“ ein. Jede Stufe kommt einmal. Verschickt wird nichts von selbst: Sie prüfen, ob das Geld schon da ist, und erstellen das Schreiben in den offenen Posten.

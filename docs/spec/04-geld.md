@@ -19,7 +19,7 @@ Entwurf – wird vor Beginn von Phase 3 verfeinert und erneut freigegeben.
 - Stufen: Zahlungserinnerung, 1. Mahnung, 2. Mahnung. Abstände und Texte einstellbar.
 - Vorschlagsliste fälliger Mahnungen. Mahnung als PDF und per E-Mail, mit Eintrag in der Kontakthistorie.
 - Sind Benachrichtigungen über Telegram eingerichtet, nennt die Tagesübersicht jede Rechnung, für die eine Stufe fällig geworden ist, einmal je Stufe: Rechnungsnummer, offener Betrag und Stufe, ohne Namen des Kunden. Erstellt und verschickt wird das Schreiben nicht von selbst, sondern erst, wenn der Nutzer den Zahlungseingang geprüft hat.
-- Verzugszinsen nach § 288 BGB: gegenüber Verbrauchern 5, gegenüber Unternehmen 9 Prozentpunkte über dem Basiszinssatz; bei Unternehmen zusätzlich 40 € Pauschale (§ 288 Abs. 5 BGB). Der Basiszinssatz wird mit Gültigkeitsdatum gepflegt.
+- Verzugszinsen nach § 288 BGB: gegenüber Verbrauchern 5, gegenüber Unternehmen 9 Prozentpunkte über dem Basiszinssatz; bei Unternehmen zusätzlich 40 € Pauschale (§ 288 Abs. 5 BGB). Je Stufe einstellbar, ob die Pauschale bei Unternehmen vorgeschlagen wird; im einzelnen Schreiben lässt sie sich abwählen, Verbrauchern wird sie nie berechnet. Der Basiszinssatz wird mit Gültigkeitsdatum gepflegt.
 - Mahngebühren sind einstellbar. Das Programm weist darauf hin, dass nur tatsächliche Kosten ersatzfähig sind und die Mahnung, die den Verzug erst auslöst, nichts kosten darf.
 - Rechnungen an Verbraucher enthalten auf Wunsch den Hinweis nach § 286 Abs. 3 BGB (Verzug 30 Tage nach Zugang).
 

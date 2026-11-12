@@ -95,7 +95,7 @@ class MahnstufeForm(forms.ModelForm):
 
     class Meta:
         model = Mahnstufe
-        fields = ["abstand", "frist", "gebuehr", "zinsen", "text"]
+        fields = ["abstand", "frist", "gebuehr", "zinsen", "pauschale", "text"]
         widgets = {"text": forms.Textarea(attrs={"rows": 5})}
 
 

@@ -31,7 +31,10 @@
     </div>
     <div class="grid-2">
       {% include "core/feld.html" with f=f.gebuehr %}
-      <label class="choice">{{ f.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">Nur wenn der Kunde schon in Verzug ist; Kontorfreund prüft das selbst.</span></span></label>
+      <div class="stack">
+        <label class="choice">{{ f.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">Nur wenn der Kunde schon in Verzug ist; Kontorfreund prüft das selbst.</span></span></label>
+        <label class="choice">{{ f.pauschale }}<span><strong>Verzugspauschale 40 € bei Firmenkunden</strong><br><span class="muted">Der Haken ist im Schreiben an Firmenkunden schon gesetzt; Sie können ihn dort entfernen. Privatkunden zahlen sie nie.</span></span></label>
+      </div>
     </div>
     {% include "core/feld.html" with f=f.text %}
   </section>

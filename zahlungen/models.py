@@ -174,6 +174,10 @@ class Mahnstufe(models.Model):
         "Mahngebühr", max_digits=12, decimal_places=2, default=0
     )
     zinsen = models.BooleanField("Verzugszinsen berechnen", default=True)
+    # Nur ein Vorschlag fürs Formular; ob sie anfällt, entscheidet mahnen.berechnen.
+    pauschale = models.BooleanField(
+        "Verzugspauschale bei Firmenkunden vorschlagen", default=False
+    )
     text = models.TextField(
         "Text",
         help_text="Steht nach der Anrede. Platzhalter: {nummer}, {datum} und "

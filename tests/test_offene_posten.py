@@ -372,6 +372,25 @@ def test_mahnung_erstellen_als_pdf(client, firma, firmenkunde, settings):
     assert not (settings.DATA_DIR / mahnung.datei).exists()
 
 
+def test_pauschale_nur_bei_firmenkunden_vorgeschlagen(
+    client, firma, firmenkunde, privatkunde
+):
+    fuer_firma = rechnung_schreiben(client, firmenkunde)
+    fuer_person = rechnung_schreiben(client, privatkunde)
+
+    def angehakt(rechnung):
+        seite = client.get(reverse("zahlungen:mahnen", args=[rechnung.pk]))
+        return seite.context["form"]["pauschale"].value()
+
+    assert not angehakt(fuer_firma)  # ohne Einstellung wie bisher
+
+    zahlungserinnerung = Mahnstufe.alle()[1]
+    zahlungserinnerung.pauschale = True
+    zahlungserinnerung.save()
+    assert angehakt(fuer_firma)
+    assert not angehakt(fuer_person)
+
+
 def test_mahnung_traegt_die_unterschrift(
     client, firma, firmenkunde, settings, unterschrift
 ):
@@ -479,9 +498,12 @@ def test_mahnwesen_einstellen_nur_inhaber(client, firma):
                 f"s{nummer}-text": stufe.text,
             }
         )
+    daten["s2-pauschale"] = "on"
     client.post(reverse("zahlungen:einstellungen"), daten)
     assert Mahnstufe.objects.get(stufe=2).abstand == 5
     assert not Mahnstufe.objects.get(stufe=2).zinsen
+    assert Mahnstufe.objects.get(stufe=2).pauschale
+    assert not Mahnstufe.objects.get(stufe=1).pauschale
 
     client.post(
         reverse("zahlungen:einstellungen"),
