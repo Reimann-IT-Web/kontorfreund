@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.43.0 – 12.11.2026
 
 - Neu: Rabatt in Prozent für Rechnungen, Angebote und Auftragsbestätigungen. Sie tragen ihn unter den Positionen ein, etwa 8 % für einen Wartungsvertrag mit halbjährlicher Zahlung. Er gilt für die Summe aller Positionen. Auf dem Beleg stehen Zwischensumme und Rabatt über dem Betrag, und auch die E-Rechnung (ZUGFeRD und XRechnung) weist ihn aus. Aus dem Angebot geht er in Auftragsbestätigung und Rechnung über; Stornorechnung und Rechnungskorrektur übernehmen ihn.
 - Neu unter Einstellungen: „Speichern und Test-E-Mail senden“. Kontorfreund speichert Ihre Angaben zum E-Mail-Versand und schickt eine kurze E-Mail an Ihre eigene Adresse. Klappt es nicht, sagt Kontorfreund, woran es liegt, etwa an einem falschen Passwort oder Port.
