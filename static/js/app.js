@@ -481,7 +481,16 @@ if (rechnung) {
       netto += gesamt;
       if (!zeile.querySelector("[name=bezeichnung]").value.trim() || (korrektur ? menge >= 0 : menge <= 0)) leistungOk = false;
     });
-    netto = cent(netto);
+    // Rabatt auf die Summe der Positionen, wie auf dem Beleg.
+    const zwischen = cent(netto);
+    const rabattProzent = feld("rabatt_prozent") ? zahl(feld("rabatt_prozent").value) : 0;
+    const rabatt = cent((zwischen * rabattProzent) / 100);
+    netto = cent(zwischen - rabatt);
+    rechnung.querySelector("[data-row-zwischen]").hidden = !rabattProzent;
+    rechnung.querySelector("[data-row-rabatt]").hidden = !rabattProzent;
+    rechnung.querySelector("[data-sum-zwischen]").textContent = euro.format(zwischen);
+    rechnung.querySelector("[data-rabatt-titel]").textContent = `Rabatt ${String(rabattProzent).replace(".", ",")} %`;
+    rechnung.querySelector("[data-sum-rabatt]").textContent = euro.format(-rabatt);
 
     const fall = feld("steuerfall").value;
     const ust = fall === "regel" ? cent(netto * 0.19) : 0;

@@ -30,7 +30,36 @@ class Betrag(forms.DecimalField):
         return super().to_python(value)
 
 
-class RechnungForm(forms.ModelForm):
+def rabattfeld():
+    """Rabatt in Prozent auf die Summe der Positionen; leer heißt keiner."""
+    return Betrag(
+        label="Rabatt in Prozent",
+        required=False,
+        min_value=0,
+        max_value=Decimal("99.99"),
+        decimal_places=2,
+        localize=True,
+        widget=forms.TextInput(attrs={"inputmode": "decimal"}),
+        error_messages={
+            # Django setzt Werte per %-Formatierung ein, daher %%.
+            "max_value": "Der Rabatt muss unter 100 %% liegen.",
+            "min_value": "Der Rabatt darf nicht negativ sein.",
+        },
+    )
+
+
+class RabattMixin:
+    """Für Rechnung, Angebot und Auftragsbestätigung: leeres Feld statt „0“."""
+
+    def rabatt_vorbelegen(self):
+        if not self.instance.rabatt_prozent:
+            self.initial["rabatt_prozent"] = None
+
+    def clean_rabatt_prozent(self):
+        return self.cleaned_data.get("rabatt_prozent") or Decimal("0")
+
+
+class RechnungForm(RabattMixin, forms.ModelForm):
     zahlungsziel = forms.TypedChoiceField(
         label="Zahlungsziel", choices=ZAHLUNGSZIELE, coerce=int, initial=14
     )
@@ -49,6 +78,7 @@ class RechnungForm(forms.ModelForm):
         min_value=0,
         widget=forms.TextInput(attrs={"inputmode": "numeric"}),
     )
+    rabatt_prozent = rabattfeld()
 
     class Meta:
         model = Rechnung
@@ -62,6 +92,7 @@ class RechnungForm(forms.ModelForm):
             "zahlungsziel",
             "skonto_prozent",
             "skonto_tage",
+            "rabatt_prozent",
             "steuerfall",
             "referenz",
             "betreff",
@@ -97,6 +128,7 @@ class RechnungForm(forms.ModelForm):
         if not self.instance.skonto_prozent:
             # Leere Felder statt „0“, sonst wird aus einer eingetippten 2 eine 20.
             self.initial["skonto_prozent"] = self.initial["skonto_tage"] = None
+        self.rabatt_vorbelegen()
         if self.instance.ist_korrektur:
             # Die Korrektur gilt für Empfänger und Steuerfall des Originals; zu zahlen ist nichts.
             for name in (
@@ -107,6 +139,7 @@ class RechnungForm(forms.ModelForm):
                 "zahlungsziel",
                 "skonto_prozent",
                 "skonto_tage",
+                "rabatt_prozent",
                 "girocode",
             ):
                 self.fields[name].disabled = True

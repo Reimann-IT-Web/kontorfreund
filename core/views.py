@@ -1,3 +1,5 @@
+import logging
+import smtplib
 import threading
 from datetime import date, timedelta
 from decimal import Decimal
@@ -16,6 +18,7 @@ from archive import fristen
 from auftraege.models import Auftragsbestaetigung
 from backups import sicherung
 from contacts.models import Kontakt
+from invoicing import versand
 from invoicing.beleg import kopf_vorschau
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
@@ -28,6 +31,8 @@ from . import umsatz as umsaetze
 from .forms import BriefkopfForm, FirmendatenForm
 from .hilfe import THEMEN
 from .models import Firmendaten
+
+logger = logging.getLogger(__name__)
 
 BELEGARTEN = (
     (Rechnung, "invoicing:bearbeiten"),
@@ -109,12 +114,37 @@ def einstellungen(request):
         request.POST or None, request.FILES or None, instance=Firmendaten.laden()
     )
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Firmendaten gespeichert.")
-        return redirect("core:einstellungen")
+        firma = form.save()
+        if request.POST.get("aktion") != "testmail":
+            messages.success(request, "Firmendaten gespeichert.")
+            return redirect("core:einstellungen")
+        _testmail(request, firma)
+        return redirect(reverse("core:einstellungen") + "#t-mail")
     return render(
         request, "core/einstellungen.html", {"bereich": "einstellungen", "form": form}
     )
+
+
+def _testmail(request, firma):
+    """Gespeichert ist schon; die Test-E-Mail geht an die eigene Adresse."""
+    if not firma.mail_bereit:
+        messages.error(
+            request,
+            "Für die Test-E-Mail fehlen Ihre E-Mail-Adresse oder der "
+            "Postausgangsserver.",
+        )
+        return
+    try:
+        versand.testen(firma)
+    except (smtplib.SMTPException, OSError) as fehler:
+        logger.warning("Test-E-Mail fehlgeschlagen: %s", fehler)
+        messages.error(request, versand.fehlertext(fehler))
+    else:
+        messages.success(
+            request,
+            f"Gespeichert. Die Test-E-Mail ist an {firma.email} unterwegs; "
+            "sehen Sie in Ihrem Postfach nach.",
+        )
 
 
 @nur_inhaber

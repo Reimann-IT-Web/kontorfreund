@@ -97,10 +97,12 @@
       {% include "core/feld.html" with f=form.mail_benutzer optional=True %}
       {% include "core/feld.html" with f=form.mail_passwort optional=True %}
     </div>
+    <p class="hint">Ob alles stimmt, prüfen Sie unten mit „Speichern und Test-E-Mail senden“. Die Test-E-Mail geht an Ihre eigene E-Mail-Adresse.</p>
   </section>
 
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    <button class="btn" type="submit" name="aktion" value="testmail">{% icon "send" %}Speichern und Test-E-Mail senden</button>
   </div>
 </form>
 {% endblock %}

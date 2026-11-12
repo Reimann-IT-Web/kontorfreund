@@ -1,17 +1,18 @@
 from django import forms
 
 from contacts.models import Kontakt
-from invoicing.forms import anschriften_pruefen
+from invoicing.forms import RabattMixin, anschriften_pruefen, rabattfeld
 
 from .models import Angebot
 
 BINDEFRISTEN = [(14, "14 Tage"), (30, "30 Tage"), (60, "60 Tage"), (90, "90 Tage")]
 
 
-class AngebotForm(forms.ModelForm):
+class AngebotForm(RabattMixin, forms.ModelForm):
     bindefrist = forms.TypedChoiceField(
         label="Gültig", choices=BINDEFRISTEN, coerce=int, initial=30
     )
+    rabatt_prozent = rabattfeld()
 
     class Meta:
         model = Angebot
@@ -22,6 +23,7 @@ class AngebotForm(forms.ModelForm):
             "datum",
             "bindefrist",
             "steuerfall",
+            "rabatt_prozent",
             "betreff",
             "kopftext",
             "fusstext",
@@ -41,6 +43,7 @@ class AngebotForm(forms.ModelForm):
         self.fields["kontakt"].queryset = Kontakt.objects.filter(
             archiviert=False
         ).prefetch_related("anschriften")
+        self.rabatt_vorbelegen()
 
     def clean(self):
         daten = super().clean()

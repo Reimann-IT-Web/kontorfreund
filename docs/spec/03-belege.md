@@ -14,6 +14,7 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 - Eine Rechnung wird nur per **Stornorechnung** (vollständig) oder **Rechnungskorrektur** (Teilbetrag) korrigiert, jeweils mit Bezug auf das Original. Die Bezeichnung ist nie „Gutschrift“ – das ist im Umsatzsteuerrecht die Abrechnung durch den Leistungsempfänger (§ 14 Abs. 2 S. 2 UStG).
 - Status: Rechnungen Entwurf, festgeschrieben, bezahlt, teilbezahlt, überfällig, storniert. Angebote Entwurf, versendet, angenommen, abgelehnt, abgelaufen.
 - Kopf- und Fußtexte als Textbausteine. Zahlungsbedingungen: Zahlungsziel in Tagen, optional Skonto (Prozent und Frist).
+- Rabatt in Prozent auf die Summe aller Positionen, optional, für Rechnung, Angebot und Auftragsbestätigung (unter 100 %). Der Beleg zeigt Zwischensumme und Rabatt über Netto bzw. Gesamtbetrag; in der E-Rechnung ist er ein Abschlag auf Belegebene (BG-20) mit der Steuerkategorie der Positionen. Angebot, Auftragsbestätigung und Rechnung reichen ihn weiter; Stornorechnung und Rechnungskorrektur übernehmen ihn vom Original, dort ist er nicht änderbar.
 - Belege kopieren, z. B. für die gleiche Rechnung wie im Vormonat.
 
 ## B-3 Nummernkreise
@@ -81,7 +82,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 
 - „Festschreiben“ vergibt die Nummer, erzeugt PDF und XML, speichert beide mit SHA-256-Prüfsumme und sperrt den Beleg dauerhaft.
 - Ein Entwurf, der an einem späteren Tag wieder geöffnet wird, zeigt als Datum den heutigen Tag, damit er nicht mit dem Datum des Anlegens festgeschrieben wird; unter dem Feld steht das bisherige Datum. Übernommen wird es mit dem Speichern. Wer am selben Tag bewusst ein früheres Datum einträgt und speichert, behält es; ein Datum in der Zukunft bleibt. Gilt für Rechnung, Angebot und Auftragsbestätigung.
-- Versand per E-Mail über den eigenen Mailserver (SMTP, Zugangsdaten verschlüsselt gespeichert), mit Eintrag in der Kontakthistorie.
+- Versand per E-Mail über den eigenen Mailserver (SMTP, Zugangsdaten verschlüsselt gespeichert), mit Eintrag in der Kontakthistorie. Eine Test-E-Mail an die eigene Adresse prüft die Zugangsdaten und nennt bei einem Fehler die Ursache.
 - Alternativ Download zum Selbstversand oder Ausdrucken.
 
 ## B-9 Ablage und Aufbewahrung
@@ -94,7 +95,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 
 ## Abnahme Phase 2
 
-- Der KoSIT-Validator akzeptiert XRechnung und ZUGFeRD-XML für alle Testfälle: Regelbesteuerung, § 19, § 13b, Skonto, mehrere Steuersätze.
+- Der KoSIT-Validator akzeptiert XRechnung und ZUGFeRD-XML für alle Testfälle: Regelbesteuerung, § 19, § 13b, Skonto, Rabatt, mehrere Steuersätze.
 - Der Mustang-Validator akzeptiert jedes ZUGFeRD-PDF (prüft PDF/A-3 und eingebettete XML).
 - Eine außerhalb des Programms veränderte Beleg-Datei wird bei der nächsten Prüfung gemeldet.
 - Eine festgeschriebene Rechnung lässt sich weder über die Oberfläche noch über direkte Anfragen ändern.

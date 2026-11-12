@@ -25,6 +25,7 @@ from invoicing.beleg import (
     lieferanschrift_daten,
     lieferzeile,
     positionen_daten,
+    rabatt_daten,
     schlusstext,
     setzen,
 )
@@ -63,6 +64,7 @@ def beleg_daten(angebot, firma, nummer):
             angebot.kontakt, angebot.lieferanschrift
         ),
         "positionen": positionen_daten(angebot.positionen.all()),
+        "rabatt": rabatt_daten(angebot),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
@@ -145,6 +147,7 @@ def rechnung_erstellen(angebot, firma):
             or angebot.anschrift,
             lieferanschrift=angebot.lieferanschrift,
             steuerfall=angebot.steuerfall,
+            rabatt_prozent=angebot.rabatt_prozent,
             betreff=angebot.betreff,
             kopftext=f"{briefanrede(angebot.kontakt)}\n\n"
             f"vielen Dank für Ihren Auftrag. Gemäß meinem Angebot {angebot.nummer} "

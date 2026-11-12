@@ -1,0 +1,8 @@
+{% load kf %}<fieldset class="field{% if form.rabatt_prozent.errors %} has-error{% endif %}">
+  <legend>Rabatt <span class="optional">optional</span></legend>
+  <div class="range range-skonto">
+    <label><span class="visually-hidden">Rabatt in Prozent</span>{{ form.rabatt_prozent }}</label>
+    <span aria-hidden="true">% auf die Summe aller Positionen</span>
+  </div>
+  {% for fehler in form.rabatt_prozent.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+</fieldset>

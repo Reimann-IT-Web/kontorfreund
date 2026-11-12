@@ -34,6 +34,7 @@ REP = {"rep": "http://www.xoev.de/de/validator/varl/1"}
 LEITWEG_ID = "991-33333TEST-33"
 
 SKONTO = {"skonto_prozent": "2", "skonto_tage": "7"}
+RABATT = {"rabatt_prozent": "8"}
 
 # Name, Steuerfall, Angaben der Adresse, weitere Angaben der Rechnung;
 # dazu je eine Stornorechnung und Rechnungskorrektur.
@@ -43,6 +44,16 @@ FAELLE = [
     ("skonto", "regel", {}, SKONTO),
     ("13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}, {}),
     ("steuerfrei", "steuerfrei", {}, {}),
+    # Rabatt auf die Summe der Positionen (BG-20), auch in Storno und Korrektur.
+    ("rabatt-kleinunternehmer", "kleinunternehmer", {}, RABATT),
+    ("rabatt-regel", "regel", {}, {**RABATT, **SKONTO}),
+    ("rabatt-13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}, RABATT),
+    (
+        "xrechnung-rabatt",
+        "regel",
+        {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
+        RABATT,
+    ),
     (
         "xrechnung-leitweg",
         "kleinunternehmer",

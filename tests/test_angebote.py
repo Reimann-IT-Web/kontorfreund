@@ -95,6 +95,21 @@ def test_nummer_eigener_kreis_nach_altangeboten():
     assert Angebot.naechste_nummer(date(2027, 1, 2)) == "270001"
 
 
+def test_rabatt_geht_vom_angebot_in_die_rechnung(client, firma, kunde):
+    angebot = fertiges_angebot(client, kunde, rabatt_prozent="6")
+    assert angebot.rabatt_prozent == Decimal("6")
+    assert angebot.beleg["rabatt"]["prozent"] == "6.00"
+    netto = Decimal(angebot.beleg["rabatt"]["zwischensumme"]) - Decimal(
+        angebot.beleg["rabatt"]["betrag"]
+    )
+    assert angebot.netto == netto
+
+    client.post(reverse("angebote:rechnung_erstellen", args=[angebot.pk]))
+    rechnung = Rechnung.objects.get()
+    assert rechnung.rabatt_prozent == Decimal("6")
+    assert rechnung.summen()[2] == angebot.brutto
+
+
 def test_neues_angebot_mit_vorbelegten_texten(client, firma, kunde):
     seite = client.get(reverse("angebote:neu") + f"?empfaenger={kunde.pk}").text
     assert "Neues Angebot" in seite

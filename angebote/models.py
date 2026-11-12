@@ -53,6 +53,7 @@ class Angebot(models.Model):
         "lieferanschrift",
         "bindefrist",
         "steuerfall",
+        "rabatt_prozent",
         "betreff",
         "kopftext",
         "fusstext",
@@ -93,6 +94,9 @@ class Angebot(models.Model):
         max_length=20,
         choices=Rechnung.Steuerfall.choices,
         default=Rechnung.Steuerfall.KLEINUNTERNEHMER,
+    )
+    rabatt_prozent = models.DecimalField(
+        "Rabatt in Prozent", max_digits=5, decimal_places=2, default=0
     )
     betreff = models.CharField("Betreff", max_length=200, blank=True)
     kopftext = models.TextField("Text vor den Positionen", blank=True)
@@ -192,7 +196,7 @@ class Angebot(models.Model):
         return [(f"Angebot-{self.nummer}.pdf", self.datei, "application/pdf")]
 
     def summen(self):
-        return summen(self.positionen.all(), self.steuerfall)
+        return summen(self.positionen.all(), self.steuerfall, self.rabatt_prozent)
 
     def fehlende_angaben(self, firma):
         """Was dem Angebot für ein ordentliches PDF noch fehlt."""

@@ -46,9 +46,8 @@ def vorschlag(rechnung, firma):
     }
 
 
-def senden(beleg, firma, an, betreff, text, kopie):
-    """Rechnung oder Angebot mit den Dateien aus `beleg.anhaenge` senden."""
-    verbindung = SmtpVersand(
+def verbindung(firma):
+    return SmtpVersand(
         host=firma.mail_server,
         port=firma.mail_port,
         username=firma.mail_benutzer or None,
@@ -57,6 +56,25 @@ def senden(beleg, firma, an, betreff, text, kopie):
         use_ssl=firma.mail_verschluesselung == Firmendaten.Verschluesselung.SSL,
         timeout=30,
     )
+
+
+def testen(firma):
+    """Test-E-Mail an die eigene Adresse; Fehler wie beim Versand (`fehlertext`)."""
+    nachricht = EmailMessage(
+        subject=f"Test-E-Mail von {settings.PRODUCT_NAME}",
+        body=(
+            f"Diese E-Mail hat {settings.PRODUCT_NAME} über Ihren E-Mail-Server "
+            "verschickt. Der Versand von Rechnungen, Angeboten und Mahnungen ist "
+            "richtig eingerichtet."
+        ),
+        from_email=formataddr((firma.name, firma.email)),
+        to=[firma.email],
+    )
+    verbindung(firma).send_messages([nachricht])
+
+
+def senden(beleg, firma, an, betreff, text, kopie):
+    """Rechnung oder Angebot mit den Dateien aus `beleg.anhaenge` senden."""
     nachricht = EmailMessage(
         subject=betreff,
         body=text,
@@ -66,7 +84,7 @@ def senden(beleg, firma, an, betreff, text, kopie):
     )
     for name, pfad, art in beleg.anhaenge:
         nachricht.attach(name, (Path(settings.DATA_DIR) / pfad).read_bytes(), art)
-    verbindung.send_messages([nachricht])
+    verbindung(firma).send_messages([nachricht])
     beleg.versendet_am = timezone.now()
     beleg.versendet_an = an
     beleg.save(update_fields=["versendet_am", "versendet_an"])

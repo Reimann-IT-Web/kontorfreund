@@ -138,6 +138,12 @@ def tabellen(von, bis):
             ("Leistung von", DATUM, "Leistungsdatum oder Beginn des Zeitraums"),
             ("Leistung bis", DATUM, "Ende des Leistungszeitraums"),
             ("Umsatzsteuer", TEXT, "§ 19 UStG, 19 % oder § 13b UStG"),
+            (
+                "Rabatt",
+                BETRAG,
+                "Rabatt auf die Summe der Positionen; Netto ist die Summe abzüglich "
+                "Rabatt",
+            ),
             ("Netto", BETRAG, ""),
             ("USt", BETRAG, "Umsatzsteuer"),
             ("Brutto", BETRAG, ""),
@@ -183,6 +189,7 @@ def tabellen(von, bis):
                 _datum(b.get("leistung_von")),
                 _datum(b.get("leistung_bis")),
                 STEUER[r.steuerfall],
+                Decimal(b["rabatt"]["betrag"]) if b.get("rabatt") else Decimal("0"),
                 r.netto,
                 r.ust,
                 r.brutto,

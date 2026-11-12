@@ -100,6 +100,7 @@
       <template id="position-vorlage">{% include "invoicing/position.html" %}</template>
       {% if artikel %}{% include "invoicing/artikel_liste.html" %}{% endif %}
       <div class="positions-foot">
+        <div class="stack">
         <div class="actions positions-actions">
           <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
           {% if artikel %}
@@ -115,7 +116,11 @@
           <p class="hint">Was Sie öfter verkaufen, legen Sie einmal unter <a href="{% url 'artikel:liste' %}">Artikel</a> an und fügen es hier mit einem Klick ein.</p>
           {% endif %}
         </div>
+        {% include "invoicing/rabatt.html" %}
+        </div>
         <dl class="totals">
+          <div data-row-zwischen hidden><dt>Zwischensumme</dt><dd class="amount" data-sum-zwischen></dd></div>
+          <div data-row-rabatt hidden><dt data-rabatt-titel>Rabatt</dt><dd class="amount" data-sum-rabatt></dd></div>
           <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
           <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
           <div class="totals-sum"><dt>Auftragssumme</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>

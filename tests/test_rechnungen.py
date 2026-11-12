@@ -1,6 +1,7 @@
 """Rechnung schreiben, festschreiben und versenden – mit erfundenen Daten."""
 
 import hashlib
+import smtplib
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -495,6 +496,39 @@ def test_versand_mit_pdf_anhang(client, firma, kunde, daten, monkeypatch):
     assert nachricht.attachments[0].filename == "Rechnung-260001.pdf"
     rechnung.refresh_from_db()
     assert rechnung.versendet_an == "buchhaltung@baeckerei.test"
+
+
+def test_test_email_an_die_eigene_adresse(client, firma, monkeypatch):
+    monkeypatch.setattr(versand, "SmtpVersand", lambda **_: locmem.EmailBackend())
+    antwort = einstellungen_absenden(
+        client, firma, mail_server="smtp.muster.test", aktion="testmail"
+    )
+
+    assert antwort.url == reverse("core:einstellungen") + "#t-mail"
+    (nachricht,) = mail.outbox
+    assert nachricht.to == ["post@muster.test"]
+    assert "Test-E-Mail" in nachricht.subject
+    # Vorher gespeichert, damit die eingetragenen Angaben gelten.
+    assert Firmendaten.laden().mail_server == "smtp.muster.test"
+    seite = client.get(reverse("core:einstellungen")).content.decode()
+    assert "Die Test-E-Mail ist an post@muster.test unterwegs" in seite
+
+
+def test_test_email_meldet_fehler(client, firma, monkeypatch):
+    class Abgelehnt:
+        def send_messages(self, nachrichten):
+            raise smtplib.SMTPAuthenticationError(535, b"Anmeldung fehlgeschlagen")
+
+    monkeypatch.setattr(versand, "SmtpVersand", lambda **_: Abgelehnt())
+    einstellungen_absenden(
+        client, firma, mail_server="smtp.muster.test", aktion="testmail"
+    )
+    seite = client.get(reverse("core:einstellungen")).content.decode()
+    assert "hat die Anmeldung abgelehnt" in seite
+
+    einstellungen_absenden(client, firma, mail_server="", aktion="testmail")
+    seite = client.get(reverse("core:einstellungen")).content.decode()
+    assert "fehlen Ihre E-Mail-Adresse oder der Postausgangsserver" in seite
 
 
 def test_passwort_bleibt_bei_leerem_feld(client, firma):
@@ -1064,6 +1098,66 @@ def test_ohne_eigenen_zahlungshinweis_bleibt_der_text(client, firma, kunde, date
 
     assert "Zahlbar ohne Abzug bis zum 12.11.2026." in text
     assert "Verwendungszweck: Rechnung 260001" in text
+
+
+def test_rabatt_auf_die_summe_der_positionen(client, firma, kunde, daten):
+    seite = client.get(reverse("invoicing:neu")).text
+    assert 'name="rabatt_prozent"' in seite and "data-sum-rabatt" in seite
+
+    client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, steuerfall="regel", rabatt_prozent="8"),
+    )
+
+    rechnung = Rechnung.objects.get()
+    # 29,5 Std. × 80 € = 2.360 €, davon 8 % = 188,80 €; 19 % auf 2.171,20 €
+    assert rechnung.beleg["rabatt"] == {
+        "prozent": "8.00",
+        "zwischensumme": "2360.00",
+        "betrag": "188.80",
+    }
+    assert (rechnung.netto, rechnung.ust, rechnung.brutto) == (
+        Decimal("2171.20"),
+        Decimal("412.53"),
+        Decimal("2583.73"),
+    )
+    inhalt = (daten / rechnung.datei).read_bytes()
+    text = seitentexte(inhalt)[0]
+    assert "Zwischensumme 2.360,00 €" in text
+    assert "Rabatt 8 % -188,80 €" in text
+    assert "Nettobetrag 2.171,20 €" in text
+    xml = PdfReader(BytesIO(inhalt)).attachments["factur-x.xml"][0].decode()
+    assert "<udt:Indicator>false</udt:Indicator>" in xml
+    assert "<ram:ReasonCode>95</ram:ReasonCode>" in xml
+    assert "<ram:CalculationPercent>8.00</ram:CalculationPercent>" in xml
+    assert "<ram:ActualAmount>188.80</ram:ActualAmount>" in xml
+    assert "<ram:LineTotalAmount>2360.00</ram:LineTotalAmount>" in xml
+    assert "<ram:AllowanceTotalAmount>188.80</ram:AllowanceTotalAmount>" in xml
+    assert "<ram:TaxBasisTotalAmount>2171.20</ram:TaxBasisTotalAmount>" in xml
+
+    # Die Stornorechnung übernimmt den Rabatt und hebt die Rechnung genau auf.
+    client.post(reverse("invoicing:stornieren", args=[rechnung.pk]))
+    storno = Rechnung.objects.get(storno_zu=rechnung)
+    assert storno.beleg["rabatt"]["betrag"] == "-188.80"
+    assert storno.brutto == -rechnung.brutto
+
+
+def test_ohne_rabatt_bleibt_alles_wie_bisher(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde, rabatt_prozent=""))
+
+    rechnung = Rechnung.objects.get()
+    assert rechnung.rabatt_prozent == 0
+    assert rechnung.beleg["rabatt"] is None
+    assert "Zwischensumme" not in seitentext(daten / rechnung.datei)
+
+
+def test_rabatt_hoechstens_unter_100_prozent(client, firma, kunde):
+    antwort = client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, aktion="speichern", rabatt_prozent="100"),
+    )
+    assert "Der Rabatt muss unter 100 % liegen." in antwort.text
+    assert not Rechnung.objects.exists()
 
 
 def test_storno_druckt_keinen_eigenen_zahlungshinweis(client, firma, kunde, daten):

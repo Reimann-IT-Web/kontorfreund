@@ -1,12 +1,14 @@
 from django import forms
 
 from contacts.models import Kontakt
-from invoicing.forms import anschriften_pruefen
+from invoicing.forms import RabattMixin, anschriften_pruefen, rabattfeld
 
 from .models import Auftragsbestaetigung
 
 
-class AuftragForm(forms.ModelForm):
+class AuftragForm(RabattMixin, forms.ModelForm):
+    rabatt_prozent = rabattfeld()
+
     class Meta:
         model = Auftragsbestaetigung
         fields = [
@@ -17,6 +19,7 @@ class AuftragForm(forms.ModelForm):
             "leistung_von",
             "leistung_bis",
             "steuerfall",
+            "rabatt_prozent",
             "betreff",
             "kopftext",
             "fusstext",
@@ -44,6 +47,7 @@ class AuftragForm(forms.ModelForm):
         self.fields["kontakt"].queryset = Kontakt.objects.filter(
             archiviert=False
         ).prefetch_related("anschriften")
+        self.rabatt_vorbelegen()
 
     def clean(self):
         daten = super().clean()

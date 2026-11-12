@@ -41,6 +41,7 @@ class Auftragsbestaetigung(models.Model):
         "anschrift",
         "lieferanschrift",
         "steuerfall",
+        "rabatt_prozent",
         "leistung_von",
         "leistung_bis",
         "betreff",
@@ -82,6 +83,9 @@ class Auftragsbestaetigung(models.Model):
         max_length=20,
         choices=Rechnung.Steuerfall.choices,
         default=Rechnung.Steuerfall.KLEINUNTERNEHMER,
+    )
+    rabatt_prozent = models.DecimalField(
+        "Rabatt in Prozent", max_digits=5, decimal_places=2, default=0
     )
     leistung_von = models.DateField("Ausführung von", null=True, blank=True)
     leistung_bis = models.DateField("Ausführung bis", null=True, blank=True)
@@ -180,7 +184,7 @@ class Auftragsbestaetigung(models.Model):
         ]
 
     def summen(self):
-        return summen(self.positionen.all(), self.steuerfall)
+        return summen(self.positionen.all(), self.steuerfall, self.rabatt_prozent)
 
     def fehlende_angaben(self, firma):
         """Was der Auftragsbestätigung für ein ordentliches PDF noch fehlt."""

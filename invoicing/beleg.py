@@ -17,7 +17,11 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from drafthorse.models.accounting import ApplicableTradeTax
+from drafthorse.models.accounting import (
+    ApplicableTradeTax,
+    CategoryTradeTax,
+    TradeAllowanceCharge,
+)
 from drafthorse.models.document import Document
 from drafthorse.models.note import IncludedNote
 from drafthorse.models.party import TaxRegistration
@@ -30,7 +34,7 @@ from segno import helpers as qr
 from contacts.models import ist_leitweg_id
 from core.templatetags.kf import euro, zahl
 
-from .models import Rechnung, runden, steuerhinweis
+from .models import Rechnung, rabatt_betrag, runden, steuerhinweis
 
 # XRechnung 3.0 in der Syntax CII; gültig ist Version 3.0.2, Version 4.0 erst ab 2027.
 XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
@@ -303,6 +307,18 @@ def positionen_daten(positionen):
     ]
 
 
+def rabatt_daten(beleg):
+    """Rabatt auf die Summe der Positionen; None ohne Rabatt (wie in älteren Belegen)."""
+    if not beleg.rabatt_prozent:
+        return None
+    zwischensumme = sum((p.gesamt for p in beleg.positionen.all()), Decimal("0.00"))
+    return {
+        "prozent": f"{beleg.rabatt_prozent:.2f}",
+        "zwischensumme": str(zwischensumme),
+        "betrag": str(rabatt_betrag(zwischensumme, beleg.rabatt_prozent)),
+    }
+
+
 def skonto_daten(rechnung, brutto):
     """Vereinbartes Skonto (§ 14 Abs. 4 Nr. 7 UStG), nur wenn etwas zu zahlen ist."""
     if not (rechnung.skonto_prozent > 0 and brutto > 0):
@@ -364,6 +380,7 @@ def beleg_daten(rechnung, firma, nummer):
         "empfaenger": empfaenger_daten(k, rechnung.anschrift),
         "lieferanschrift": lieferanschrift_daten(k, rechnung.lieferanschrift),
         "positionen": positionen_daten(rechnung.positionen.all()),
+        "rabatt": rabatt_daten(rechnung),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
@@ -576,13 +593,20 @@ def druck_positionen(positionen):
 
 
 def druck_summen(b):
-    """Netto und Umsatzsteuer über dem Gesamtbetrag, nur wenn Steuer ausgewiesen wird."""
-    if b["steuerfall"] != Rechnung.Steuerfall.REGEL:
-        return []
-    return [
-        ["Nettobetrag", euro(b["netto"])],
-        ["Umsatzsteuer 19 %", euro(b["ust"])],
-    ]
+    """Zeilen über dem Gesamtbetrag: Zwischensumme und Rabatt, falls es einen gibt,
+    Netto und Umsatzsteuer, wenn Steuer ausgewiesen wird."""
+    zeilen = []
+    if rabatt := b.get("rabatt"):
+        zeilen += [
+            ["Zwischensumme", euro(rabatt["zwischensumme"])],
+            [f"Rabatt {zahl(rabatt['prozent'])} %", euro(-Decimal(rabatt["betrag"]))],
+        ]
+    if b["steuerfall"] == Rechnung.Steuerfall.REGEL:
+        zeilen += [
+            ["Nettobetrag", euro(b["netto"])],
+            ["Umsatzsteuer 19 %", euro(b["ust"])],
+        ]
+    return zeilen
 
 
 def setzen(druck, format="pdf", ppi=110):
@@ -792,6 +816,23 @@ def zugferd(b):
             )
         abrechnung.terms.add(bedingung)
 
+    rabatt = b.get("rabatt")
+    if rabatt:
+        # Abschlag auf Belegebene (BG-20) mit derselben Steuerkategorie wie die Positionen.
+        abschlag = TradeAllowanceCharge()
+        abschlag.indicator = False
+        abschlag.calculation_percent = Decimal(rabatt["prozent"])
+        abschlag.basis_amount = Decimal(rabatt["zwischensumme"])
+        abschlag.actual_amount = Decimal(rabatt["betrag"])
+        abschlag.reason_code = "95"  # Discount (UNTDID 5189)
+        abschlag.reason = "Rabatt"
+        abschlag_steuer = CategoryTradeTax()
+        abschlag_steuer.type_code = "VAT"
+        abschlag_steuer.category_code = kategorie
+        abschlag_steuer.rate_applicable_percent = satz
+        abschlag.trade_tax.add(abschlag_steuer)
+        abrechnung.allowance_charge.add(abschlag)
+
     steuer = ApplicableTradeTax()
     steuer.calculated_amount = Decimal(b["ust"])
     steuer.basis_amount = Decimal(b["netto"])
@@ -805,7 +846,9 @@ def zugferd(b):
     abrechnung.trade_tax.add(steuer)
 
     summe = abrechnung.monetary_summation
-    summe.line_total = Decimal(b["netto"])
+    summe.line_total = Decimal(rabatt["zwischensumme"] if rabatt else b["netto"])
+    if rabatt:
+        summe.allowance_total = Decimal(rabatt["betrag"])
     summe.tax_basis_total = Decimal(b["netto"])
     summe.tax_total = (Decimal(b["ust"]), "EUR")
     summe.grand_total = Decimal(b["brutto"])

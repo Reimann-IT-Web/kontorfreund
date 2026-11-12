@@ -18,9 +18,16 @@ def runden(wert):
     return wert.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def summen(positionen, steuerfall):
-    """(netto, ust, brutto) aus den Positionen eines Belegs, kaufmännisch gerundet."""
-    netto = sum((p.gesamt for p in positionen), Decimal("0.00"))
+def rabatt_betrag(zwischensumme, prozent):
+    """Rabatt auf die Summe der Positionen, kaufmännisch gerundet (bei Storno negativ)."""
+    return runden(zwischensumme * prozent / 100)
+
+
+def summen(positionen, steuerfall, rabatt=Decimal("0")):
+    """(netto, ust, brutto) aus den Positionen eines Belegs nach Abzug des Rabatts in
+    Prozent, kaufmännisch gerundet."""
+    zwischensumme = sum((p.gesamt for p in positionen), Decimal("0.00"))
+    netto = zwischensumme - rabatt_betrag(zwischensumme, rabatt)
     ust = (
         runden(netto * UST_SATZ / 100)
         if steuerfall == Rechnung.Steuerfall.REGEL
@@ -88,6 +95,7 @@ class Rechnung(models.Model):
         "zahlungsziel",
         "skonto_prozent",
         "skonto_tage",
+        "rabatt_prozent",
         "steuerfall",
         "referenz",
         "betreff",
@@ -135,6 +143,10 @@ class Rechnung(models.Model):
     )
     skonto_tage = models.PositiveSmallIntegerField(
         "Skonto innerhalb von Tagen", default=0
+    )
+    # Auf die Summe der Positionen; Korrektur und Storno übernehmen ihn vom Original.
+    rabatt_prozent = models.DecimalField(
+        "Rabatt in Prozent", max_digits=5, decimal_places=2, default=0
     )
     steuerfall = models.CharField(
         max_length=20, choices=Steuerfall.choices, default=Steuerfall.KLEINUNTERNEHMER
@@ -350,8 +362,8 @@ class Rechnung(models.Model):
         return dateien
 
     def summen(self):
-        """(netto, ust, brutto) aus den Positionen, kaufmännisch gerundet."""
-        return summen(self.positionen.all(), self.steuerfall)
+        """(netto, ust, brutto) aus den Positionen nach Rabatt, kaufmännisch gerundet."""
+        return summen(self.positionen.all(), self.steuerfall, self.rabatt_prozent)
 
     def fehlende_angaben(self, firma):
         """Pflichtangaben nach § 14 Abs. 4 UStG, die noch fehlen."""
