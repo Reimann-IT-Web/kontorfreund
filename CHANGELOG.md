@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.44.0 – 13.11.2026
 
 - Neu: Verträge für Rechnungen, die sich wiederholen, etwa Wartungsverträge. Unter Angebote & Rechnungen im Reiter „Verträge“ legen Sie einmal Empfänger, Positionen, Rhythmus (monatlich, vierteljährlich, halbjährlich oder jährlich), Beginn und Rabatt fest. Am ersten Tag jedes Zeitraums legt Kontorfreund den Rechnungsentwurf über den ganzen Zeitraum an. Zusatzstunden ergänzen Sie dort, dann schreiben Sie ihn wie gewohnt fest. Von selbst verschickt wird nichts.
 - Auf der Seite einer Rechnung macht „Als Vertrag wiederholen“ aus ihr einen Vertrag mit denselben Positionen.
