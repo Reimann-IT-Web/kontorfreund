@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.45.0 – 13.11.2026
 
 - Neu: Knöpfe in Telegram. Ist der E-Mail-Versand eingerichtet, kommen fällige Mahnungen und neue Entwürfe aus Verträgen als eigene Nachricht mit Knöpfen. „Senden“ erstellt die Zahlungserinnerung oder Mahnung mit Ihren Vorgaben und schickt sie per E-Mail an den Kunden; „Festschreiben und senden“ macht dasselbe mit einem Rechnungsentwurf, mit dem heutigen Datum. „Ist bezahlt“ bucht den offenen Betrag als Überweisung von heute, „Später“ erinnert morgen wieder. Kontorfreund sieht alle fünf Minuten nach und schreibt dann unter die Nachricht, was geschehen ist. Knöpfe aus einem anderen Chat wirken nicht.
 
