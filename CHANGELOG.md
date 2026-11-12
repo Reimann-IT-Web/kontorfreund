@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.42.0 – 12.11.2026
 
 - Neu unter Offene Posten › „Mahnwesen einstellen“: „Verzugspauschale 40 € bei Firmenkunden“ für jede Stufe. Ist der Schalter an, ist der Haken für die Pauschale im Schreiben an Firmenkunden schon gesetzt. Für einen guten Stammkunden entfernen Sie ihn dort einfach. Privatkunden zahlen die Pauschale nie, das Gesetz sieht sie nur gegenüber Unternehmen vor. Bisher mussten Sie den Haken jedes Mal selbst setzen; ohne Änderung bleibt es dabei.
 
