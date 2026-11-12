@@ -1,5 +1,9 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Neu: Knöpfe in Telegram. Ist der E-Mail-Versand eingerichtet, kommen fällige Mahnungen und neue Entwürfe aus Verträgen als eigene Nachricht mit Knöpfen. „Senden“ erstellt die Zahlungserinnerung oder Mahnung mit Ihren Vorgaben und schickt sie per E-Mail an den Kunden; „Festschreiben und senden“ macht dasselbe mit einem Rechnungsentwurf, mit dem heutigen Datum. „Ist bezahlt“ bucht den offenen Betrag als Überweisung von heute, „Später“ erinnert morgen wieder. Kontorfreund sieht alle fünf Minuten nach und schreibt dann unter die Nachricht, was geschehen ist. Knöpfe aus einem anderen Chat wirken nicht.
+
 ## 0.44.0 – 13.11.2026
 
 - Neu: Verträge für Rechnungen, die sich wiederholen, etwa Wartungsverträge. Unter Angebote & Rechnungen im Reiter „Verträge“ legen Sie einmal Empfänger, Positionen, Rhythmus (monatlich, vierteljährlich, halbjährlich oder jährlich), Beginn und Rabatt fest. Am ersten Tag jedes Zeitraums legt Kontorfreund den Rechnungsentwurf über den ganzen Zeitraum an. Zusatzstunden ergänzen Sie dort, dann schreiben Sie ihn wie gewohnt fest. Von selbst verschickt wird nichts.

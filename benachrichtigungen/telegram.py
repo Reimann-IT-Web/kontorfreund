@@ -4,6 +4,9 @@ Siehe https://core.telegram.org/bots/api. Den Bot legt der Nutzer bei @BotFather
 Verbunden wird über einen Link mit Code (`https://t.me/<bot>?start=<code>`): Tippt
 er darauf auf „Starten“, schickt Telegram „/start <code>“, und `chat_finden` erkennt
 daran seinen Chat. Fremde, die den Bot finden, können sich so nicht verbinden.
+
+Knöpfe unter einer Nachricht (`senden` mit `knoepfe`) liefert Telegram als
+„callback_query“ über getUpdates (`neuigkeiten`); `knoepfe.py` wertet sie aus.
 """
 
 import json
@@ -77,9 +80,13 @@ def bot(schluessel):
     return _aufrufen(schluessel, "getMe")["username"]
 
 
+# Telegram merkt sich die Auswahl; beide Aufrufe nennen deshalb immer dieselbe.
+ARTEN = json.dumps(["message", "callback_query"])
+
+
 def chat_finden(schluessel, code):
     """Chat, in dem jemand über den Link mit diesem Code auf „Starten“ getippt hat."""
-    for eintrag in reversed(_aufrufen(schluessel, "getUpdates")):
+    for eintrag in reversed(_aufrufen(schluessel, "getUpdates", allowed_updates=ARTEN)):
         nachricht = eintrag.get("message") or {}
         chat = nachricht.get("chat") or {}
         if nachricht.get("text") == f"/start {code}" and chat.get("type") == "private":
@@ -87,5 +94,30 @@ def chat_finden(schluessel, code):
     return None
 
 
-def senden(schluessel, chat, text):
-    _aufrufen(schluessel, "sendMessage", chat_id=chat, text=text)
+def senden(schluessel, chat, text, knoepfe=None):
+    """Nachricht, auf Wunsch mit Knöpfen darunter: [(Beschriftung, Daten), …]."""
+    werte = {"chat_id": chat, "text": text}
+    if knoepfe:
+        werte["reply_markup"] = json.dumps(
+            {"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in knoepfe]]}
+        )
+    _aufrufen(schluessel, "sendMessage", **werte)
+
+
+def neuigkeiten(schluessel, ab):
+    """Was seit `ab` (update_id) beim Bot einging; frühere gelten damit als gelesen."""
+    return _aufrufen(
+        schluessel, "getUpdates", offset=ab, timeout=0, allowed_updates=ARTEN
+    )
+
+
+def antworten(schluessel, frage, text=""):
+    """Bestätigt einen Knopfdruck; nach einigen Minuten lehnt Telegram das ab."""
+    _aufrufen(schluessel, "answerCallbackQuery", callback_query_id=frage, text=text)
+
+
+def aendern(schluessel, chat, nachricht, text):
+    """Ersetzt den Text einer Nachricht; ihre Knöpfe verschwinden dabei."""
+    _aufrufen(
+        schluessel, "editMessageText", chat_id=chat, message_id=nachricht, text=text
+    )

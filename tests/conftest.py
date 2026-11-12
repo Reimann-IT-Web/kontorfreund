@@ -5,6 +5,7 @@ from django.test import Client
 from PIL import Image, ImageDraw
 
 from archive import pruefung
+from benachrichtigungen import telegram
 from core import updates
 from konten.models import Benutzer
 from vertraege import abrechnen
@@ -27,6 +28,12 @@ def ohne_taegliche_pruefung(monkeypatch):
 def entwuerfe_aus_vertraegen_sofort(monkeypatch):
     """Die erste Anfrage jedes Tests legt fällige Entwürfe an, wie nach dem Start."""
     monkeypatch.setattr(abrechnen, "_naechste_suche", 0.0)
+
+
+@pytest.fixture(autouse=True)
+def ohne_knopfdruecke(monkeypatch):
+    """Keine Abfrage bei Telegram; tests/test_knoepfe.py liefert eigene Knopfdrücke."""
+    monkeypatch.setattr(telegram, "neuigkeiten", lambda schluessel, ab: [])
 
 
 def _kein_netz(*args, **kwargs):

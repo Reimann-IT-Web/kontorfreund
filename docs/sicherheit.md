@@ -142,7 +142,7 @@ Umgang mit den Schlüsseln:
 ## Verbindungen (13.1.1)
 
 - Browser und Server: HTTP über `127.0.0.1:8765`, nur auf diesem Rechner.
-- Telegram Bot API (`api.telegram.org`, HTTPS): nur wenn der Inhaber einen Bot einrichtet. Der Rechner steht fest im Code; Umleitungen gelten als Fehler.
+- Telegram Bot API (`api.telegram.org`, HTTPS): nur wenn der Inhaber einen Bot einrichtet. Der Rechner steht fest im Code; Umleitungen gelten als Fehler. Knöpfe unter den Nachrichten (`benachrichtigungen/knoepfe.py`) lösen nur Festschreiben und Versand eines Entwurfs, Erstellen und Versand der fälligen Mahnstufe und das Buchen des offenen Betrags aus. Angenommen wird ein Knopf nur aus dem verbundenen Chat (Chat und Absender) und nur mit gültiger HMAC-SHA-256-Signatur über Aktion und Beleg (Schlüssel aus `SECRET_KEY`); die Lese-Position wird vor der Aktion gespeichert, damit nichts doppelt geschieht. Das Protokoll nennt den Empfänger der Benachrichtigungen als Benutzer; die Antworten enthalten keine Namen oder E-Mail-Adressen.
 - GitHub-API (`api.github.com`, HTTPS, `core/updates.py`): nur wenn der Inhaber die Suche nach neuen Versionen einschaltet (höchstens einmal am Tag) oder „Jetzt nach Updates suchen“ klickt. Fester Rechner, Umleitungen gelten als Fehler, gelesen wird höchstens 1 MiB. Die Anfrage trägt keine Version und keine Kennung. Die Antwort ist fremder Text: Version nur als 1.2.3, Neuerungen ohne Markup und mit Autoescaping, Links baut das Programm aus Version und festem Paketnamen.
 - SMTP-Server: nur wenn der Inhaber einen einträgt, für den Versand von Rechnungen; nur mit STARTTLS oder SSL/TLS.
 - Zweiter Speicherort für Sicherungen: ein Ordner, den der Inhaber wählt.
@@ -357,7 +357,7 @@ Alle 253 Anforderungen der Stufen 1 und 2: 161 erfüllt, 12 mit Begründung abwe
 | 6.5.4 | 2 | entfällt | Codes per Nachricht | Gibt es nicht. |
 | 6.5.5 | 2 | begründet | Lebensdauer | Ein Code gilt 30 Sekunden; ein Zeitschritt davor und danach wird angenommen, damit abweichende Uhren nicht aussperren (RFC 6238, Abschnitt 5.2). Nach dem Kennwort bleiben 5 Minuten für den Code. |
 | 6.6.1 | 2 | entfällt | SMS | Keine Anmeldung per SMS oder Telefon. |
-| 6.6.2 | 2 | entfällt | Codes per Nachricht | Telegram meldet nur Termine, es meldet niemanden an. |
+| 6.6.2 | 2 | entfällt | Codes per Nachricht | Telegram meldet niemanden an; seine Knöpfe lösen nur Versand und Buchungen aus (siehe Verbindungen nach außen). |
 | 6.6.3 | 2 | entfällt | Codes per Nachricht | Wie V6.6.2. |
 | 6.8.1 | 2 | entfällt | Identitätsanbieter | Keine fremden Anmeldedienste. |
 | 6.8.2 | 2 | entfällt | Identitätsanbieter | Keine. |

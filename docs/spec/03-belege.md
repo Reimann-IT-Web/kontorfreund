@@ -100,7 +100,7 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 - Der Entwurf ist eine gewöhnliche Rechnung mit Verweis auf den Vertrag: Der Nutzer ergänzt etwa Zusatzstunden, prüft, schreibt fest und versendet. Festgeschrieben wird nie von selbst.
 - Änderungen am Vertrag gelten für die folgenden Entwürfe; vorhandene Entwürfe und Rechnungen bleiben, wie sie sind. Ein beendeter Vertrag erzeugt keine Entwürfe mehr. Ein Vertrag lässt sich löschen; seine Rechnungen bleiben und verlieren nur den Verweis.
 - Auf Wunsch (2, 4 oder 8 Wochen vorher, Vorgabe 4) legt das Programm vor jedem Zeitraum eine Wiedervorlage an der Adresse an: Fortsetzung und Preis mit dem Kunden klären. Einmal je Zeitraum; nicht, wenn der Vertrag erst nach diesem Tag angelegt wurde.
-- Sind Benachrichtigungen über Telegram eingerichtet, nennt die Tagesübersicht jeden neuen Entwurf einmal mit Bezeichnung des Vertrags und Betrag.
+- Sind Benachrichtigungen über Telegram eingerichtet, nennt die Tagesübersicht jeden neuen Entwurf einmal mit Bezeichnung des Vertrags und Betrag. Mit eingerichtetem E-Mail-Versand kommt er als eigene Nachricht mit den Knöpfen „Festschreiben und senden“ (mit dem heutigen Datum und denselben Prüfungen wie im Editor, an die E-Mail-Adresse der Adresse) und „Später“ (M-3).
 - Wird eine Adresse gesperrt (D-1), enden ihre Verträge. Die Auskunft nennt sie, die Löschung entfernt sie mit.
 
 ## Abnahme Phase 2

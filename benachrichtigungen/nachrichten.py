@@ -5,7 +5,9 @@
   Rechnungen, für die das nächste Mahnschreiben fällig ist (je Stufe einmal; verschickt
   wird es nicht, das tut der Nutzer in den offenen Posten), neue Rechnungsentwürfe aus
   Verträgen (B-10) und Eingangsrechnungen, die bald zu zahlen sind. Steht nichts an,
-  kommt nichts.
+  kommt nichts. Ist der E-Mail-Versand eingerichtet, kommen fällige Mahnstufen und neue
+  Entwürfe einzeln mit Knöpfen ([Senden] usw., knoepfe.py), höchstens `EINZELN` je Art;
+  die übrigen stehen wie bisher als Zeile in der Übersicht.
 - Termine: Wiedervorlagen mit Uhrzeit, die eingestellte Zeit vorher.
 - Ablage: sobald die tägliche Prüfung eine Datei neu als fehlend oder verändert findet.
 
@@ -15,7 +17,7 @@ kommt sie in der nächsten Runde wieder. Läuft Kontorfreund zur Uhrzeit nicht, 
 die Übersicht beim Start.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from django.utils import timezone
@@ -30,19 +32,22 @@ from wiedervorlagen.models import Wiedervorlage
 from zahlungen import mahnen
 from zahlungen.models import Mahnstufe
 
-from . import telegram
+from . import knoepfe, telegram
 from .models import Einstellung, Gemeldet
 
 # Eingangsrechnungen so viele Tage vor der Fälligkeit melden.
 VORHER = 3
 # Höchstens so viele Einträge je Zeile, damit die Nachricht kurz bleibt.
 HOECHSTENS = 3
+# Höchstens so viele Nachrichten mit Knöpfen je Art und Tag.
+EINZELN = 5
 
 
 @dataclass
 class Nachricht:
     text: str  # leer: nichts zu senden, nur als gemeldet merken
     meldungen: list  # (anlass, schluessel) für Gemeldet
+    knoepfe: list = field(default_factory=list)  # [(Beschriftung, Daten)]
 
 
 def _gemeldet(anlass, schluessel):
@@ -71,9 +76,10 @@ def _kopf():
 
 
 def tagesuebersicht(einstellung, jetzt):
+    """Die Übersicht und die einzelnen Nachrichten mit Knöpfen, in dieser Folge."""
     heute = jetzt.date()
     if jetzt.time() < einstellung.uhrzeit or _gemeldet("tag", heute.isoformat()):
-        return None
+        return []
     offen = _offen(einstellung)
     aufgaben = [_aufgabe(w) for w in offen.filter(faellig=heute)]
     ueberfaellig = offen.filter(faellig__lt=heute).count()
@@ -105,6 +111,12 @@ def tagesuebersicht(einstellung, jetzt):
         ).order_by("faellig")
         if not _gemeldet("eingang", str(e.pk))
     ]
+    # Mit eingerichtetem E-Mail-Versand einzeln mit Knöpfen, der Rest als Zeile.
+    einzeln = Firmendaten.laden().mail_bereit
+    mahn_einzeln = zu_mahnen[:EINZELN] if einzeln else []
+    entwurf_einzeln = vertragsentwuerfe[:EINZELN] if einzeln else []
+    zu_mahnen = zu_mahnen[len(mahn_einzeln) :]
+    vertragsentwuerfe = vertragsentwuerfe[len(entwurf_einzeln) :]
     zeilen = []
     if aufgaben:
         zeilen.append(f"Heute: {_aufzaehlen(aufgaben)}")
@@ -143,13 +155,43 @@ def tagesuebersicht(einstellung, jetzt):
                 ]
             )
         )
-    return Nachricht(
+    uebersicht = Nachricht(
         f"{_kopf()}, {heute:%d.%m.}:\n" + "\n".join(zeilen) if zeilen else "",
         [("tag", heute.isoformat())]
         + [("rechnung", str(r.pk)) for r in rechnungen]
         + [("mahnstufe", f"{r.pk}:{s.stufe}") for r, s in zu_mahnen]
         + [("entwurf", str(r.pk)) for r in vertragsentwuerfe]
         + [("eingang", str(e.pk)) for e in eingang],
+    )
+    return [
+        uebersicht,
+        *(_mahnung(r, s) for r, s in mahn_einzeln),
+        *(_entwurf(r) for r in entwurf_einzeln),
+    ]
+
+
+OHNE_ADRESSE = (
+    "\nBeim Kunden fehlt die E-Mail-Adresse; bitte in Kontorfreund verschicken."
+)
+
+
+def _mahnung(rechnung, stufe):
+    adresse = bool(rechnung.kontakt.email)
+    return Nachricht(
+        f"{_kopf()}: Zu mahnen: Rechnung {rechnung.nummer} {euro(rechnung.offen)} "
+        f"({stufe})" + ("" if adresse else OHNE_ADRESSE),
+        [("mahnstufe", f"{rechnung.pk}:{stufe.stufe}")],
+        knoepfe.mahn_knoepfe(rechnung, stufe, mit_senden=adresse),
+    )
+
+
+def _entwurf(rechnung):
+    adresse = bool(rechnung.kontakt and rechnung.kontakt.email)
+    return Nachricht(
+        f"{_kopf()}: Neuer Entwurf aus dem Vertrag „{rechnung.vertrag}“: "
+        f"{euro(rechnung.summen()[2])}" + ("" if adresse else OHNE_ADRESSE),
+        [("entwurf", str(rechnung.pk))],
+        knoepfe.entwurf_knoepfe(rechnung) if adresse else [],
     )
 
 
@@ -191,19 +233,28 @@ def erinnern(jetzt=None):
     if not einstellung.bereit:
         return
     jetzt = jetzt or timezone.localtime()
+    try:
+        # Zuerst die Knöpfe aus früheren Nachrichten, dann neue Nachrichten.
+        knoepfe.verarbeiten(einstellung)
+    except telegram.Fehler as fehler:
+        Einstellung.objects.filter(pk=1).update(
+            fehler=str(fehler), fehler_am=timezone.now()
+        )
+        return
     # Erst die fälligen Entwürfe anlegen, damit die Übersicht sie nennt.
     abrechnen.faellige(jetzt.date())
     for nachricht in [
         *termine(einstellung, jetzt),
-        tagesuebersicht(einstellung, jetzt),
+        *tagesuebersicht(einstellung, jetzt),
         ablage(),
     ]:
         if nachricht is None:
             continue
         if nachricht.text:
+            mit = {"knoepfe": nachricht.knoepfe} if nachricht.knoepfe else {}
             try:
                 telegram.senden(
-                    einstellung.bot_schluessel, einstellung.chat, nachricht.text
+                    einstellung.bot_schluessel, einstellung.chat, nachricht.text, **mit
                 )
             except telegram.Fehler as fehler:
                 # Nur den Stand, ohne Eintrag im Änderungsprotokoll.

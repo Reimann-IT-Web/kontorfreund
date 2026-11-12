@@ -801,7 +801,8 @@ def datenschutz():
             and _taetigkeit(
                 "Benachrichtigungen über Telegram",
                 "Erinnerung des Inhabers an Termine, fällige Wiedervorlagen und "
-                "Zahlungen",
+                "Zahlungen; auf seinen Knopfdruck Versand von Rechnungen und Mahnungen "
+                "und Buchung von Zahlungen",
                 "Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der eigenen "
                 "Arbeitsorganisation)",
                 "Inhaber; Personen, deren Namen im Titel einer Wiedervorlage stehen",

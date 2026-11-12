@@ -45,6 +45,8 @@ class Einstellung(models.Model):
         related_name="+",
     )
     gesendet_am = models.DateTimeField(null=True, blank=True, editable=False)
+    # Nächste update_id von Telegram; alles davor ist ausgewertet (knoepfe.py).
+    gelesen_bis = models.BigIntegerField(default=0, editable=False)
     fehler = models.CharField(max_length=300, blank=True, editable=False)
     fehler_am = models.DateTimeField(null=True, blank=True, editable=False)
 
