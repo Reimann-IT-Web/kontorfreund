@@ -8,7 +8,7 @@ from invoicing.beleg import (
     unbekannte_platzhalter,
 )
 
-from .models import Firmendaten
+from .models import LOGO_MM, Firmendaten
 
 BILD_GROESSE = 1024 * 1024
 BILDARTEN = ".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
@@ -38,14 +38,16 @@ def bilddatei_lesen(datei, name):
     return daten
 
 
+def bilder_uebernehmen(form, felder):
+    """Neue Bilddatei übernehmen oder das Bild auf Wunsch entfernen; leer behält es."""
+    for feld in felder:
+        if form.cleaned_data[f"{feld}_datei"]:
+            setattr(form.instance, feld, form.cleaned_data[f"{feld}_datei"])
+        elif form.cleaned_data[f"{feld}_entfernen"]:
+            setattr(form.instance, feld, b"")
+
+
 class FirmendatenForm(forms.ModelForm):
-    logo_datei = forms.FileField(
-        label="Bilddatei",
-        required=False,
-        help_text="SVG, PNG oder JPG bis 1 MB. Steht oben links auf jeder Rechnung.",
-        widget=forms.FileInput(attrs={"accept": BILDARTEN}),
-    )
-    logo_entfernen = forms.BooleanField(label="Logo entfernen", required=False)
     unterschrift_datei = forms.FileField(
         label="Bilddatei",
         required=False,
@@ -60,7 +62,6 @@ class FirmendatenForm(forms.ModelForm):
         model = Firmendaten
         fields = [
             "name",
-            "marke",
             "unterschrift_text",
             "inhaber",
             "strasse",
@@ -105,7 +106,6 @@ class FirmendatenForm(forms.ModelForm):
             ),
         }
         help_texts = {
-            "marke": "Steht klein unter dem Firmennamen neben dem Logo, z. B. Ihr Markenname.",
             "unterschrift_text": "Zum Beispiel Ihr Name und in der zweiten Zeile Ihre Funktion.",
             "steuernummer": "Steht auf jeder Rechnung. Alternativ genügt die USt-IdNr.",
             "steuerfrei_hinweis": "Steht auf jedem Beleg mit steuerfreien Leistungen. "
@@ -157,18 +157,90 @@ class FirmendatenForm(forms.ModelForm):
             )
         return text
 
-    def clean_logo_datei(self):
-        return bilddatei_lesen(self.cleaned_data["logo_datei"], "Das Logo")
-
     def clean_unterschrift_datei(self):
         return bilddatei_lesen(
             self.cleaned_data["unterschrift_datei"], "Die Unterschrift"
         )
 
     def save(self, commit=True):
-        for feld in ("logo", "unterschrift"):
-            if self.cleaned_data[f"{feld}_datei"]:
-                setattr(self.instance, feld, self.cleaned_data[f"{feld}_datei"])
-            elif self.cleaned_data[f"{feld}_entfernen"]:
-                setattr(self.instance, feld, b"")
+        bilder_uebernehmen(self, ("unterschrift",))
+        return super().save(commit)
+
+
+class BriefkopfForm(forms.ModelForm):
+    """Briefkopf auf Seite 1 jedes Belegs (Spezifikation B-6)."""
+
+    logo_datei = forms.FileField(
+        label="Logo",
+        required=False,
+        help_text="SVG, PNG oder JPG bis 1 MB. Am schärfsten wird es als SVG oder als PNG "
+        "mit mindestens 600 Pixeln Breite.",
+        widget=forms.FileInput(attrs={"accept": BILDARTEN}),
+    )
+    logo_entfernen = forms.BooleanField(label="Logo entfernen", required=False)
+    kopfbild_datei = forms.FileField(
+        label="Bilddatei",
+        required=False,
+        help_text="SVG, PNG oder JPG bis 1 MB, gestaltet als Briefkopf im Querformat. "
+        "Für die ganze Seitenbreite etwa 2480 × 550 Pixel, so wird es auch gedruckt scharf.",
+        widget=forms.FileInput(attrs={"accept": BILDARTEN}),
+    )
+    kopfbild_entfernen = forms.BooleanField(label="Kopfbild entfernen", required=False)
+
+    class Meta:
+        model = Firmendaten
+        fields = [
+            "kopf_art",
+            "logo_lage",
+            "logo_hoehe",
+            "logo_zuschneiden",
+            "kopf_name",
+            "marke",
+            "kopf_anschrift",
+            "kopf_linie",
+            "akzentfarbe",
+            "kopfbild_breite",
+        ]
+        widgets = {
+            "kopf_art": forms.RadioSelect,
+            "logo_lage": forms.RadioSelect,
+            "kopfbild_breite": forms.RadioSelect,
+            "logo_hoehe": forms.NumberInput(
+                attrs={"min": LOGO_MM[0], "max": LOGO_MM[1], "step": 1}
+            ),
+            "akzentfarbe": forms.TextInput(attrs={"type": "color"}),
+        }
+        help_texts = {
+            "logo_hoehe": f"{LOGO_MM[0]} bis {LOGO_MM[1]} mm. Ein sehr breites Logo wird "
+            "schmaler gesetzt, damit Name und Anschrift daneben Platz haben.",
+            "logo_zuschneiden": "Für PNG und JPG: Weiße oder durchsichtige Ränder in der "
+            "Datei fallen weg, das Logo selbst wird so größer.",
+            "marke": "Steht klein unter dem Firmennamen, z. B. Ihr Markenname.",
+            "kopfbild_breite": "Bis an den Rand druckt nicht jeder Drucker; im PDF und "
+            "per E-Mail sieht es immer so aus.",
+        }
+
+    def clean_logo_datei(self):
+        return bilddatei_lesen(self.cleaned_data["logo_datei"], "Das Logo")
+
+    def clean_kopfbild_datei(self):
+        return bilddatei_lesen(self.cleaned_data["kopfbild_datei"], "Das Kopfbild")
+
+    def clean_akzentfarbe(self):
+        return self.cleaned_data["akzentfarbe"].lower()
+
+    def clean(self):
+        daten = super().clean()
+        bild = daten.get("kopfbild_datei") or (
+            bytes(self.instance.kopfbild) and not daten.get("kopfbild_entfernen")
+        )
+        if daten.get("kopf_art") == Firmendaten.Kopfart.BILD and not bild:
+            self.add_error(
+                "kopfbild_datei",
+                "Bitte wählen Sie ein Kopfbild, oder nehmen Sie „Logo und Angaben“.",
+            )
+        return daten
+
+    def save(self, commit=True):
+        bilder_uebernehmen(self, ("logo", "kopfbild"))
         return super().save(commit)

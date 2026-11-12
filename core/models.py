@@ -2,7 +2,16 @@ import base64
 import re
 
 from django.core.exceptions import ValidationError
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    RegexValidator,
+)
 from django.db import models
+
+# Briefkopf (B-6): Grenzen, damit der Kopf über dem Infoblock und dem Anschriftfeld endet.
+LOGO_MM = (6, 20)
+AKZENT = "#1d5f6e"
 
 
 def iban_pruefen(wert):
@@ -72,6 +81,54 @@ class Firmendaten(models.Model):
     zahlungstext = models.TextField("Zahlungshinweis auf Rechnungen", blank=True)
     # In der Datenbank statt als Datei, damit es mit jeder Sicherung erhalten bleibt.
     logo = models.BinaryField("Logo", blank=True, default=b"")
+
+    # Briefkopf auf Seite 1 jedes Belegs; die Vorgaben ergeben den bisherigen Kopf.
+    class Kopfart(models.TextChoices):
+        LOGO = "logo", "Logo und Angaben"
+        BILD = "bild", "Eigenes Kopfbild"
+
+    class Lage(models.TextChoices):
+        LINKS = "links", "Links"
+        MITTE = "mitte", "Mitte"
+        RECHTS = "rechts", "Rechts"
+
+    class Bildbreite(models.TextChoices):
+        TEXT = "text", "So breit wie der Text"
+        SEITE = "seite", "Ganze Seitenbreite, bis an den Rand"
+
+    kopf_art = models.CharField(
+        "Briefkopf", max_length=10, choices=Kopfart.choices, default=Kopfart.LOGO
+    )
+    logo_lage = models.CharField(
+        "Lage", max_length=10, choices=Lage.choices, default=Lage.LINKS
+    )
+    logo_hoehe = models.PositiveSmallIntegerField(
+        "Höhe des Logos in mm",
+        default=12,
+        validators=[MinValueValidator(LOGO_MM[0]), MaxValueValidator(LOGO_MM[1])],
+    )
+    logo_zuschneiden = models.BooleanField(
+        "Weißen Rand um das Logo abschneiden", default=False
+    )
+    kopf_name = models.BooleanField("Firmenname und Zusatz", default=True)
+    kopf_anschrift = models.BooleanField("Anschrift, Telefon und E-Mail", default=True)
+    kopf_linie = models.BooleanField("Linie unter dem Kopf", default=True)
+    akzentfarbe = models.CharField(
+        "Farbe für Firmenname und Linie",
+        max_length=7,
+        default=AKZENT,
+        validators=[
+            RegexValidator(
+                r"^#[0-9a-fA-F]{6}$",
+                "Bitte eine Farbe im Format #1d5f6e angeben.",
+            )
+        ],
+    )
+    kopfbild = models.BinaryField("Kopfbild", blank=True, default=b"")
+    kopfbild_breite = models.CharField(
+        "Breite", max_length=10, choices=Bildbreite.choices, default=Bildbreite.TEXT
+    )
+
     unterschrift = models.BinaryField("Unterschrift", blank=True, default=b"")
     unterschrift_text = models.TextField("Text unter der Unterschrift", blank=True)
 
@@ -128,6 +185,10 @@ class Firmendaten(models.Model):
     @property
     def logo_bild(self):
         return daten_url(self.logo)
+
+    @property
+    def kopfbild_bild(self):
+        return daten_url(self.kopfbild)
 
     @property
     def unterschrift_bild(self):

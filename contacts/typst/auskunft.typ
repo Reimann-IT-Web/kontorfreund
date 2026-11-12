@@ -2,13 +2,17 @@
 // (invoicing/typst/rechnung.typ). Alle Texte kommen fertig formatiert aus
 // contacts/datenschutz.py und werden als reiner Text gesetzt, nie als Typst-Code ausgewertet.
 
+// Typst läuft hier mit dem Projektordner als Wurzel (contacts/datenschutz.py, setzen).
+#import "/invoicing/typst/kopf.typ": abstand-zum-inhalt, akzentfarbe, briefkopf
+
 #let d = json(bytes(sys.inputs.daten))
 
-#let akzent = rgb("#1d5f6e")
+#let akzent = akzentfarbe(d)
 #let tinte = rgb("#1f2326")
 #let leise = rgb("#61686c")
 #let linie = rgb("#d5d2cb")
 #let zeilen(liste) = liste.join(linebreak())
+#let rand = (left: 25mm, right: 20mm, top: 20mm, bottom: 34mm)
 
 #set document(title: d.titel, author: d.absender_name)
 #set text(
@@ -21,7 +25,7 @@
 #set par(leading: 0.62em, spacing: 1.1em)
 #set page(
   paper: "a4",
-  margin: (left: 25mm, right: 20mm, top: 20mm, bottom: 34mm),
+  margin: rand,
   background: {
     // Falz- und Lochmarken
     for (y, laenge) in ((105mm, 4mm), (148.5mm, 6mm), (210mm, 4mm)) {
@@ -44,24 +48,9 @@
   },
 )
 
-// ---------- Kopf (nur Seite 1) ----------
+// ---------- Kopf (nur Seite 1, wie auf den Belegen) ----------
 
-#grid(
-  columns: if d.logo != none { (auto, 1fr, auto) } else { (1fr, auto) },
-  column-gutter: 4mm,
-  align: if d.logo != none {
-    (left + horizon, left + horizon, right + bottom)
-  } else { (left + bottom, right + bottom) },
-  ..if d.logo != none { (image(bytes(d.logo), height: 12mm),) },
-  stack(
-    spacing: 2.2mm,
-    text(size: 15pt, weight: "bold", fill: akzent, d.absender_name),
-    ..if d.marke != "" { (text(size: 10pt, fill: leise, d.marke),) },
-  ),
-  text(size: 8.5pt, fill: leise, zeilen(d.kopf)),
-)
-#v(2mm)
-#line(length: 100%, stroke: 0.6pt + akzent)
+#briefkopf(d, akzent, leise, rand)
 
 // Anschriftfeld: 45 mm von oben, 20 mm von links; Rücksendeangabe in der unteren Zeile der Vermerkzone.
 #place(top + left, dx: -5mm, dy: 37mm, block(width: 85mm)[
@@ -79,7 +68,7 @@
   ..d.info.map(((name, wert)) => (text(fill: leise, name), wert)).flatten(),
 )))
 
-#v(64mm)
+#abstand-zum-inhalt(rand)
 
 // ---------- Inhalt ----------
 

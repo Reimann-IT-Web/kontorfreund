@@ -16,6 +16,7 @@ from archive import fristen
 from auftraege.models import Auftragsbestaetigung
 from backups import sicherung
 from contacts.models import Kontakt
+from invoicing.beleg import kopf_vorschau
 from invoicing.models import Rechnung
 from konten.rechte import nur_inhaber
 from wiedervorlagen.models import DEMNAECHST, Wiedervorlage
@@ -24,7 +25,7 @@ from zahlungen.models import Mahnstufe
 
 from . import firmen, updates
 from . import umsatz as umsaetze
-from .forms import FirmendatenForm
+from .forms import BriefkopfForm, FirmendatenForm
 from .hilfe import THEMEN
 from .models import Firmendaten
 
@@ -113,6 +114,31 @@ def einstellungen(request):
         return redirect("core:einstellungen")
     return render(
         request, "core/einstellungen.html", {"bereich": "einstellungen", "form": form}
+    )
+
+
+@nur_inhaber
+def briefkopf(request):
+    """Logo oder Kopfbild und Aufbau des Briefkopfs, mit Vorschau (B-6)."""
+    form = BriefkopfForm(
+        request.POST or None, request.FILES or None, instance=Firmendaten.laden()
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(
+            request,
+            "Briefkopf gespeichert. Er gilt für alle Belege, die ab jetzt entstehen.",
+        )
+        return redirect("core:briefkopf")
+    # Die Vorschau zeigt den gespeicherten Stand; das Formular hat die Instanz schon geändert.
+    return render(
+        request,
+        "core/briefkopf.html",
+        {
+            "bereich": "einstellungen",
+            "form": form,
+            "vorschau": kopf_vorschau(Firmendaten.laden()),
+        },
     )
 
 

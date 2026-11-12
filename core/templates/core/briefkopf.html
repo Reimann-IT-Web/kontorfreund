@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Briefkopf{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'core:einstellungen' %}">Einstellungen</a></li>
+    <li aria-current="page">Briefkopf</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Briefkopf</h1>
+    <p class="muted">Steht oben auf der ersten Seite von Rechnungen, Angeboten, Auftragsbestätigungen, Mahnungen und der Auskunft nach der DSGVO.</p>
+  </div>
+</div>
+
+<div class="form">
+  <figure class="kopf-vorschau">
+    {% if vorschau %}<img src="{{ vorschau }}" alt="Vorschau: der obere Teil der ersten Seite mit Ihrem Briefkopf, dem Anschriftfeld und den Angaben zum Beleg">{% endif %}
+    <figcaption class="hint">So beginnt jeder neue Beleg. Schon festgeschriebene Belege bleiben, wie sie sind.</figcaption>
+  </figure>
+
+  <form method="post" enctype="multipart/form-data" novalidate data-briefkopf>
+    {% csrf_token %}
+    <section class="form-section" aria-labelledby="t-aufbau">
+      <h2 class="form-title" id="t-aufbau">Aufbau</h2>
+      <fieldset class="field">
+        <legend class="visually-hidden">{{ form.kopf_art.label }}</legend>
+        {% for wahl in form.kopf_art %}
+        <label class="choice">
+          {{ wahl.tag }}
+          <span><strong>{{ wahl.choice_label }}</strong><br><span class="muted">{% if wahl.data.value == "logo" %}Ihr Logo mit Firmenname und Anschrift. Was davon erscheint, wie groß und wo, legen Sie unten fest.{% else %}Ein Bild, das Sie selbst als Briefkopf gestaltet haben, etwa vom Briefpapier Ihrer Druckerei. Es ersetzt Logo und Angaben.{% endif %}</span></span>
+        </label>
+        {% endfor %}
+      </fieldset>
+    </section>
+
+    <section class="form-section" aria-labelledby="t-logo" data-nur-kopfart="logo">
+      <h2 class="form-title" id="t-logo">Logo und Angaben</h2>
+      <div class="logo-feld">
+        {% if form.instance.logo_bild %}<img class="logo-bild" src="{{ form.instance.logo_bild }}" alt="Ihr aktuelles Logo">{% endif %}
+        <div class="stack">
+          {% include "core/feld.html" with f=form.logo_datei optional=True %}
+          {% if form.instance.logo_bild %}<label class="choice">{{ form.logo_entfernen }}<span>{{ form.logo_entfernen.label }}</span></label>{% endif %}
+        </div>
+      </div>
+      <div class="form-grid kopf-raster">
+        {% include "core/feld.html" with f=form.logo_hoehe %}
+        <div class="field">
+          <label class="choice">{{ form.logo_zuschneiden }}<span>{{ form.logo_zuschneiden.label }}<br><span class="muted">{{ form.logo_zuschneiden.help_text }}</span></span></label>
+        </div>
+        <div class="field field-wide">
+          <label class="choice">{{ form.kopf_name }}<span>{{ form.kopf_name.label }} neben dem Logo</span></label>
+        </div>
+        {% include "core/feld.html" with f=form.marke optional=True breit=True %}
+        <div class="field field-wide">
+          <label class="choice">{{ form.kopf_anschrift }}<span>{{ form.kopf_anschrift.label }}</span></label>
+          <p class="hint">Im Anschriftfeld und in der Fußzeile steht Ihr Absender in jedem Fall.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="t-kopfbild" data-nur-kopfart="bild">
+      <h2 class="form-title" id="t-kopfbild">Kopfbild</h2>
+      <div class="logo-feld">
+        {% if form.instance.kopfbild_bild %}<img class="logo-bild kopfbild-bild" src="{{ form.instance.kopfbild_bild }}" alt="Ihr aktuelles Kopfbild">{% endif %}
+        <div class="stack">
+          {% include "core/feld.html" with f=form.kopfbild_datei %}
+          {% if form.instance.kopfbild_bild %}<label class="choice">{{ form.kopfbild_entfernen }}<span>{{ form.kopfbild_entfernen.label }}</span></label>{% endif %}
+        </div>
+      </div>
+      <fieldset class="field kopf-wahl">
+        <legend>{{ form.kopfbild_breite.label }}</legend>
+        {% for wahl in form.kopfbild_breite %}
+        <label class="choice">{{ wahl.tag }}<span>{{ wahl.choice_label }}</span></label>
+        {% endfor %}
+        <p class="hint">{{ form.kopfbild_breite.help_text }} Damit es nicht in den Infoblock reicht, endet das Bild spätestens 44 mm unter der Blattkante; ein höheres wird kleiner gesetzt.</p>
+      </fieldset>
+    </section>
+
+    <section class="form-section" aria-labelledby="t-lage">
+      <h2 class="form-title" id="t-lage">Lage, Farbe und Linie</h2>
+      <fieldset class="field kopf-wahl">
+        <legend>Lage des Logos oder Kopfbilds</legend>
+        <div class="choice-reihe">
+          {% for wahl in form.logo_lage %}
+          <label class="choice">{{ wahl.tag }}<span>{{ wahl.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+        <p class="hint">Links stehen Firmenname und Anschrift rechts daneben, in der Mitte links und rechts davon, rechts beide links davon.</p>
+      </fieldset>
+      <div class="form-grid kopf-raster">
+        <div class="field{% if form.akzentfarbe.errors %} has-error{% endif %}">
+          <label for="{{ form.akzentfarbe.id_for_label }}">{{ form.akzentfarbe.label }}</label>
+          {{ form.akzentfarbe }}
+          {% for fehler in form.akzentfarbe.errors %}<p class="field-error">{% icon "alert" %}<span>{{ fehler }}</span></p>{% endfor %}
+        </div>
+        <div class="field">
+          <label class="choice">{{ form.kopf_linie }}<span>{{ form.kopf_linie.label }}</span></label>
+        </div>
+      </div>
+    </section>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

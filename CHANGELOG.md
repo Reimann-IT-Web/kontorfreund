@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.39.0 – 12.11.2026
+
+- Neu: Einstellungen › „Briefkopf gestalten“. Auf einer eigenen Seite legen Sie fest, wie die erste Seite von Rechnungen, Angeboten, Auftragsbestätigungen, Mahnungen und der Auskunft nach der DSGVO beginnt. Oben zeigt eine Vorschau den Kopf mit Anschriftfeld, nach dem Speichern sofort mit Ihren Änderungen.
+- Das Logo lässt sich 6 bis 20 mm hoch stellen (bisher fest 12 mm) und links, in der Mitte oder rechts setzen. Firmenname mit Zusatz und die Anschrift mit Telefon und E-Mail können Sie einzeln ausblenden, etwa wenn Ihr Logo den Namen schon enthält. Im Anschriftfeld und in der Fußzeile bleibt Ihr Absender.
+- „Weißen Rand um das Logo abschneiden“ entfernt beim Drucken weiße oder durchsichtige Ränder eines PNG oder JPG. Ein Logo mit viel Rand wird so endlich so groß wie eingestellt; die gespeicherte Datei bleibt unverändert.
+- Neu: ein eigenes Kopfbild statt Logo und Angaben, etwa der Briefkopf Ihrer Druckerei. Es steht so breit wie der Text oder über die ganze Seitenbreite bis an den Rand und endet spätestens 44 mm unter der Blattkante, damit es nicht in den Infoblock reicht.
+- Die Farbe von Firmenname und Linie unter dem Kopf ist wählbar, die Linie lässt sich abschalten.
+- Logo und Marke stehen deshalb nicht mehr direkt unter Einstellungen, sondern auf der Seite Briefkopf. Ohne Änderung sieht jeder Beleg aus wie bisher. Schon festgeschriebene Belege bleiben unverändert.
+
 ## 0.38.1 – 11.11.2026
 
 - Die Suche oben (Strg+K) findet jetzt auch Rechnungen, Angebote und Auftragsbestätigungen, über Nummer, Empfänger, Ansprechpartner, Ort und Datum; je Belegart die neuesten 200. Adressen findet sie auch über den Ansprechpartner und die Straße. Das hilft, wenn viele Firmen gleich heißen, etwa „Betreuung“.

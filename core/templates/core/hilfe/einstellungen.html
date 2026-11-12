@@ -1,18 +1,27 @@
 {% extends "core/hilfe/thema.html" %}
 
 {% block anleitung %}
-<p>Einstellungen, Benutzer, Benachrichtigungen, Firmen und Updates sieht nur der Inhaber. „Mein Konto“ hat jeder.</p>
+<p>Einstellungen, Briefkopf, Benutzer, Benachrichtigungen, Firmen und Updates sieht nur der Inhaber. „Mein Konto“ hat jeder.</p>
 
 <h2 id="firmendaten">Firmendaten</h2>
 <p>Unter <a href="{% url 'core:einstellungen' %}">Einstellungen</a> stehen die Angaben, die als Absender auf jedem Beleg erscheinen:</p>
 <ul>
-  <li><strong>Unternehmen:</strong> Firmenname, auf Wunsch eine Marke oder ein Zusatz, Inhaber und Anschrift.</li>
-  <li><strong>Logo und Marke:</strong> ein Logo als SVG, PNG oder JPG bis 1 MB; es steht oben links auf jeder Rechnung.</li>
+  <li><strong>Unternehmen:</strong> Firmenname, Inhaber und Anschrift.</li>
+  <li><strong>Briefkopf:</strong> Logo oder eigenes Kopfbild, Marke und Farbe; „Briefkopf gestalten“ führt zu einer eigenen Seite (<a href="#briefkopf">mehr dazu</a>).</li>
   <li><strong>Unterschrift:</strong> ein Bild Ihrer Unterschrift als PNG, JPG oder SVG bis 1 MB und auf Wunsch ein Text darunter, etwa Ihr Name und Ihre Funktion. Beides steht am Ende von Rechnungen, Angeboten, Auftragsbestätigungen und Mahnungen. Steht Ihr Name im Text unter der Unterschrift, druckt Kontorfreund ihn nicht noch einmal im Gruß darüber. Schneiden Sie das Bild eng zu: Ein leerer Rand macht die Unterschrift im Beleg kleiner und den Abstand zum Text größer.</li>
   <li><strong>Steuer:</strong> Steuernummer oder USt-IdNr. und unter „Umsatzsteuer auf Ihren Belegen“, wie Sie abrechnen: als Kleinunternehmer nach § 19 UStG, mit 19 % Umsatzsteuer oder mit steuerfreien Leistungen nach § 4 UStG, etwa für Unterricht, Bildung oder Heilbehandlung. Die Wahl gilt für jeden neuen Beleg, im Beleg selbst können Sie sie ändern. Nur als Kleinunternehmer zeigt die Übersicht Ihren Umsatz im Vergleich zu den Grenzen. Für steuerfreie Leistungen tragen Sie unter „Hinweis auf die Steuerbefreiung“ den Satz ein, der auf jedem steuerfreien Beleg stehen soll, zum Beispiel „Umsatzsteuerfrei nach § 4 Nr. 21 UStG“. Welche Befreiung für Sie gilt, klären Sie am besten mit Ihrem Steuerberater; Kontorfreund prüft das nicht.</li>
   <li><strong>Kontakt und Bank:</strong> E-Mail-Adresse, Telefon, auf Wunsch Ihre Internetadresse, IBAN und Bank. Die IBAN braucht es für den GiroCode, Telefon, E-Mail-Adresse und IBAN für die XRechnung. Die Internetadresse steht in der Fußzeile jedes Belegs; „beispiel.de“ genügt, das https:// ergänzt Kontorfreund. Unter „Zahlungshinweis auf Rechnungen“ ändern Sie den Wortlaut unter dem Rechnungsbetrag, etwa „Bitte überweisen Sie {betrag} mit Angabe der Rechnungsnummer {nummer} auf mein Konto mit der IBAN {iban}.“ In geschweiften Klammern setzt Kontorfreund ein: {betrag}, {nummer}, {datum} (Rechnungsdatum), {faellig}, {iban} und {bank}. Bleibt das Feld leer, steht dort der Text aus dem Beispiel im Feld. Skonto und der Hinweis auf Zahlungsverzug folgen in beiden Fällen darunter.</li>
 </ul>
 <p>Eine Änderung gilt für neue Belege. Festgeschriebene Rechnungen behalten die Angaben, mit denen sie geschrieben wurden.</p>
+
+<h2 id="briefkopf">Briefkopf</h2>
+<p>Unter Einstellungen › „<a href="{% url 'core:briefkopf' %}">Briefkopf gestalten</a>“ legen Sie fest, wie die erste Seite von Rechnungen, Angeboten, Auftragsbestätigungen, Mahnungen und der Auskunft nach der DSGVO beginnt. Oben auf der Seite zeigt eine Vorschau den Kopf mit Anschriftfeld; nach dem Speichern sehen Sie dort sofort das Ergebnis.</p>
+<ul>
+  <li><strong>Logo und Angaben:</strong> Ihr Logo als SVG, PNG oder JPG bis 1 MB, 6 bis 20 mm hoch, links, in der Mitte oder rechts. Firmenname mit Marke oder Zusatz und die Anschrift mit Telefon und E-Mail können Sie einzeln ausblenden, etwa wenn Ihr Logo den Namen schon enthält. Im Anschriftfeld und in der Fußzeile steht Ihr Absender immer. Hat die Bilddatei einen weißen oder durchsichtigen Rand, schneidet „Weißen Rand um das Logo abschneiden“ ihn beim Drucken ab; die Datei selbst bleibt, wie sie ist.</li>
+  <li><strong>Eigenes Kopfbild:</strong> ein Bild, das Sie selbst als Briefkopf gestaltet haben, etwa vom Briefpapier Ihrer Druckerei. Es ersetzt Logo und Angaben und steht so breit wie der Text oder über die ganze Seitenbreite bis an den Rand. Damit es nicht in den Infoblock rechts reicht, endet es spätestens 44 mm unter der Blattkante; ein höheres Bild wird kleiner gesetzt. Gedruckt bleibt es scharf, wenn es für die ganze Seitenbreite etwa 2480 Pixel breit ist.</li>
+  <li><strong>Farbe und Linie:</strong> Die Farbe gilt für den Firmennamen und die Linie unter dem Kopf; die Linie lässt sich abschalten.</li>
+</ul>
+<p>Am schärfsten wird ein Logo als SVG. Ein PNG oder JPG sollte mindestens 600 Pixel breit sein; ein kleines Bild wirkt im Druck unscharf, auch wenn Sie es größer stellen. Der Briefkopf gilt für jeden neuen Beleg, schon festgeschriebene Belege bleiben, wie sie sind.</p>
 
 <h2 id="e-mail">E-Mail-Versand</h2>
 <p>Damit Kontorfreund Rechnungen, Angebote und Mahnungen selbst verschickt, tragen Sie unter „E-Mail-Versand“ den Postausgangsserver Ihres E-Mail-Anbieters ein: Server, Port, Verschlüsselung, Benutzername (meist Ihre E-Mail-Adresse) und Kennwort. Die Angaben finden Sie beim Anbieter unter „SMTP“ oder „Postausgang“. Bei Gmail brauchen Sie ein App-Passwort. Ohne diese Angaben laden Sie die PDFs herunter und hängen sie in Ihrem E-Mail-Programm an.</p>

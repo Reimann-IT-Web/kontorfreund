@@ -31,14 +31,13 @@
     </div>
   </section>
 
-  <section class="form-section" aria-labelledby="t-logo">
-    <h2 class="form-title" id="t-logo">Logo und Marke</h2>
+  <section class="form-section" aria-labelledby="t-briefkopf">
+    <h2 class="form-title" id="t-briefkopf">Briefkopf</h2>
     <div class="logo-feld">
-      {% if form.instance.logo_bild %}<img class="logo-bild" src="{{ form.instance.logo_bild }}" alt="Ihr aktuelles Logo">{% endif %}
+      {% if form.instance.kopf_art == "bild" and form.instance.kopfbild_bild %}<img class="logo-bild kopfbild-bild" src="{{ form.instance.kopfbild_bild }}" alt="Ihr aktuelles Kopfbild">{% elif form.instance.logo_bild %}<img class="logo-bild" src="{{ form.instance.logo_bild }}" alt="Ihr aktuelles Logo">{% endif %}
       <div class="stack">
-        {% include "core/feld.html" with f=form.logo_datei optional=True %}
-        {% if form.instance.logo_bild %}<label class="choice">{{ form.logo_entfernen }}<span>{{ form.logo_entfernen.label }}</span></label>{% endif %}
-        {% include "core/feld.html" with f=form.marke optional=True %}
+        <p class="muted">Logo oder eigenes Kopfbild, Größe, Lage, Farbe und was im Kopf Ihrer Belege steht.</p>
+        <p><a class="btn" href="{% url 'core:briefkopf' %}">{% icon "pencil" %}Briefkopf gestalten</a></p>
       </div>
     </div>
   </section>

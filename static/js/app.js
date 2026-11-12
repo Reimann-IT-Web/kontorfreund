@@ -216,6 +216,23 @@ if (ablagen.length) {
   }
 }
 
+// ---------- Briefkopf: Abschnitte für Logo oder Kopfbild ----------
+
+const briefkopfForm = document.querySelector("[data-briefkopf]");
+if (briefkopfForm) {
+  const umschalten = () => {
+    const art = briefkopfForm.querySelector("[name=kopf_art]:checked")?.value ?? "logo";
+    briefkopfForm.querySelectorAll("[data-nur-kopfart]").forEach((el) => {
+      // Ein Abschnitt mit Fehlermeldung bleibt sichtbar, sonst fände man den Fehler nicht.
+      el.hidden = el.dataset.nurKopfart !== art && !el.querySelector(".has-error");
+    });
+  };
+  briefkopfForm.addEventListener("change", (e) => {
+    if (e.target.name === "kopf_art") umschalten();
+  });
+  umschalten();
+}
+
 // ---------- Adressformular: Firmenfeld nur bei Firmen, „Ansprechpartner bei“ nur bei Personen ----------
 
 const kontaktForm = document.querySelector("[data-kontakt-form]");

@@ -36,11 +36,14 @@ from core.models import Firmendaten
 from core.templatetags.kf import euro
 from invoicing.beleg import (
     SCHRIFTEN,
+    WURZEL,
     absaetze,
     absender_daten,
     briefanrede,
     briefkopf,
+    druckbilder,
     grussformel,
+    kopf_druck,
 )
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen, schwaerzen
@@ -308,7 +311,7 @@ def _hinweise(kontakt, daten, ende):
     ]
 
 
-def druckdaten(kontakt, daten, ende, jetzt, logo=b""):
+def druckdaten(kontakt, daten, ende, jetzt, logo=b"", kopf=None):
     """Der Brief zur Auskunft als fertig formatierte Texte für auskunft.typ."""
     firma = Firmendaten.laden()
     abschnitte = [
@@ -428,7 +431,7 @@ def druckdaten(kontakt, daten, ende, jetzt, logo=b""):
     )
     return {
         "titel": "Auskunft nach Art. 15 DSGVO",
-        "logo": list(logo) or None,
+        **kopf_druck(logo, kopf),
         **briefkopf(absender_daten(firma)),
         "empfaenger": kontakt.anschrift_zeilen(),
         "info": [
@@ -450,6 +453,7 @@ def druckdaten(kontakt, daten, ende, jetzt, logo=b""):
 def setzen(druck):
     return typst.compile(
         str(VORLAGE),
+        root=str(WURZEL),
         font_paths=[str(SCHRIFTEN)],
         ignore_system_fonts=True,
         sys_inputs={"daten": json.dumps(druck)},
@@ -461,12 +465,21 @@ def auskunft(kontakt):
     jetzt = timezone.localtime()
     alle = belege(kontakt)
     daten = auskunft_daten(kontakt, alle, jetzt)
-    logo = bytes(Firmendaten.laden().logo)
+    bilder = druckbilder(Firmendaten.laden())
     datei = tempfile.TemporaryFile()
     with zipfile.ZipFile(datei, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(
             f"Auskunft {kontakt.kundennummer}.pdf",
-            setzen(druckdaten(kontakt, daten, frist(alle), jetzt, logo)),
+            setzen(
+                druckdaten(
+                    kontakt,
+                    daten,
+                    frist(alle),
+                    jetzt,
+                    bilder["logo"],
+                    bilder["kopf"],
+                )
+            ),
         )
         z.writestr(
             "auskunft.json",

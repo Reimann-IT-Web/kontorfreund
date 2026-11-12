@@ -55,7 +55,13 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 ## B-6 PDF
 
 - Erzeugt mit Typst als PDF/A-3b.
-- Briefpapier: Logo, Akzentfarbe, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt, auf Wunsch Internetadresse), Anschriftfeld nach DIN 5008.
+- Briefpapier: Briefkopf, Absenderzeile, Fußzeile (Bank, Steuernummer, Kontakt, auf Wunsch Internetadresse), Anschriftfeld nach DIN 5008.
+- Briefkopf auf Seite 1, einstellbar auf einer eigenen Seite mit Vorschau (nur Inhaber), gleich für Rechnung, Angebot, Auftragsbestätigung, Mahnung und die Auskunft nach Art. 15 DSGVO:
+  - Aufbau „Logo und Angaben“: Logo (SVG, PNG oder JPG bis 1 MB) 6 bis 20 mm hoch, links, in der Mitte oder rechts; ein sehr breites Logo wird schmaler gesetzt, damit die Angaben daneben Platz behalten. Firmenname mit Marke oder Zusatz und Anschrift mit Telefon und E-Mail lassen sich einzeln ausblenden; Absenderzeile und Fußzeile bleiben. Auf Wunsch schneidet der Druck weiße oder durchsichtige Ränder eines PNG oder JPG ab, die gespeicherte Datei bleibt unverändert.
+  - Aufbau „Eigenes Kopfbild“: ein selbst gestaltetes Bild ersetzt Logo und Angaben, so breit wie der Text oder über die ganze Seitenbreite bis an den Blattrand.
+  - Akzentfarbe für Firmenname und Linie unter dem Kopf; die Linie lässt sich abschalten.
+  - Kein Kopf reicht in Infoblock oder Anschriftfeld: Ein Kopfbild endet spätestens 44 mm unter der Blattkante, die Linie 2 mm darunter; ein höheres Kopfbild wird kleiner gesetzt. Das Logo ist höchstens 20 mm hoch. Der Text beginnt nie früher als 94 mm unter der Blattkante.
+  - Die Vorgaben ergeben den bisherigen Kopf (Logo 12 mm links, Name, Anschrift, Linie in Petrol). Änderungen gelten für neue Belege; festgeschriebene bleiben, wie sie abgelegt sind.
 - Unterschrift: Bild und Text aus den Firmendaten am Ende von Rechnung, Angebot, Auftragsbestätigung und Mahnung, mit dem Schlusstext auf einer Seite. Steht der Name im Text unter der Unterschrift, entfällt beim Drucken die gleiche Zeile am Ende des Schlusstexts.
 - Seitenwechsel: Eine Position bleibt auf einer Seite. Ist sie höher als 60 mm, trennt die Seite nur zwischen zwei Zeilen der Beschreibung, und die Bezeichnung bleibt bei der ersten Zeile. Nur eine Zeile, die selbst höher als 60 mm ist, darf reißen.
 - Schluss: Schlusstext und Unterschrift bleiben bis 60 mm Höhe auf einer Seite, und der Zahlungshinweis wechselt mit ihnen die Seite, damit Gruß und Name nie allein auf der letzten Seite stehen. Ein längerer Schluss trennt nur zwischen zwei Zeilen; die letzten beiden Zeilen mit Text (Gruß und Name) bleiben beisammen und bei der Unterschrift.
@@ -92,3 +98,4 @@ Das Programm prüft die Pflichtangaben nach § 14 Abs. 4 UStG und nennt fehlende
 - Eine außerhalb des Programms veränderte Beleg-Datei wird bei der nächsten Prüfung gemeldet.
 - Eine festgeschriebene Rechnung lässt sich weder über die Oberfläche noch über direkte Anfragen ändern.
 - Auch bei gleichzeitigem Festschreiben durch zwei Benutzer entstehen keine doppelten Nummern und keine Lücken.
+- Mit den Vorgaben des Briefkopfs ist ein Beleg pixelgleich mit dem vor Einführung der Einstellungen; ein Kopf ohne Logo und Angaben zieht den Text nicht ins Anschriftfeld.

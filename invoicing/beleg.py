@@ -7,6 +7,7 @@ import json
 import re
 from datetime import date
 from decimal import Decimal
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from drafthorse.models.party import TaxRegistration
 from drafthorse.models.payment import PaymentMeans, PaymentTerms
 from drafthorse.models.tradelines import LineItem
 from drafthorse.pdf import attach_xml
+from PIL import Image, ImageChops, ImageOps
 from segno import helpers as qr
 
 from contacts.models import ist_leitweg_id
@@ -50,6 +52,20 @@ ZAHLUNG_BEISPIEL = (
 
 VORLAGE = Path(__file__).parent / "typst" / "rechnung.typ"
 SCHRIFTEN = Path(__file__).parent / "schrift"
+# Typst-Wurzel für Vorlagen anderer Apps, die den Briefkopf aus typst/kopf.typ laden.
+WURZEL = Path(__file__).parent.parent
+
+# Briefkopf (B-6): So breit darf ein Logo höchstens werden, damit Firmenname und Anschrift
+# daneben Platz behalten (Satzspiegel 165 mm).
+SATZBREITE_MM = 165
+PLATZ_DANEBEN_MM = 50
+LOGO_MINDESTBREITE_MM = 40
+# Größere Bilder werden nicht zugeschnitten (Schutz vor Dekompressionsbomben).
+ZUSCHNEIDEN_PIXEL = 40_000_000
+# Heller als das gilt beim Zuschneiden als weißer Rand.
+WEISS = 245
+# Die Vorschau des Briefkopfs zeigt die Seite bis knapp über dem Beginn des Inhalts.
+VORSCHAU_MM = 92
 
 MONATE = (
     "Januar Februar März April Mai Juni Juli August September Oktober November Dezember"
@@ -154,8 +170,78 @@ def absender_daten(firma):
 
 
 def druckbilder(firma):
-    """Bilder für den Druck; sie liegen nur in den Firmendaten, nicht im Beleg."""
-    return {"logo": bytes(firma.logo), "unterschrift": bytes(firma.unterschrift)}
+    """Bilder und Briefkopf für den Druck; sie liegen nur in den Firmendaten, nicht im Beleg.
+
+    Maßgeblich für einen festgeschriebenen Beleg ist das abgelegte PDF, deshalb gelten
+    geänderte Einstellungen nur für Belege, die danach entstehen.
+    """
+    kopf = kopf_einstellungen(firma)
+    logo = bytes(firma.logo)
+    if kopf["bild"]:
+        logo = b""  # Das Kopfbild ersetzt Logo und Angaben.
+    elif firma.logo_zuschneiden:
+        logo = zuschneiden(logo)
+    return {"logo": logo, "unterschrift": bytes(firma.unterschrift), "kopf": kopf}
+
+
+def kopf_einstellungen(firma):
+    """Aufbau des Briefkopfs für kopf.typ; `bild` ist das Kopfbild oder leer."""
+    bild = bytes(firma.kopfbild) if firma.kopf_art == firma.Kopfart.BILD else b""
+    breite = SATZBREITE_MM
+    for gezeigt in (firma.kopf_name, firma.kopf_anschrift):
+        if gezeigt:
+            breite -= PLATZ_DANEBEN_MM
+    return {
+        "art": firma.Kopfart.BILD if bild else firma.Kopfart.LOGO,
+        "lage": firma.logo_lage,
+        "logo_hoehe": firma.logo_hoehe,
+        "logo_breite": max(breite, LOGO_MINDESTBREITE_MM),
+        "name": firma.kopf_name,
+        "anschrift": firma.kopf_anschrift,
+        "linie": firma.kopf_linie,
+        "farbe": firma.akzentfarbe.lower(),
+        "breite": firma.kopfbild_breite,
+        "bild": bild,
+    }
+
+
+def kopf_druck(logo, kopf):
+    """Logo, Kopfbild und Aufbau des Briefkopfs als Druckdaten; ohne `kopf` der bisherige Kopf."""
+    kopf = dict(kopf or {})
+    bild = kopf.pop("bild", b"")
+    return {
+        "logo": list(logo) or None,
+        "kopfbild": list(bild) or None,
+        "briefkopf": kopf or None,
+    }
+
+
+@lru_cache(maxsize=4)
+def zuschneiden(daten):
+    """PNG oder JPG ohne weißen oder durchsichtigen Rand; alles andere unverändert."""
+    if not daten.startswith((b"\x89PNG", b"\xff\xd8")):
+        return daten
+    try:
+        with Image.open(BytesIO(daten)) as bild:
+            if bild.width * bild.height > ZUSCHNEIDEN_PIXEL:
+                return daten
+            jpeg = bild.format == "JPEG"
+            bild = ImageOps.exif_transpose(bild)
+            rgba = bild.convert("RGBA")
+    except (OSError, ValueError, Image.DecompressionBombError):
+        return daten
+    sichtbar = rgba.getchannel("A").point(lambda a: 255 if a > 8 else 0)
+    farbig = rgba.convert("L").point(lambda w: 255 if w < WEISS else 0)
+    rahmen = ImageChops.multiply(sichtbar, farbig).getbbox()
+    if not rahmen or rahmen == (0, 0, *rgba.size):
+        return daten
+    ausschnitt = bild.crop(rahmen)
+    ausgabe = BytesIO()
+    if jpeg:
+        ausschnitt.convert("RGB").save(ausgabe, format="JPEG", quality=95)
+    else:
+        ausschnitt.save(ausgabe, format="PNG")
+    return ausgabe.getvalue()
 
 
 def empfaenger_daten(k, anschrift=None):
@@ -313,7 +399,7 @@ def girocode_svg(b):
     return ausgabe.getvalue().decode()
 
 
-def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
     """Beleg-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     a, e, storno = b["absender"], b["empfaenger"], b["storno_zu"]
     korrektur = b.get("korrektur_zu")
@@ -374,7 +460,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     return {
         "entwurf": entwurf,
         "titel": titel,
-        "logo": list(logo) or None,
+        **kopf_druck(logo, kopf),
         "unterschrift": list(unterschrift) or None,
         **briefkopf(a),
         "empfaenger": e["zeilen"],
@@ -499,7 +585,7 @@ def druck_summen(b):
     ]
 
 
-def setzen(druck, format="pdf"):
+def setzen(druck, format="pdf", ppi=110):
     """Druckdaten mit der Typst-Vorlage setzen, als PDF/A-3b oder als Bild."""
     return typst.compile(
         str(VORLAGE),
@@ -507,12 +593,51 @@ def setzen(druck, format="pdf"):
         ignore_system_fonts=True,
         sys_inputs={"daten": json.dumps(druck)},
         format=format,
-        **({"pdf_standards": "a-3b"} if format == "pdf" else {"ppi": 110}),
+        **({"pdf_standards": "a-3b"} if format == "pdf" else {"ppi": ppi}),
     )
 
 
-def pdf(b, entwurf=False, logo=b"", unterschrift=b"", format="pdf"):
-    return setzen(druckdaten(b, entwurf, logo, unterschrift), format)
+def pdf(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None, format="pdf"):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift, kopf), format)
+
+
+def kopf_vorschau(firma):
+    """Oberer Teil einer Rechnung mit dem Briefkopf als PNG-Daten-URL (B-6).
+
+    Gesetzt mit der echten Vorlage und den Firmendaten, ohne Empfänger und Inhalt; so zeigt
+    die Vorschau auch, wie der Kopf zu Anschriftfeld und Infoblock steht.
+    """
+    bilder = druckbilder(firma)
+    druck = {
+        **briefkopf(absender_daten(firma)),
+        **kopf_druck(bilder["logo"], bilder["kopf"]),
+        "entwurf": False,
+        "titel": "",
+        "unterschrift": None,
+        "unterschrift_text": [],
+        "empfaenger": ["Anschrift des Empfängers"],
+        "info": [
+            ("Rechnungsnummer", "wird vergeben"),
+            ("Rechnungsdatum", datum_de(timezone.localdate().isoformat())),
+        ],
+        "betreff": "",
+        "kopftext": [],
+        "positionen": [],
+        "summen": [],
+        "summe_titel": "",
+        "brutto": "",
+        "steuerhinweis": "",
+        "zahlung": [],
+        "girocode": None,
+        "fusstext": [],
+    }
+    seiten = setzen(druck, "png", ppi=150)
+    seite = seiten[0] if isinstance(seiten, list) else seiten
+    with Image.open(BytesIO(seite)) as bild:
+        oben = bild.crop((0, 0, bild.width, round(bild.height * VORSCHAU_MM / 297)))
+    ausgabe = BytesIO()
+    oben.save(ausgabe, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(ausgabe.getvalue()).decode()
 
 
 def logo_lesbar(daten):

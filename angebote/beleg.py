@@ -21,6 +21,7 @@ from invoicing.beleg import (
     druckbilder,
     empfaenger_daten,
     grussformel,
+    kopf_druck,
     lieferanschrift_daten,
     lieferzeile,
     positionen_daten,
@@ -68,7 +69,7 @@ def beleg_daten(angebot, firma, nummer):
     }
 
 
-def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
     """Angebots-Angaben als fertig formatierte Texte für die Typst-Vorlage."""
     e = b["empfaenger"]
     info = [
@@ -81,7 +82,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     return {
         "entwurf": entwurf,
         "titel": f"Angebot {b['nummer']}" if b["nummer"] else "Angebot (Entwurf)",
-        "logo": list(logo) or None,
+        **kopf_druck(logo, kopf),
         "unterschrift": list(unterschrift) or None,
         **briefkopf(b["absender"]),
         "empfaenger": e["zeilen"],
@@ -100,8 +101,8 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b"", unterschrift=b""):
-    return setzen(druckdaten(b, entwurf, logo, unterschrift))
+def pdf(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift, kopf))
 
 
 def fertigstellen(angebot, firma):

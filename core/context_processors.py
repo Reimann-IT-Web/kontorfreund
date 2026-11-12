@@ -134,6 +134,11 @@ def navigation(request):
                 "url": reverse("backups:uebersicht"),
             },
             {
+                "titel": "Briefkopf",
+                "info": "Logo, Kopfbild und Farbe der Belege",
+                "url": reverse("core:briefkopf"),
+            },
+            {
                 "titel": "Updates",
                 "info": f"Installiert: Version {settings.VERSION}",
                 "url": reverse("core:updates"),

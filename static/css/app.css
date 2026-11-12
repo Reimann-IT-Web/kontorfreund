@@ -2606,6 +2606,59 @@ input[type="file"]::file-selector-button {
   border-radius: var(--r);
 }
 
+/* ---------- Einstellungen: Briefkopf ---------- */
+
+.kopf-vorschau {
+  margin: 0 0 var(--s6);
+}
+
+/* Papier bleibt auch im Dunkelmodus weiß. */
+.kopf-vorschau img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--s2);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-panel);
+}
+
+.kopfbild-bild {
+  max-width: 100%;
+  height: auto;
+  max-height: 6rem;
+}
+
+.kopf-raster {
+  margin-top: var(--s4);
+  align-items: start;
+}
+
+.kopf-wahl {
+  margin-top: var(--s4);
+}
+
+.choice-reihe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.choice-reihe .choice + .choice {
+  margin-top: 0;
+}
+
+input[type="color"] {
+  width: 5rem;
+  height: 2.5rem;
+  padding: 0.2rem;
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+
 /* ---------- Beleg: Vorschau und Ansicht ---------- */
 
 .preview-dialog {

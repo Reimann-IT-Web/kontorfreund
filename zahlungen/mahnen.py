@@ -20,6 +20,7 @@ from invoicing.beleg import (
     girocode_svg,
     grussformel,
     iban_lesbar,
+    kopf_druck,
     schlusstext,
     setzen,
 )
@@ -195,7 +196,7 @@ def beleg_daten(rechnung, firma, stufe, datum, frist, text, aufstellung):
     }
 
 
-def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
+def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
     """Mahnung als fertig formatierte Texte für die Typst-Vorlage der Rechnung."""
     a, e, r = b["absender"], b["empfaenger"], b["rechnung"]
     info = [("Datum", datum_de(b["datum"]))]
@@ -215,7 +216,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     return {
         "entwurf": entwurf,
         "titel": b["bezeichnung"],
-        "logo": list(logo) or None,
+        **kopf_druck(logo, kopf),
         "unterschrift": list(unterschrift) or None,
         **briefkopf(a),
         "empfaenger": e["zeilen"],
@@ -238,8 +239,8 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b""):
     }
 
 
-def pdf(b, entwurf=False, logo=b"", unterschrift=b""):
-    return setzen(druckdaten(b, entwurf, logo, unterschrift))
+def pdf(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
+    return setzen(druckdaten(b, entwurf, logo, unterschrift, kopf))
 
 
 def erstellen(rechnung, firma, stufe, datum, frist, text, gebuehr, zinsen, pauschale):

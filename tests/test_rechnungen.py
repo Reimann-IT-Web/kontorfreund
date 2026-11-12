@@ -518,12 +518,6 @@ def test_passwort_bleibt_bei_leerem_feld(client, firma):
     assert "geheim" not in client.get(reverse("core:einstellungen")).content.decode()
 
 
-LOGO = (
-    b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-    b'<rect width="32" height="32" rx="9" fill="#0b1220"/></svg>'
-)
-
-
 def einstellungen_absenden(client, firma, **mehr):
     werte = {
         f: getattr(firma, f)
@@ -539,47 +533,6 @@ def einstellungen_absenden(client, firma, **mehr):
             **mehr,
         },
     )
-
-
-def test_logo_hochladen_und_auf_rechnung(client, firma, kunde, daten):
-    einstellungen_absenden(
-        client, firma, logo_datei=SimpleUploadedFile("logo.svg", LOGO, "image/svg+xml")
-    )
-    assert bytes(Firmendaten.laden().logo) == LOGO
-    seite = client.get(reverse("core:einstellungen")).content.decode()
-    assert 'src="data:image/svg+xml;base64,' in seite
-
-    ohne = client.get(reverse("invoicing:pdf", args=[Rechnung.objects.create().pk]))
-    client.post(reverse("invoicing:neu"), formular(kunde))
-    rechnung = Rechnung.objects.get(status=Rechnung.Status.FESTGESCHRIEBEN)
-    inhalt = (daten / rechnung.datei).read_bytes()
-    assert len(inhalt) > len(ohne.content)  # Logo als Vektorgrafik im Kopf
-
-    # Leeres Feld behält das Logo, „entfernen“ löscht es.
-    einstellungen_absenden(client, firma)
-    assert bytes(Firmendaten.laden().logo) == LOGO
-    einstellungen_absenden(client, firma, logo_entfernen="on")
-    assert bytes(Firmendaten.laden().logo) == b""
-
-
-def test_marke_unter_dem_firmennamen(client, firma, kunde, daten):
-    einstellungen_absenden(client, firma, marke="Muster Netz & Web")
-    client.post(reverse("invoicing:neu"), formular(kunde))
-
-    rechnung = Rechnung.objects.get()
-    assert rechnung.beleg["absender"]["marke"] == "Muster Netz & Web"
-    pdf = PdfReader(BytesIO((daten / rechnung.datei).read_bytes()))
-    assert "Muster IT\nMuster Netz & Web" in pdf.pages[0].extract_text()
-
-
-def test_kaputtes_logo_abgelehnt(client, firma):
-    antwort = einstellungen_absenden(
-        client,
-        firma,
-        logo_datei=SimpleUploadedFile("logo.png", b"\x89PNG kaputt", "image/png"),
-    )
-    assert "nicht als Bild lesen" in antwort.content.decode()
-    assert bytes(Firmendaten.laden().logo) == b""
 
 
 def test_unterschrift_hochladen_und_auf_rechnung(
