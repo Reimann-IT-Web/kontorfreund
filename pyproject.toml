@@ -1,6 +1,6 @@
 [project]
 name = "kontorfreund"
-version = "0.40.1"
+version = "0.41.0"
 description = "Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer"
 readme = "README.md"
 license = "AGPL-3.0-only"
