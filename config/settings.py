@@ -26,7 +26,7 @@ PORTABEL = os.environ.get("APP_PORTABEL") == "1"
 PRODUCT_NAME = "Kontorfreund"
 PRODUCT_EDITION = "Kleinunternehmen"
 # Wie in pyproject.toml; das Installationspaket kennt die Datei nicht.
-VERSION = "0.46.1"
+VERSION = "0.47.0"
 
 DEBUG = os.environ.get("APP_DEBUG") == "1"
 ALLOWED_HOSTS = os.environ.get("APP_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")

@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.47.0 – 13.11.2026
 
 - Neu: 7 % Umsatzsteuer und mehrere Steuersätze auf einem Beleg. Weist ein Beleg Umsatzsteuer aus, wählen Sie je Position 19 % oder 7 %, in Rechnung, Angebot, Auftragsbestätigung und Vertrag. Mit beiden Sätzen nennt jede Position auf dem PDF ihren Satz, und Nettobetrag und Umsatzsteuer stehen je Satz über dem Gesamtbetrag. Die E-Rechnung schlüsselt die Steuer je Satz auf; ein Rabatt gilt je Satz. Bisherige Belege und Entwürfe rechnen weiter mit 19 %.
 - Artikel haben einen Steuersatz, den die Position übernimmt. Zu sehen ist er, wenn Sie in den Einstellungen „Umsatzsteuer ausweisen“ gewählt haben. Der Import von Artikeln liest eine Spalte „Steuersatz“ oder „MwSt“ mit Werten wie „7“, „7 %“, „0,07“ oder „ermäßigt“; leer heißt 19 %.
