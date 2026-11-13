@@ -103,18 +103,7 @@
         <div class="stack">
         <div class="actions positions-actions">
           <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
-          {% if artikel %}
-          <details class="menu" data-artikel-menue>
-            <summary class="btn btn-sm">{% icon "box" %}Artikel einfügen{% icon "chevron-down" %}</summary>
-            <ul class="menu-list" aria-label="Artikel">
-              {% for a in artikel %}
-              <li><button type="button" data-artikel data-bezeichnung="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}"><span>{{ a.bezeichnung }}</span><span class="menu-meta">{{ a.preis|euro }}{% if a.einheit %} / {{ a.einheit }}{% endif %}</span></button></li>
-              {% endfor %}
-            </ul>
-          </details>
-          {% else %}
-          <p class="hint">Was Sie öfter verkaufen, legen Sie einmal unter <a href="{% url 'artikel:liste' %}">Artikel</a> an und fügen es hier mit einem Klick ein.</p>
-          {% endif %}
+          {% include "invoicing/artikel_menue.html" with wofuer="öfter verkaufen" %}
         </div>
         {% include "invoicing/rabatt.html" %}
         </div>

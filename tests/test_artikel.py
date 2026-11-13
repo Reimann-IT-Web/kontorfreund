@@ -89,10 +89,15 @@ def test_rechnung_bietet_nur_aktive_artikel_an(client):
     assert list(client.get("/artikel/", {"inaktiv": "1"}).context["artikel"]) == [alt]
 
 
-def test_auswahl_beim_tippen_der_bezeichnung(client):
-    seiten = [reverse(f"{app}:neu") for app in ("invoicing", "angebote", "auftraege")]
+def test_auswahl_in_jedem_editor(client):
+    seiten = [
+        reverse(f"{app}:neu")
+        for app in ("invoicing", "angebote", "auftraege", "vertraege")
+    ]
     for seite in seiten:
-        assert 'list="artikel-liste"' not in client.get(seite).text
+        html = client.get(seite).text
+        assert 'list="artikel-liste"' not in html
+        assert "data-artikel-menue" not in html and "unter <a" in html
     anlegen(client, bezeichnung="Stundensatz Gartenpflege", preis="45")
     anlegen(client, bezeichnung="Alter Stundensatz", preis="40")
     alt = Artikel.objects.get(bezeichnung="Alter Stundensatz")
@@ -106,7 +111,9 @@ def test_auswahl_beim_tippen_der_bezeichnung(client):
             '<option value="Stundensatz Gartenpflege" data-beschreibung="" '
             'data-einheit="Std." data-preis="45,00">45,00' in html
         )
-        assert 'value="Alter Stundensatz"' not in html
+        # Dazu „Artikel einfügen“ unter den Positionen.
+        assert 'data-artikel data-bezeichnung="Stundensatz Gartenpflege"' in html
+        assert "Alter Stundensatz" not in html
 
 
 def test_artikel_suchen(client):

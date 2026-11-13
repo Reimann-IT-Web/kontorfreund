@@ -62,10 +62,12 @@
       </table>
     </div>
     <template id="position-vorlage">{% include "invoicing/position.html" %}</template>
+    {% if artikel %}{% include "invoicing/artikel_liste.html" %}{% endif %}
     <div class="positions-foot">
       <div class="stack">
         <div class="actions positions-actions">
           <button class="btn btn-sm" type="button" data-add-position>{% icon "plus" %}Position hinzufügen</button>
+          {% include "invoicing/artikel_menue.html" with wofuer="regelmäßig berechnen" %}
         </div>
         {% include "invoicing/rabatt.html" %}
       </div>

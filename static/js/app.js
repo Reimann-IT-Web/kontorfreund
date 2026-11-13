@@ -349,6 +349,67 @@ if (anschriften) {
   });
 }
 
+// ---------- Artikel in Positionen: Rechnung, Angebot, Auftragsbestätigung, Vertrag ----------
+
+// Verbindet „Artikel einfügen“ und die Vorschläge im Feld Bezeichnung mit den Positionen.
+// Vor dem Rechnen ans Formular hängen, damit übernommene Preise gleich mitzählen.
+const artikelVerbinden = (formular, tbody, vorlage, rechnen) => {
+  // Artikelauswahl schließt bei Klick daneben und mit Esc.
+  const artikelMenue = formular.querySelector("[data-artikel-menue]");
+  if (artikelMenue) {
+    document.addEventListener("click", (e) => {
+      if (!artikelMenue.contains(e.target)) artikelMenue.open = false;
+    });
+    artikelMenue.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && artikelMenue.open) {
+        e.preventDefault();
+        artikelMenue.open = false;
+        artikelMenue.querySelector("summary").focus();
+      }
+    });
+    // Artikel füllen die letzte Position, wenn sie noch leer ist, sonst eine neue.
+    formular.addEventListener("click", (e) => {
+      const artikel = e.target.closest("[data-artikel]");
+      if (!artikel) return;
+      let zeile = tbody.lastElementChild;
+      const leer = ["bezeichnung", "beschreibung", "preis"].every((name) => !zeile.querySelector(`[name=${name}]`).value.trim());
+      if (!leer) {
+        tbody.append(vorlage.content.cloneNode(true));
+        zeile = tbody.lastElementChild;
+      }
+      for (const name of ["bezeichnung", "beschreibung", "einheit", "preis"]) {
+        zeile.querySelector(`[name=${name}]`).value = artikel.dataset[name];
+      }
+      zeile.dataset.artikelName = artikel.dataset.bezeichnung;
+      artikelMenue.open = false;
+      rechnen();
+      zeile.querySelector("[name=menge]").select();
+      ansage(`${artikel.dataset.bezeichnung} eingefügt. Bitte die Menge prüfen.`);
+    });
+  }
+
+  // Artikel auch über die Bezeichnung: Wer einen Artikel aus der Liste wählt oder seinen
+  // Namen tippt, bekommt Beschreibung, Einheit und Preis dazu. Nur beim Wechsel zu einem
+  // anderen Artikel, damit ein geänderter Preis bleibt.
+  const artikelListe = document.getElementById("artikel-liste");
+  if (artikelListe) {
+    tbody.querySelectorAll("[data-position]").forEach((zeile) => {
+      zeile.dataset.artikelName = zeile.querySelector("[name=bezeichnung]").value;
+    });
+    formular.addEventListener("input", (e) => {
+      if (e.target.name !== "bezeichnung") return;
+      const zeile = e.target.closest("[data-position]");
+      const gewaehlt = [...artikelListe.options].find((o) => o.value === e.target.value);
+      if (!gewaehlt || zeile.dataset.artikelName === gewaehlt.value) return;
+      zeile.dataset.artikelName = gewaehlt.value;
+      for (const name of ["beschreibung", "einheit", "preis"]) {
+        zeile.querySelector(`[name=${name}]`).value = gewaehlt.dataset[name];
+      }
+      ansage(`Beschreibung, Einheit und Preis von ${gewaehlt.value} übernommen.`);
+    });
+  }
+};
+
 // ---------- Rechnung, Angebot und Auftragsbestätigung: rechnen und Pflichtangaben prüfen ----------
 
 const rechnung = document.querySelector("[data-invoice]");
@@ -559,41 +620,7 @@ if (rechnung) {
     });
   };
 
-  // Artikelauswahl schließt bei Klick daneben und mit Esc.
-  const artikelMenue = rechnung.querySelector("[data-artikel-menue]");
-  if (artikelMenue) {
-    document.addEventListener("click", (e) => {
-      if (!artikelMenue.contains(e.target)) artikelMenue.open = false;
-    });
-    artikelMenue.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && artikelMenue.open) {
-        e.preventDefault();
-        artikelMenue.open = false;
-        artikelMenue.querySelector("summary").focus();
-      }
-    });
-  }
-
-  // Artikel auch über die Bezeichnung: Wer einen Artikel aus der Liste wählt oder seinen
-  // Namen tippt, bekommt Beschreibung, Einheit und Preis dazu. Nur beim Wechsel zu einem
-  // anderen Artikel, damit ein geänderter Preis bleibt.
-  const artikelListe = document.getElementById("artikel-liste");
-  if (artikelListe) {
-    tbody.querySelectorAll("[data-position]").forEach((zeile) => {
-      zeile.dataset.artikelName = zeile.querySelector("[name=bezeichnung]").value;
-    });
-    rechnung.addEventListener("input", (e) => {
-      if (e.target.name !== "bezeichnung") return;
-      const zeile = e.target.closest("[data-position]");
-      const gewaehlt = [...artikelListe.options].find((o) => o.value === e.target.value);
-      if (!gewaehlt || zeile.dataset.artikelName === gewaehlt.value) return;
-      zeile.dataset.artikelName = gewaehlt.value;
-      for (const name of ["beschreibung", "einheit", "preis"]) {
-        zeile.querySelector(`[name=${name}]`).value = gewaehlt.dataset[name];
-      }
-      ansage(`Beschreibung, Einheit und Preis von ${gewaehlt.value} übernommen.`);
-    });
-  }
+  artikelVerbinden(rechnung, tbody, vorlage, rechnen);
 
   rechnung.addEventListener("input", rechnen);
   rechnung.addEventListener("change", rechnen);
@@ -602,25 +629,6 @@ if (rechnung) {
       tbody.append(vorlage.content.cloneNode(true));
       rechnen();
       tbody.lastElementChild.querySelector("[name=bezeichnung]").focus();
-      return;
-    }
-    // Artikel füllen die letzte Position, wenn sie noch leer ist, sonst eine neue.
-    const artikel = e.target.closest("[data-artikel]");
-    if (artikel) {
-      let zeile = tbody.lastElementChild;
-      const leer = ["bezeichnung", "beschreibung", "preis"].every((name) => !zeile.querySelector(`[name=${name}]`).value.trim());
-      if (!leer) {
-        tbody.append(vorlage.content.cloneNode(true));
-        zeile = tbody.lastElementChild;
-      }
-      for (const name of ["bezeichnung", "beschreibung", "einheit", "preis"]) {
-        zeile.querySelector(`[name=${name}]`).value = artikel.dataset[name];
-      }
-      zeile.dataset.artikelName = artikel.dataset.bezeichnung;
-      artikelMenue.open = false;
-      rechnen();
-      zeile.querySelector("[name=menge]").select();
-      ansage(`${artikel.dataset.bezeichnung} eingefügt. Bitte die Menge prüfen.`);
       return;
     }
     const entfernen = e.target.closest("[data-remove-position]");
@@ -750,6 +758,7 @@ if (vertrag) {
     zeigen("ust", ust, regel);
     vertrag.querySelector("[data-sum-total]").textContent = euro.format(cent(netto + ust));
   };
+  artikelVerbinden(vertrag, tbody, vorlage, rechnen);
   vertrag.addEventListener("input", rechnen);
   vertrag.addEventListener("change", rechnen);
   vertrag.addEventListener("click", (e) => {

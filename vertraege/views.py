@@ -8,6 +8,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from artikel.models import Artikel
 from core.models import Firmendaten
 from core.templatetags.kf import euro
 from invoicing.forms import positionen_lesen
@@ -108,6 +109,7 @@ def _editor(request, vertrag, positionen):
             "form": form,
             "positionen": positionen,
             "einheiten": EINHEITEN,
+            "artikel": Artikel.objects.filter(aktiv=True),
         },
     )
 

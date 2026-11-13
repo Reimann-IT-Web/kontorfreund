@@ -6,6 +6,7 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 
 - Felder: Nummer, Bezeichnung, Beschreibung, Einheit, Nettopreis, Steuersatz, aktiv/inaktiv.
 - Einheiten mit Code nach UN/ECE-Empfehlung 20 (z. B. Stück `H87`, Stunde `HUR`, Tag `DAY`, Pauschale `LS`) – nötig für die E-Rechnung.
+- In Rechnung, Angebot, Auftragsbestätigung und Vertrag (B-10) lassen sich aktive Artikel als Position einfügen. Die Position übernimmt Bezeichnung, Beschreibung, Einheit und Preis als Kopie; spätere Änderungen am Artikel berühren sie nicht.
 - Positionen lassen sich auch ohne Artikel frei erfassen.
 
 ## B-2 Belegarten und Ablauf
