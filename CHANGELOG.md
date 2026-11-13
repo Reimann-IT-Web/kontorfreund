@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.46.0 – 13.11.2026
 
 - Verträge bieten Ihre Artikel an wie die Rechnung: beim Tippen der Bezeichnung oder mit „Artikel einfügen“ unter den Positionen. Die Position übernimmt Beschreibung, Einheit und Preis.
 
