@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projekt
 
-Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer in Deutschland. Django-Web-App, Bedienung im Browser, läuft auf Linux, macOS und Windows. Lizenz AGPL-3.0-only (Dual Licensing geplant).
+Open-Source-CRM und Rechnungsprogramm für Selbstständige und Kleinunternehmer in Deutschland. Django-Web-App, Bedienung im Browser, läuft auf Linux, macOS und Windows. Lizenz AGPL-3.0-only (Dual Licensing geplant).
 
 Was gebaut wird, steht ausschließlich in `docs/spec/` (Clean-Room-Spezifikation, nach Phasen gegliedert). Neue Funktionen nur, wenn sie dort beschrieben und freigegeben sind.
 
@@ -69,3 +69,4 @@ Die CI (`.github/workflows/ci.yml`) führt genau diese Prüfungen aus, Tests auf
 - Festgeschriebene Belege sind unveränderbar (GoBD); Korrektur nur per Stornorechnung oder Rechnungskorrektur.
 - Oberflächentexte auf Deutsch, Anrede „Sie“.
 - Neue Abhängigkeiten nur mit AGPL-3.0-verträglicher Lizenz.
+- README und PRODUCT.md nennen die Steuerfälle (§ 19, 19 %, § 13b, steuerfrei) und dass 7 % fehlt. Kommt ein Steuersatz dazu, beide anpassen und Bescheid geben, dass auf der Kontorfreund-Seite der Website „Das passt eher nicht“ geändert werden muss.

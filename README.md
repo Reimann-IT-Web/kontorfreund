@@ -1,7 +1,8 @@
 # Kontorfreund (Kleinunternehmen)
 
-Open-Source-CRM und Rechnungsprogramm für Kleinunternehmer und kleine Büros in Deutschland: Kontakte, Wiedervorlagen, Angebote und Rechnungen mit E-Rechnung (XRechnung, ZUGFeRD), offene Posten, Mahnwesen und DATEV-Export.
+Open-Source-CRM und Rechnungsprogramm für Selbstständige, Kleinunternehmer und kleine Büros in Deutschland: Kontakte, Wiedervorlagen, Angebote und Rechnungen mit E-Rechnung (XRechnung, ZUGFeRD), offene Posten, Mahnwesen und DATEV-Export.
 
+- Für Kleinunternehmer nach § 19 UStG ebenso wie mit 19 % Umsatzsteuer, mit § 13b UStG (der Kunde schuldet die Steuer) und für steuerfreie Leistungen. 7 % oder mehrere Steuersätze auf einer Rechnung gibt es noch nicht.
 - Bedienung im Browser – läuft auf Linux, macOS und Windows, ohne Microsoft Office
 - Ihre Daten bleiben bei Ihnen: keine Werbung, kein Tracking, keine externen Dienste
 - Datenschutz (DSGVO) und GoBD von Anfang an eingebaut

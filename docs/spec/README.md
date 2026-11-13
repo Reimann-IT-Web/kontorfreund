@@ -1,6 +1,6 @@
 # Funktionsspezifikation
 
-Beschreibt, **was** das Programm leisten soll. Sie ist die einzige Quelle für Funktionen und wird in eigenen Worten aus den Anforderungen von Kleinunternehmern, aus Gesetzen und aus Normen abgeleitet.
+Beschreibt, **was** das Programm leisten soll. Sie ist die einzige Quelle für Funktionen und wird in eigenen Worten aus den Anforderungen von Selbstständigen und Kleinunternehmern, aus Gesetzen und aus Normen abgeleitet.
 
 Status: **Entwurf** – wartet auf Freigabe.
 

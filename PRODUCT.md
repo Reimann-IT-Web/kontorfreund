@@ -8,15 +8,15 @@ web
 
 ## Users
 
-Inhaber kleiner Unternehmen in Deutschland, meist Solo-Selbstständige oder Kleinunternehmer nach § 19 UStG (z. B. IT-Service, Webagentur, Handwerk, Dienstleistung). Typische Szene: allein im Homeoffice am Schreibtisch-PC mit großem Bildschirm, oft abends oder zwischen Kundenterminen. Häufigste Aufgabe: Angebote und Rechnungen schreiben und versenden. Daneben Kontakte nachschlagen, Notizen erfassen, Wiedervorlagen abarbeiten, Zahlungseingänge prüfen. Teams mit bis zu 5 Personen sind möglich, aber nicht der Normalfall. Handy und Tablet sind Nebenschauplätze (nachschlagen, kurz notieren).
+Inhaber kleiner Unternehmen in Deutschland, meist Solo-Selbstständige, als Kleinunternehmer nach § 19 UStG oder mit 19 % Umsatzsteuer (z. B. IT-Service, Webagentur, Handwerk, Dienstleistung). Typische Szene: allein im Homeoffice am Schreibtisch-PC mit großem Bildschirm, oft abends oder zwischen Kundenterminen. Häufigste Aufgabe: Angebote und Rechnungen schreiben und versenden. Daneben Kontakte nachschlagen, Notizen erfassen, Wiedervorlagen abarbeiten, Zahlungseingänge prüfen. Teams mit bis zu 5 Personen sind möglich, aber nicht der Normalfall. Handy und Tablet sind Nebenschauplätze (nachschlagen, kurz notieren).
 
 ## Product Purpose
 
-Kontorfreund (Edition Kleinunternehmen) ersetzt klassische, Access- bzw. Office-gebundene Desktop-Bürosoftware: Kunden verwalten und rechtssichere Rechnungen schreiben, an einem ruhigen Ort, im Browser, auf dem eigenen Rechner. Erfolg heißt: Der Inhaber sieht beim Öffnen sofort, was heute zu tun ist, schreibt eine korrekte Rechnung in Sekunden und muss über Finanzamt-Pflichten (Pflichtangaben, § 19 UStG, E-Rechnung, Aufbewahrung) nicht nachdenken.
+Kontorfreund (Edition Kleinunternehmen) ersetzt klassische, Access- bzw. Office-gebundene Desktop-Bürosoftware: Kunden verwalten und rechtssichere Rechnungen schreiben, an einem ruhigen Ort, im Browser, auf dem eigenen Rechner. Erfolg heißt: Der Inhaber sieht beim Öffnen sofort, was heute zu tun ist, schreibt eine korrekte Rechnung in Sekunden und muss über Finanzamt-Pflichten (Pflichtangaben, Umsatzsteuer oder § 19 UStG, E-Rechnung, Aufbewahrung) nicht nachdenken.
 
 ## Positioning
 
-Quelloffen (AGPL-3.0), ohne Microsoft und ohne Cloud-Zwang: läuft lokal auf dem eigenen Rechner, die Daten bleiben beim Nutzer. Fachlich auf deutsche Kleinunternehmer zugeschnitten: § 19 UStG, ZUGFeRD als Standardformat jeder Rechnung, GoBD-Festschreibung und Aufbewahrung sind eingebaut statt nachgerüstet. Ziel, noch nicht erreicht: das Programm existiert als Grundgerüst, die Funktionen entstehen ab Phase 1.
+Quelloffen (AGPL-3.0), ohne Microsoft und ohne Cloud-Zwang: läuft lokal auf dem eigenen Rechner, die Daten bleiben beim Nutzer. Fachlich auf deutsche Selbstständige und Kleinunternehmer zugeschnitten: § 19 UStG, Umsatzsteuer mit 19 % samt § 13b, ZUGFeRD als Standardformat jeder Rechnung, GoBD-Festschreibung und Aufbewahrung sind eingebaut statt nachgerüstet. Ermäßigte 7 % und mehrere Steuersätze auf einer Rechnung fehlen noch. Ziel, noch nicht erreicht: das Programm existiert als Grundgerüst, die Funktionen entstehen ab Phase 1.
 
 ## Operating Context
 
