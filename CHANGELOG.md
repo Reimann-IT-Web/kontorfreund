@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 0.46.1 – 13.11.2026
 
 - Behoben: Ließ sich eine Adresse nicht speichern, etwa weil bei „Rechnungen zusätzlich als XRechnung“ die Käuferreferenz fehlte, stand der Grund nur klein am Feld weit unten, und es sah aus, als passiere nichts. Jetzt meldet Kontorfreund oben auf der Seite „Nicht gespeichert“ und nennt das Feld.
 
