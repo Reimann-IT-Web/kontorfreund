@@ -18,7 +18,7 @@ from django.utils import timezone
 from contacts.models import Anschrift
 from invoicing.beleg import briefanrede, grussformel
 from invoicing.models import Position as Rechnungsposition
-from invoicing.models import Rechnung
+from invoicing.models import Rechnung, positionsfelder
 from wiedervorlagen.models import Wiedervorlage
 
 from .models import Vertrag, monate_spaeter
@@ -58,15 +58,7 @@ def entwurf(vertrag, beginn, heute):
         fusstext=vertrag.fusstext,
     )
     Rechnungsposition.objects.bulk_create(
-        Rechnungsposition(
-            rechnung=rechnung,
-            nr=p.nr,
-            bezeichnung=p.bezeichnung,
-            beschreibung=p.beschreibung,
-            menge=p.menge,
-            einheit=p.einheit,
-            preis=p.preis,
-        )
+        Rechnungsposition(rechnung=rechnung, **positionsfelder(p))
         for p in vertrag.positionen.all()
     )
     return rechnung

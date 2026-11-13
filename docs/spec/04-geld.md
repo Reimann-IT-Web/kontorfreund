@@ -26,7 +26,7 @@ Entwurf – wird vor Beginn von Phase 3 verfeinert und erneut freigegeben.
 ## M-4 DATEV-Export
 
 - Export eines Zeitraums im DATEV-Format (Buchungsstapel, CSV) nach der öffentlichen Formatbeschreibung von DATEV.
-- Kontenrahmen SKR03 oder SKR04. Erlöskonten je Steuerfall einstellbar; die Vorbelegung bestätigt ein Steuerberater. Steuerfreie Leistungen (B-4) sind mit „Steuerfreie Umsätze § 4 Nr. 8 ff. UStG“ vorbelegt, SKR03 8100 und SKR04 4100.
+- Kontenrahmen SKR03 oder SKR04. Erlöskonten je Steuerfall einstellbar; die Vorbelegung bestätigt ein Steuerberater. Steuerfreie Leistungen (B-4) sind mit „Steuerfreie Umsätze § 4 Nr. 8 ff. UStG“ vorbelegt, SKR03 8100 und SKR04 4100. Bei Umsatzsteuer gibt es je Satz ein Erlöskonto (19 %: 8400 bzw. 4400, 7 %: 8300 bzw. 4300, beides Automatikkonten); eine Rechnung mit beiden Sätzen ergibt je Satz eine Buchung über den Bruttobetrag dieses Satzes.
 - Debitorenkonto je Kunde oder ein Sammelkonto.
 - Optional die Rechnungs-PDFs als ZIP dazu.
 

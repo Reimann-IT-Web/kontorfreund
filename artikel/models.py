@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Max
 
 from invoicing.beleg import EINHEIT_CODE
+from invoicing.models import steuersatzfeld
 
 
 class Artikel(models.Model):
@@ -29,6 +30,7 @@ class Artikel(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
     )
+    steuersatz = steuersatzfeld()
     aktiv = models.BooleanField(default=True)
     erstellt = models.DateTimeField(auto_now_add=True)
     geaendert = models.DateTimeField(auto_now=True)

@@ -12,7 +12,7 @@ from artikel.models import Artikel
 from core.models import Firmendaten
 from core.templatetags.kf import euro
 from invoicing.forms import positionen_lesen
-from invoicing.models import Rechnung
+from invoicing.models import Rechnung, Steuersatz, positionsfelder
 from invoicing.views import EINHEITEN
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
@@ -48,17 +48,7 @@ def neu(request):
             beginn=date.today(),
             **abrechnen.vorgaben(vorlage.kontakt, firma),
         )
-        positionen = [
-            Position(
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
-            for p in vorlage.positionen.all()
-        ]
+        positionen = [Position(**positionsfelder(p)) for p in vorlage.positionen.all()]
     else:
         vertrag = Vertrag(
             steuerfall=firma.umsatzsteuer,
@@ -109,6 +99,7 @@ def _editor(request, vertrag, positionen):
             "form": form,
             "positionen": positionen,
             "einheiten": EINHEITEN,
+            "steuersaetze": Steuersatz.choices,
             "artikel": Artikel.objects.filter(aktiv=True),
         },
     )

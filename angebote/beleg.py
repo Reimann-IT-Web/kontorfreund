@@ -28,9 +28,11 @@ from invoicing.beleg import (
     rabatt_daten,
     schlusstext,
     setzen,
+    steuer_daten,
+    ust_spalte,
 )
 from invoicing.models import Position as Rechnungsposition
-from invoicing.models import Rechnung, steuerhinweis
+from invoicing.models import Rechnung, positionsfelder, steuerhinweis
 
 from .models import Angebot
 
@@ -65,6 +67,7 @@ def beleg_daten(angebot, firma, nummer):
         ),
         "positionen": positionen_daten(angebot.positionen.all()),
         "rabatt": rabatt_daten(angebot),
+        "steuern": steuer_daten(angebot),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
@@ -93,6 +96,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
         "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
+        "ust_spalte": ust_spalte(b),
         "summen": druck_summen(b),
         "summe_titel": "Gesamtbetrag",
         "brutto": euro(b["brutto"]),
@@ -155,15 +159,7 @@ def rechnung_erstellen(angebot, firma):
             fusstext=grussformel(firma),
         )
         Rechnungsposition.objects.bulk_create(
-            Rechnungsposition(
-                rechnung=rechnung,
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
+            Rechnungsposition(rechnung=rechnung, **positionsfelder(p))
             for p in angebot.positionen.all()
         )
         angebot.rechnung = rechnung

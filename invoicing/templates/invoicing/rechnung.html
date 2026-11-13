@@ -116,6 +116,7 @@
               <th scope="col" class="num">Menge</th>
               <th scope="col">Einheit</th>
               <th scope="col" class="num">Einzelpreis</th>
+              <th scope="col" class="col-satz" data-satz-spalte{% if form.steuerfall.value != "regel" %} hidden{% endif %}>USt</th>
               <th scope="col" class="num">Gesamt</th>
               <th scope="col"><span class="visually-hidden">Entfernen</span></th>
             </tr>
@@ -138,8 +139,6 @@
         <dl class="totals">
           <div data-row-zwischen hidden><dt>Zwischensumme</dt><dd class="amount" data-sum-zwischen></dd></div>
           <div data-row-rabatt hidden><dt data-rabatt-titel>Rabatt</dt><dd class="amount" data-sum-rabatt></dd></div>
-          <div data-row-netto hidden><dt>Nettobetrag</dt><dd class="amount" data-sum-netto></dd></div>
-          <div data-row-ust hidden><dt>Umsatzsteuer 19 %</dt><dd class="amount" data-sum-ust></dd></div>
           <div class="totals-sum"><dt>{% if rechnung.ist_korrektur %}Korrekturbetrag{% else %}Rechnungsbetrag{% endif %}</dt><dd class="amount" data-sum-total>0,00&nbsp;€</dd></div>
         </dl>
       </div>

@@ -5,6 +5,9 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.models import Firmendaten
+from invoicing.models import Steuersatz
+
 from .forms import ArtikelForm
 from .models import Artikel
 
@@ -40,7 +43,15 @@ def liste(request):
 
 def bearbeiten(request, pk=None):
     artikel = get_object_or_404(Artikel, pk=pk) if pk else None
-    form = ArtikelForm(request.POST or None, instance=artikel)
+    # Den Steuersatz braucht nur, wer Umsatzsteuer ausweist; einen ermäßigten zeigt das
+    # Formular immer, damit er sich zurücksetzen lässt.
+    mit_steuersatz = (
+        Firmendaten.laden().umsatzsteuer == Firmendaten.Umsatzsteuer.REGEL
+        or (artikel is not None and artikel.steuersatz != Steuersatz.VOLL)
+    )
+    form = ArtikelForm(
+        request.POST or None, instance=artikel, mit_steuersatz=mit_steuersatz
+    )
     if request.method == "POST" and form.is_valid():
         artikel = form.save()
         aktion = "gespeichert" if pk else "angelegt"

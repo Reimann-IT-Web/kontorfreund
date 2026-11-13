@@ -16,6 +16,7 @@ class DatevForm(forms.ModelForm):
             "sammelkonto",
             "erloes_kleinunternehmer",
             "erloes_regel",
+            "erloes_regel7",
             "erloes_13b",
             "erloes_steuerfrei",
         ]
@@ -25,6 +26,7 @@ class DatevForm(forms.ModelForm):
             "sammelkonto": ZAHL,
             "erloes_kleinunternehmer": ZAHL,
             "erloes_regel": ZAHL,
+            "erloes_regel7": ZAHL,
             "erloes_13b": ZAHL,
             "erloes_steuerfrei": ZAHL,
         }

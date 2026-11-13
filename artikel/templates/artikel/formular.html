@@ -27,6 +27,7 @@
       {% include "core/feld.html" with f=form.beschreibung breit=True optional=True %}
       {% include "core/feld.html" with f=form.preis %}
       {% include "core/feld.html" with f=form.einheit %}
+      {% if form.steuersatz %}{% include "core/feld.html" with f=form.steuersatz %}{% endif %}
     </div>
   </section>
 

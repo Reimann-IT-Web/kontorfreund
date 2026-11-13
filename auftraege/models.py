@@ -7,7 +7,15 @@ from django.db.models import Q
 
 from angebote.models import Angebot
 from contacts.models import Anschrift, Kontakt
-from invoicing.models import HINWEIS_FEHLT, Rechnung, hinweis_fehlt, runden, summen
+from invoicing.models import (
+    HINWEIS_FEHLT,
+    Rechnung,
+    hinweis_fehlt,
+    positionsfelder,
+    runden,
+    steuersatzfeld,
+    summen,
+)
 
 
 class Fertiggestellt(ValidationError):
@@ -215,16 +223,7 @@ class Auftragsbestaetigung(models.Model):
             **{f: getattr(self, f) for f in self.KOPIERT}
         )
         Position.objects.bulk_create(
-            Position(
-                auftrag=kopie,
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
-            for p in self.positionen.all()
+            Position(auftrag=kopie, **positionsfelder(p)) for p in self.positionen.all()
         )
         return kopie
 
@@ -254,6 +253,7 @@ class Position(models.Model):
     menge = models.DecimalField(max_digits=12, decimal_places=3, default=1)
     einheit = models.CharField(max_length=20, blank=True)
     preis = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    steuersatz = steuersatzfeld()
 
     class Meta:
         ordering = ["nr"]

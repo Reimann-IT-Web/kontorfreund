@@ -65,7 +65,7 @@
           {% for wahl in form.umsatzsteuer %}
           <label class="choice">
             {{ wahl.tag }}
-            <span><strong>{{ wahl.choice_label }}</strong><br><span class="muted">{% if wahl.data.value == "kleinunternehmer" %}Keine Umsatzsteuer, auf jedem Beleg der Hinweis nach § 19 UStG. Kontorfreund zeigt Ihren Umsatz im Vergleich zu den Grenzen von 25.000 € und 100.000 € und warnt rechtzeitig.{% elif wahl.data.value == "regel" %}Kontorfreund weist auf jedem Beleg 19 % Umsatzsteuer aus.{% else %}Zum Beispiel Unterricht, Bildung oder Heilbehandlung. Keine Umsatzsteuer, auf jedem Beleg steht Ihr Hinweis auf die Befreiung.{% endif %}</span></span>
+            <span><strong>{{ wahl.choice_label }}</strong><br><span class="muted">{% if wahl.data.value == "kleinunternehmer" %}Keine Umsatzsteuer, auf jedem Beleg der Hinweis nach § 19 UStG. Kontorfreund zeigt Ihren Umsatz im Vergleich zu den Grenzen von 25.000 € und 100.000 € und warnt rechtzeitig.{% elif wahl.data.value == "regel" %}Kontorfreund weist auf jedem Beleg Umsatzsteuer aus, 19 % oder für einzelne Positionen 7 %.{% else %}Zum Beispiel Unterricht, Bildung oder Heilbehandlung. Keine Umsatzsteuer, auf jedem Beleg steht Ihr Hinweis auf die Befreiung.{% endif %}</span></span>
           </label>
           {% endfor %}
         </div>

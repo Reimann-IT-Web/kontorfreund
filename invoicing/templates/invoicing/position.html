@@ -11,6 +11,12 @@
     </select>
   </td>
   <td class="num"><input class="num" name="preis" type="text" inputmode="decimal" value="{% if p %}{{ p.preis|zahl:2 }}{% endif %}" placeholder="0,00" aria-label="Einzelpreis in Euro"></td>
+  {# Nur sichtbar, wenn der Beleg Umsatzsteuer ausweist; gesendet wird der Satz immer. #}
+  <td class="col-satz" data-satz-spalte{% if form.steuerfall.value != "regel" %} hidden{% endif %}>
+    <select name="steuersatz" aria-label="Umsatzsteuer">
+      {% for wert, name in steuersaetze %}<option value="{{ wert }}"{% if p and wert == p.steuersatz %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </td>
   <td class="num amount" data-line-total>0,00&nbsp;€</td>
   <td class="cell-action"><button class="btn btn-ghost btn-icon" type="button" data-remove-position>{% icon "x" %}<span class="visually-hidden">Position entfernen</span></button></td>
 </tr>

@@ -47,6 +47,7 @@ FELDER = {
         ("beschreibung", "Beschreibung"),
         ("einheit", "Einheit"),
         ("preis", "Einzelpreis netto"),
+        ("steuersatz", "Steuersatz"),
     ],
 }
 
@@ -127,6 +128,7 @@ VORLAGEN = {
                 "beschreibung": ["Beschreibung"],
                 "einheit": ["Einheit"],
                 "preis": ["Einzelpreis"],
+                "steuersatz": ["Steuersatz"],
             },
         ),
     ],
@@ -282,6 +284,19 @@ UEBLICH = {
             "Price",
             "Net Price",
             "Unit Price",
+        ],
+        "steuersatz": [
+            "Steuersatz",
+            "USt-Satz",
+            "USt",
+            "MwSt-Satz",
+            "MwSt.",
+            "MwSt",
+            "Umsatzsteuer",
+            "Mehrwertsteuer",
+            "VAT",
+            "VAT Rate",
+            "Tax Rate",
         ],
     },
 }

@@ -58,7 +58,7 @@ class Firmendaten(models.Model):
     # Die Werte sind zugleich Steuerfälle der Belege (invoicing.models.Rechnung.Steuerfall).
     class Umsatzsteuer(models.TextChoices):
         KLEINUNTERNEHMER = "kleinunternehmer", "Kleinunternehmer nach § 19 UStG"
-        REGEL = "regel", "Umsatzsteuer ausweisen (19 %)"
+        REGEL = "regel", "Umsatzsteuer ausweisen (19 % oder 7 %)"
         STEUERFREI = "steuerfrei", "Steuerfreie Leistungen nach § 4 UStG"
 
     umsatzsteuer = models.CharField(

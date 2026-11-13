@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from contacts.models import Kontakt
 
-from .models import Position, Rechnung
+from .models import Position, Rechnung, Steuersatz
 
 ZAHLUNGSZIELE = [(0, "sofort"), (7, "7 Tage"), (14, "14 Tage"), (30, "30 Tage")]
 
@@ -196,12 +196,14 @@ def positionen_lesen(post, korrektur=False, modell=Position):
     """Positionszeilen aus dem Editor; leere Zeilen fallen weg.
 
     Negative Mengen nur in einer Rechnungskorrektur, negative Preise nie (BR-27).
-    `modell` ist die Positionsklasse der Belegart, z. B. die des Angebots.
+    `modell` ist die Positionsklasse der Belegart, z. B. die des Angebots. Fehlt der
+    Steuersatz, gilt 19 %.
     """
     spalten = [
         post.getlist(name)
         for name in ("bezeichnung", "beschreibung", "menge", "einheit", "preis")
     ]
+    saetze = post.getlist("steuersatz")
     positionen, fehler = [], []
     for zeile, (bez, besch, menge, einheit, preis) in enumerate(
         zip(*spalten, strict=False), 1
@@ -219,6 +221,10 @@ def positionen_lesen(post, korrektur=False, modell=Position):
                 f"Position {zeile}: Menge und Preis dürfen nicht negativ sein."
             )
             continue
+        satz = saetze[zeile - 1].strip() if zeile <= len(saetze) else ""
+        if satz and satz not in {str(s) for s in Steuersatz.values}:
+            fehler.append(f"Position {zeile}: Steuersatz bitte 19 % oder 7 %.")
+            continue
         positionen.append(
             modell(
                 nr=len(positionen) + 1,
@@ -227,6 +233,7 @@ def positionen_lesen(post, korrektur=False, modell=Position):
                 menge=menge,
                 einheit=einheit.strip()[:20],
                 preis=preis,
+                steuersatz=int(satz) if satz else Steuersatz.VOLL,
             )
         )
     return positionen, fehler

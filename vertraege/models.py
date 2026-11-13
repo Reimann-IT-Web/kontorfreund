@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from django.db import models
 
 from contacts.models import Kontakt
-from invoicing.models import Rechnung, runden, summen
+from invoicing.models import Rechnung, runden, steuersatzfeld, summen
 
 
 def monate_spaeter(tag, monate):
@@ -132,6 +132,7 @@ class Position(models.Model):
     menge = models.DecimalField(max_digits=12, decimal_places=3, default=1)
     einheit = models.CharField(max_length=20, blank=True)
     preis = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    steuersatz = steuersatzfeld()
 
     class Meta:
         ordering = ["nr"]

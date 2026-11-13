@@ -27,6 +27,19 @@ STEUER = {
     Rechnung.Steuerfall.UMKEHR: "§ 13b UStG",
     Rechnung.Steuerfall.STEUERFREI: "steuerfrei",
 }
+
+
+def steuer_text(r):
+    """Steuerfall einer Rechnung; mit Umsatzsteuer die Sätze des Belegs, z. B. „19 % und 7 %“.
+
+    Belege vor den Steuersätzen je Position haben nur 19 %.
+    """
+    if r.steuerfall != Rechnung.Steuerfall.REGEL:
+        return STEUER[r.steuerfall]
+    saetze = [g["satz"] for g in r.beleg.get("steuern", [])] or [19]
+    return " und ".join(f"{satz} %" for satz in saetze)
+
+
 STAND = {
     "bezahlt": "bezahlt",
     "teilbezahlt": "teilbezahlt",
@@ -125,7 +138,7 @@ def zeilen(von, bis):
                     bezug=original.nummer if original else "",
                     kundennummer=empfaenger.get("kundennummer", ""),
                     kunde=empfaenger.get("name") or str(r.kontakt or ""),
-                    steuer=STEUER[r.steuerfall],
+                    steuer=steuer_text(r),
                     netto=r.netto,
                     ust=r.ust,
                     brutto=r.brutto,

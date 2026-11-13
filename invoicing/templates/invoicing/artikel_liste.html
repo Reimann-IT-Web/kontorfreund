@@ -1,4 +1,4 @@
 {% load kf %}<datalist id="artikel-liste">
-  {% for a in artikel %}<option value="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}">{{ a.preis|euro }}{% if a.einheit %} / {{ a.einheit }}{% endif %}</option>
+  {% for a in artikel %}<option value="{{ a.bezeichnung }}" data-beschreibung="{{ a.beschreibung }}" data-einheit="{{ a.einheit }}" data-preis="{{ a.preis|zahl:2 }}" data-steuersatz="{{ a.steuersatz }}">{{ a.preis|euro }}{% if a.einheit %} / {{ a.einheit }}{% endif %}</option>
   {% endfor %}
 </datalist>

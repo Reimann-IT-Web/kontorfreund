@@ -3,17 +3,21 @@ from django.db import models
 
 from invoicing.models import Rechnung
 
-# Übliche Erlöskonten je Steuerfall; die Vorbelegung bestätigt der Steuerberater.
+# Übliche Erlöskonten je Steuerfall, bei Umsatzsteuer je Satz; die Vorbelegung bestätigt
+# der Steuerberater. 8400/8300 bzw. 4400/4300 sind Automatikkonten für 19 % und 7 %.
+ERMAESSIGT = "regel-7"
 ERLOESKONTEN = {
     "03": {
         Rechnung.Steuerfall.KLEINUNTERNEHMER: 8195,
         Rechnung.Steuerfall.REGEL: 8400,
+        ERMAESSIGT: 8300,
         Rechnung.Steuerfall.UMKEHR: 8337,
         Rechnung.Steuerfall.STEUERFREI: 8100,
     },
     "04": {
         Rechnung.Steuerfall.KLEINUNTERNEHMER: 4185,
         Rechnung.Steuerfall.REGEL: 4400,
+        ERMAESSIGT: 4300,
         Rechnung.Steuerfall.UMKEHR: 4337,
         Rechnung.Steuerfall.STEUERFREI: 4100,
     },
@@ -81,6 +85,7 @@ class Datev(models.Model):
         "Erlöskonto § 19 UStG", Rechnung.Steuerfall.KLEINUNTERNEHMER
     )
     erloes_regel = _erloeskonto("Erlöskonto 19 % USt", Rechnung.Steuerfall.REGEL)
+    erloes_regel7 = _erloeskonto("Erlöskonto 7 % USt", ERMAESSIGT)
     erloes_13b = _erloeskonto("Erlöskonto § 13b UStG", Rechnung.Steuerfall.UMKEHR)
     erloes_steuerfrei = _erloeskonto(
         "Erlöskonto steuerfreie Leistungen", Rechnung.Steuerfall.STEUERFREI
@@ -106,10 +111,14 @@ class Datev(models.Model):
         """Ohne Berater- und Mandantennummer liest DATEV die Datei nicht ein."""
         return bool(self.beraternummer and self.mandantennummer)
 
-    def erloeskonto(self, steuerfall):
+    def erloeskonto(self, steuerfall, satz=19):
+        """Erlöskonto des Steuerfalls; bei ausgewiesener Umsatzsteuer das des Satzes."""
+        if steuerfall == Rechnung.Steuerfall.REGEL and satz == 7:
+            steuerfall = ERMAESSIGT
         eigenes = {
             Rechnung.Steuerfall.KLEINUNTERNEHMER: self.erloes_kleinunternehmer,
             Rechnung.Steuerfall.REGEL: self.erloes_regel,
+            ERMAESSIGT: self.erloes_regel7,
             Rechnung.Steuerfall.UMKEHR: self.erloes_13b,
             Rechnung.Steuerfall.STEUERFREI: self.erloes_steuerfrei,
         }[steuerfall]

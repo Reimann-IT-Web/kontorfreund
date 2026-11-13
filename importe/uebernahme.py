@@ -12,7 +12,8 @@ Werte, die Kontorfreund anders schreibt, werden umgesetzt: Art sowie Kunde,
 Interessent und Lieferant auch im Plural oder englisch, Anrede (unbekannte
 fallen mit Hinweis weg), Land als Ländercode, vierstellige deutsche PLZ, bei
 denen Excel die Null vorn verloren hat, Hausnummer aus eigener Spalte, Einheit
-(„Stk“, „h“) und Preis in deutscher oder englischer Schreibweise. Eine Nummer
+(„Stk“, „h“), Preis in deutscher oder englischer Schreibweise und Steuersatz
+(„7“, „7 %“, „0,07“, „ermäßigt“; leer heißt 19 %). Eine Nummer
 aus der Datei gilt, wenn sie frei ist; die übrigen Zeilen bekommen die Nummern
 danach. Mobiltelefon und Fax werden weitere Telefonnummern mit der Bezeichnung
 „Mobil“ bzw. „Fax“; die Spalte mit weiteren Nummern und Adressen hat je Zeile
@@ -44,6 +45,7 @@ from contacts.forms import nummer_lesen as kundennummer
 from contacts.models import Kategorie, Kontakt, Kontaktweg
 from core.templatetags.kf import zahl
 from invoicing.beleg import EINHEIT_CODE, LAND_CODE
+from invoicing.models import Steuersatz
 
 WAHR = {"ja", "j", "x", "1", "wahr", "true", "yes", "y"}
 ARTEN = {
@@ -350,6 +352,7 @@ def _artikel(imp, zeilen, bericht):
             "beschreibung": roh.get("beschreibung", ""),
             "einheit": _einheit(roh.get("einheit", ""), meldungen),
             "preis": _preis(roh.get("preis", ""), meldungen),
+            "steuersatz": _steuersatz(roh.get("steuersatz", ""), meldungen),
         }
         form = ArtikelForm(data=daten)
         meldungen += [] if form.is_valid() else _fehler(form)
@@ -401,3 +404,24 @@ def _preis(text, meldungen):
     meldungen.append(f"Einzelpreis: „{text}“ ist kein Betrag.")
     # Die Zeile ist schon ein Fehler; das Formular soll den Preis nicht noch einmal melden.
     return "0"
+
+
+def _steuersatz(text, meldungen):
+    """19 oder 7 aus „7“, „7 %“, „7,00“, „0,07“ oder „ermäßigt“; leer heißt 19 %."""
+    wort = text.strip().casefold()
+    if wort in {"", "voll", "normal", "regulär", "standard"}:
+        return Steuersatz.VOLL
+    if wort in {"ermäßigt", "ermässigt", "reduziert", "reduced"}:
+        return Steuersatz.ERMAESSIGT
+    try:
+        wert = Decimal(re.sub(r"\s|%", "", wort).replace(",", "."))
+    except InvalidOperation:
+        wert = None
+    if wert is not None and 0 < wert < 1:
+        wert *= 100  # Excel schreibt 7 % als 0,07
+    if wert in Steuersatz.values:
+        return int(wert)
+    meldungen.append(
+        f"Steuersatz: „{text}“ gibt es in Kontorfreund nicht. Möglich sind 19 % und 7 %."
+    )
+    return Steuersatz.VOLL

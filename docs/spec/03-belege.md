@@ -6,7 +6,8 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 
 - Felder: Nummer, Bezeichnung, Beschreibung, Einheit, Nettopreis, Steuersatz, aktiv/inaktiv.
 - Einheiten mit Code nach UN/ECE-Empfehlung 20 (z. B. Stück `H87`, Stunde `HUR`, Tag `DAY`, Pauschale `LS`) – nötig für die E-Rechnung.
-- In Rechnung, Angebot, Auftragsbestätigung und Vertrag (B-10) lassen sich aktive Artikel als Position einfügen. Die Position übernimmt Bezeichnung, Beschreibung, Einheit und Preis als Kopie; spätere Änderungen am Artikel berühren sie nicht.
+- In Rechnung, Angebot, Auftragsbestätigung und Vertrag (B-10) lassen sich aktive Artikel als Position einfügen. Die Position übernimmt Bezeichnung, Beschreibung, Einheit, Preis und Steuersatz als Kopie; spätere Änderungen am Artikel berühren sie nicht.
+- Den Steuersatz (B-4) zeigt das Formular, wenn die Firmendaten „Umsatzsteuer ausweisen“ wählen oder der Artikel schon 7 % hat.
 - Positionen lassen sich auch ohne Artikel frei erfassen.
 
 ## B-2 Belegarten und Ablauf
@@ -27,7 +28,7 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 
 | Steuerfall | Ausweis | Pflichthinweis auf dem Beleg |
 |---|---|---|
-| Regelbesteuerung | 19 %, 7 % oder 0 % je Position, Summe je Steuersatz | – |
+| Regelbesteuerung | 19 % oder 7 % je Position, Entgelt und Steuer je Steuersatz | – |
 | Kleinunternehmer (§ 19 UStG) | keine Umsatzsteuer | Hinweis auf die Steuerbefreiung nach § 19 UStG |
 | Steuerschuldnerschaft des Leistungsempfängers (§ 13b UStG) | keine Umsatzsteuer, USt-IdNr. des Kunden nötig | „Steuerschuldnerschaft des Leistungsempfängers“ (§ 14a Abs. 5 UStG) |
 | Steuerfreie Leistung (§ 4 UStG, etwa Nr. 14 Heilbehandlung oder Nr. 21 Unterricht und Bildung) | keine Umsatzsteuer | Hinweis auf die Steuerbefreiung (§ 14 Abs. 4 S. 1 Nr. 8 UStG), Wortlaut aus den Firmendaten |
@@ -35,7 +36,11 @@ Entwurf – wird vor Beginn von Phase 2 verfeinert und erneut freigegeben.
 - Der Steuerfall wird aus den Firmendaten vorbelegt und ist je Beleg änderbar: „steuerfrei“, wenn dort „Meine Leistungen sind in der Regel steuerfrei“ angekreuzt ist, sonst nach Kleinunternehmer ja/nein.
 - Steuerfreie Leistungen: Den Hinweis tragen Sie einmal in den Firmendaten ein, z. B. „Umsatzsteuerfrei nach § 4 Nr. 21 UStG“. Welche Befreiung gilt, entscheidet der Nutzer, das Programm prüft sie nicht. Ohne Hinweis lässt sich ein steuerfreier Beleg nicht festschreiben oder fertigstellen (B-5 Nr. 8). Der Wortlaut wird beim Festschreiben eingefroren; Stornorechnung und Rechnungskorrektur übernehmen ihn vom Original. Gilt für Rechnung, Angebot und Auftragsbestätigung.
 - E-Rechnung bei steuerfreien Leistungen: Umsatzsteuer-Kategorie E (befreit), Satz 0 %, der Hinweis als Befreiungsgrund (BT-120). Einen Befreiungscode (BT-121) setzt das Programm nicht, weil es die Rechtsgrundlage nicht kennt.
-- Ein Steuerfall gilt für den ganzen Beleg. Belege mit steuerfreien und steuerpflichtigen Positionen zugleich kommen erst mit den Steuersätzen je Position.
+- Steuersatz je Position: 19 % oder 7 % (§ 12 Abs. 2 UStG), vorbelegt mit 19 % bzw. dem Satz des Artikels. Der Editor zeigt die Auswahl nur bei Regelbesteuerung; bei den anderen Steuerfällen bleibt der Satz gespeichert, wirkt aber nicht. Rechnung, Angebot, Auftragsbestätigung und Vertrag haben ihn, jeder Übergang, jede Kopie, Stornorechnung und Rechnungskorrektur übernimmt ihn.
+- Mit mehreren Sätzen nennt jede Position auf dem Beleg ihren Satz (Spalte „USt“), und über dem Gesamtbetrag stehen Nettobetrag und Umsatzsteuer je Satz (§ 14 Abs. 4 S. 1 Nr. 7 und 8 UStG). Ein Rabatt (B-2) gilt je Satz auf die Summe seiner Positionen; der Beleg zeigt ihn weiter als einen Betrag.
+- E-Rechnung: Jede Position trägt ihren Satz (BT-152), die Aufschlüsselung (BG-23) und der Rabatt als Abschlag (BG-20) stehen je Satz (BR-S-08, BR-S-09).
+- Ein Steuerfall gilt für den ganzen Beleg. Belege mit steuerfreien und steuerpflichtigen Positionen zugleich sowie der Nullsatz (§ 12 Abs. 3 UStG, Kategorie Z) kommen später.
+- Belege, die vor den Steuersätzen je Position festgeschrieben wurden, gelten mit 19 % bzw. ohne Umsatzsteuer, wie sie gedruckt sind.
 - Umsatzgrenzen nach § 19 UStG (seit 2025): Vorjahr höchstens 25.000 €, laufendes Jahr höchstens 100.000 €. Das Programm zeigt den Jahresumsatz und warnt ab 80 % jeder Grenze. Würde eine Rechnung die 100.000-€-Grenze überschreiten, weist es vor dem Festschreiben darauf hin, dass bereits dieser Umsatz der Regelbesteuerung unterliegt.
 - Steuerfreie Rechnungen zählen nicht zu diesem Umsatz: § 19 Abs. 2 Nr. 1 UStG zieht die Umsätze nach § 4 Nr. 8 Buchst. i, Nr. 9 Buchst. b und Nr. 11 bis 29 vom Gesamtumsatz ab. Die Hilfe nennt die Ausnahme: Umsätze nach § 4 Nr. 8 Buchst. a bis h, Nr. 9 Buchst. a und Nr. 10 zählen mit, wenn sie keine Hilfsumsätze sind; diese rechnet der Nutzer selbst hinzu.
 - Beträge werden mit `Decimal` berechnet: Positionsbeträge auf 2 Nachkommastellen, die Steuer je Steuersatz aus der Summe der Positionen (Rechenregeln nach EN 16931).

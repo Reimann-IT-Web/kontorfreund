@@ -377,7 +377,7 @@ const artikelVerbinden = (formular, tbody, vorlage, rechnen) => {
         tbody.append(vorlage.content.cloneNode(true));
         zeile = tbody.lastElementChild;
       }
-      for (const name of ["bezeichnung", "beschreibung", "einheit", "preis"]) {
+      for (const name of ["bezeichnung", "beschreibung", "einheit", "preis", "steuersatz"]) {
         zeile.querySelector(`[name=${name}]`).value = artikel.dataset[name];
       }
       zeile.dataset.artikelName = artikel.dataset.bezeichnung;
@@ -389,8 +389,8 @@ const artikelVerbinden = (formular, tbody, vorlage, rechnen) => {
   }
 
   // Artikel auch über die Bezeichnung: Wer einen Artikel aus der Liste wählt oder seinen
-  // Namen tippt, bekommt Beschreibung, Einheit und Preis dazu. Nur beim Wechsel zu einem
-  // anderen Artikel, damit ein geänderter Preis bleibt.
+  // Namen tippt, bekommt Beschreibung, Einheit, Preis und Steuersatz dazu. Nur beim Wechsel
+  // zu einem anderen Artikel, damit ein geänderter Preis bleibt.
   const artikelListe = document.getElementById("artikel-liste");
   if (artikelListe) {
     tbody.querySelectorAll("[data-position]").forEach((zeile) => {
@@ -402,13 +402,72 @@ const artikelVerbinden = (formular, tbody, vorlage, rechnen) => {
       const gewaehlt = [...artikelListe.options].find((o) => o.value === e.target.value);
       if (!gewaehlt || zeile.dataset.artikelName === gewaehlt.value) return;
       zeile.dataset.artikelName = gewaehlt.value;
-      for (const name of ["beschreibung", "einheit", "preis"]) {
+      for (const name of ["beschreibung", "einheit", "preis", "steuersatz"]) {
         zeile.querySelector(`[name=${name}]`).value = gewaehlt.dataset[name];
       }
       ansage(`Beschreibung, Einheit und Preis von ${gewaehlt.value} übernommen.`);
     });
   }
 };
+
+// ---------- Umsatzsteuer je Steuersatz: Rechnung, Angebot, Auftragsbestätigung, Vertrag ----------
+
+// Beträge je Steuersatz wie auf dem Beleg (invoicing.models.steuergruppen): Rabatt und Steuer
+// je Satz aus der Summe seiner Positionen; ohne ausgewiesene Steuer eine Gruppe mit Satz 0.
+const steuergruppen = (posten, regel, rabattProzent) => {
+  const cent = (wert) => Math.round(wert * 100) / 100;
+  const summe = new Map();
+  posten.forEach(({ gesamt, satz }) => {
+    const s = regel ? satz : 0;
+    summe.set(s, cent((summe.get(s) ?? 0) + gesamt));
+  });
+  return [...summe.entries()]
+    .sort(([a], [b]) => b - a)
+    .map(([satz, zwischen]) => {
+      const rabatt = cent((zwischen * rabattProzent) / 100);
+      const netto = cent(zwischen - rabatt);
+      return { satz, zwischen, rabatt, netto, ust: cent((netto * satz) / 100) };
+    });
+};
+
+// Nettobetrag und Umsatzsteuer über dem Gesamtbetrag, bei mehreren Sätzen je Satz, wie auf
+// dem Beleg; die Spalte „USt“ der Positionen nur, wenn der Beleg Umsatzsteuer ausweist.
+const steuerZeigen = (formular, gruppen, regel, euro) => {
+  formular.querySelectorAll("[data-satz-spalte]").forEach((el) => {
+    el.hidden = !regel;
+  });
+  const gesamt = formular.querySelector(".totals-sum");
+  gesamt.parentElement.querySelectorAll("[data-steuerzeile]").forEach((el) => el.remove());
+  if (!regel) return;
+  const netto = Math.round(gruppen.reduce((s, g) => s + g.netto, 0) * 100) / 100;
+  const zeilen =
+    gruppen.length > 1
+      ? gruppen.flatMap((g) => [
+          [`Nettobetrag zu ${g.satz} %`, g.netto],
+          [`Umsatzsteuer ${g.satz} %`, g.ust],
+        ])
+      : [
+          ["Nettobetrag", netto],
+          [`Umsatzsteuer ${gruppen[0]?.satz ?? 19} %`, gruppen[0]?.ust ?? 0],
+        ];
+  zeilen.forEach(([titel, betrag]) => {
+    const zeile = document.createElement("div");
+    zeile.dataset.steuerzeile = "";
+    const dt = document.createElement("dt");
+    dt.textContent = titel;
+    const dd = document.createElement("dd");
+    dd.className = "amount";
+    dd.textContent = euro.format(betrag);
+    zeile.append(dt, dd);
+    gesamt.before(zeile);
+  });
+};
+
+// Gesamtbetrag und Satz je Position für steuergruppen.
+const positionPosten = (zeile, gesamt) => ({
+  gesamt,
+  satz: Number(zeile.querySelector("[name=steuersatz]").value),
+});
 
 // ---------- Rechnung, Angebot und Auftragsbestätigung: rechnen und Pflichtangaben prüfen ----------
 
@@ -532,34 +591,33 @@ if (rechnung) {
   });
 
   const rechnen = () => {
-    let netto = 0;
+    const posten = [];
     let leistungOk = tbody.children.length > 0;
     tbody.querySelectorAll("[data-position]").forEach((zeile, i) => {
       zeile.querySelector("[data-pos-nr]").textContent = i + 1;
       const menge = zahl(zeile.querySelector("[name=menge]").value);
       const gesamt = cent(menge * zahl(zeile.querySelector("[name=preis]").value));
       zeile.querySelector("[data-line-total]").textContent = euro.format(gesamt);
-      netto += gesamt;
+      posten.push(positionPosten(zeile, gesamt));
       if (!zeile.querySelector("[name=bezeichnung]").value.trim() || (korrektur ? menge >= 0 : menge <= 0)) leistungOk = false;
     });
-    // Rabatt auf die Summe der Positionen, wie auf dem Beleg.
-    const zwischen = cent(netto);
+    // Rabatt auf die Summe der Positionen, Rabatt und Steuer je Steuersatz, wie auf dem Beleg.
+    const fall = feld("steuerfall").value;
     const rabattProzent = feld("rabatt_prozent") ? zahl(feld("rabatt_prozent").value) : 0;
-    const rabatt = cent((zwischen * rabattProzent) / 100);
-    netto = cent(zwischen - rabatt);
+    const gruppen = steuergruppen(posten, fall === "regel", rabattProzent);
+    const addieren = (name) => cent(gruppen.reduce((s, g) => s + g[name], 0));
+    const zwischen = addieren("zwischen");
+    const rabatt = addieren("rabatt");
+    const netto = addieren("netto");
+    const ust = addieren("ust");
     rechnung.querySelector("[data-row-zwischen]").hidden = !rabattProzent;
     rechnung.querySelector("[data-row-rabatt]").hidden = !rabattProzent;
     rechnung.querySelector("[data-sum-zwischen]").textContent = euro.format(zwischen);
     rechnung.querySelector("[data-rabatt-titel]").textContent = `Rabatt ${String(rabattProzent).replace(".", ",")} %`;
     rechnung.querySelector("[data-sum-rabatt]").textContent = euro.format(-rabatt);
 
-    const fall = feld("steuerfall").value;
-    const ust = fall === "regel" ? cent(netto * 0.19) : 0;
     const summe = cent(netto + ust);
-    rechnung.querySelector("[data-row-netto]").hidden = fall !== "regel";
-    rechnung.querySelector("[data-row-ust]").hidden = fall !== "regel";
-    rechnung.querySelector("[data-sum-netto]").textContent = euro.format(netto);
-    rechnung.querySelector("[data-sum-ust]").textContent = euro.format(ust);
+    steuerZeigen(rechnung, gruppen, fall === "regel", euro);
     rechnung.querySelector("[data-sum-total]").textContent = euro.format(summe);
     rechnung.querySelector("[data-sum-side]").textContent = euro.format(summe);
     const steuerhinweis = rechnung.querySelector("[data-tax-note]");
@@ -737,26 +795,23 @@ if (vertrag) {
     vertrag.querySelector(`[data-sum-${name}]`).textContent = euro.format(wert);
   };
   const rechnen = () => {
-    let summe = 0;
+    const posten = [];
     tbody.querySelectorAll("[data-position]").forEach((zeile, i) => {
       zeile.querySelector("[data-pos-nr]").textContent = i + 1;
       const menge = zahl(zeile.querySelector("[name=menge]").value);
       const gesamt = cent(menge * zahl(zeile.querySelector("[name=preis]").value));
       zeile.querySelector("[data-line-total]").textContent = euro.format(gesamt);
-      summe += gesamt;
+      posten.push(positionPosten(zeile, gesamt));
     });
-    const zwischen = cent(summe);
     const prozent = zahl(vertrag.elements["vertrag-rabatt_prozent"].value);
-    const rabatt = cent((zwischen * prozent) / 100);
-    const netto = cent(zwischen - rabatt);
     const regel = vertrag.elements["vertrag-steuerfall"].value === "regel";
-    const ust = regel ? cent(netto * 0.19) : 0;
-    zeigen("zwischen", zwischen, prozent > 0);
-    zeigen("rabatt", -rabatt, prozent > 0);
+    const gruppen = steuergruppen(posten, regel, prozent);
+    const addieren = (name) => cent(gruppen.reduce((s, g) => s + g[name], 0));
+    zeigen("zwischen", addieren("zwischen"), prozent > 0);
+    zeigen("rabatt", -addieren("rabatt"), prozent > 0);
     vertrag.querySelector("[data-rabatt-titel]").textContent = `Rabatt ${String(prozent).replace(".", ",")} %`;
-    zeigen("netto", netto, regel);
-    zeigen("ust", ust, regel);
-    vertrag.querySelector("[data-sum-total]").textContent = euro.format(cent(netto + ust));
+    steuerZeigen(vertrag, gruppen, regel, euro);
+    vertrag.querySelector("[data-sum-total]").textContent = euro.format(addieren("netto") + addieren("ust"));
   };
   artikelVerbinden(vertrag, tbody, vorlage, rechnen);
   vertrag.addEventListener("input", rechnen);

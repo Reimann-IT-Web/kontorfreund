@@ -23,7 +23,7 @@ from protokoll.erfassen import positionen_geaendert, positionen_text
 
 from . import beleg, versand
 from .forms import RechnungForm, VersandForm, datum_auf_heute, positionen_lesen
-from .models import Rechnung
+from .models import Rechnung, Steuersatz
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +123,7 @@ def _editor(request, rechnung, firma):
             "positionen": positionen,
             "kontakte": kontakte,
             "einheiten": EINHEITEN,
+            "steuersaetze": Steuersatz.choices,
             "artikel": Artikel.objects.filter(aktiv=True),
             "naechste_nummer": Rechnung.naechste_nummer(rechnung.datum),
             "grenz_hinweise": umsatz.hinweise(rechnung.datum.year, _netto(rechnung))

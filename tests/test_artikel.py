@@ -60,7 +60,10 @@ def test_artikel_ohne_einheit(client):
     liste = client.get(reverse("artikel:liste")).text
     assert "69,00 €</span></td>" in liste
     rechnung = client.get(reverse("invoicing:neu")).text
-    assert 'data-einheit="" data-preis="69,00">69,00 €</option>' in rechnung
+    assert (
+        'data-einheit="" data-preis="69,00" data-steuersatz="19">69,00 €</option>'
+        in rechnung
+    )
 
 
 @pytest.mark.parametrize("preis", ["-5", "zehn", ""])
@@ -109,7 +112,7 @@ def test_auswahl_in_jedem_editor(client):
         assert html.count('list="artikel-liste"') == 2
         assert (
             '<option value="Stundensatz Gartenpflege" data-beschreibung="" '
-            'data-einheit="Std." data-preis="45,00">45,00' in html
+            'data-einheit="Std." data-preis="45,00" data-steuersatz="19">45,00' in html
         )
         # Dazu „Artikel einfügen“ unter den Positionen.
         assert 'data-artikel data-bezeichnung="Stundensatz Gartenpflege"' in html

@@ -1,11 +1,13 @@
 """DATEV-Export (Spezifikation M-4): Buchungsstapel im DATEV-Format, Formatversion 13.
 
 Nach der öffentlichen Formatbeschreibung von DATEV: eine Kopfzeile mit Berater, Mandant
-und Zeitraum, eine Zeile mit den 125 Feldnamen, dann eine Buchung je Beleg. Jede
-festgeschriebene Rechnung, Stornorechnung und Rechnungskorrektur bucht ihren
-Bruttobetrag vom Debitor an das Erlöskonto ihres Steuerfalls, Stornos und Korrekturen
-im Haben. Das Erlöskonto für 19 % ist ein Automatikkonto: DATEV rechnet die
-Umsatzsteuer selbst heraus. Altbelege fehlen, weil ihr Steuerfall unbekannt ist.
+und Zeitraum, eine Zeile mit den 125 Feldnamen, dann eine Buchung je Beleg und
+Steuersatz. Jede festgeschriebene Rechnung, Stornorechnung und Rechnungskorrektur bucht
+ihren Bruttobetrag vom Debitor an das Erlöskonto ihres Steuerfalls, Stornos und
+Korrekturen im Haben; mit Positionen zu 19 % und 7 % sind es zwei Buchungen mit dem
+Bruttobetrag je Satz. Die Erlöskonten für 19 % und 7 % sind Automatikkonten: DATEV
+rechnet die Umsatzsteuer selbst heraus. Altbelege fehlen, weil ihr Steuerfall
+unbekannt ist.
 
 Die Datei ist Windows-1252 kodiert, mit Semikolon und CR/LF, wie DATEV sie erwartet.
 """
@@ -115,8 +117,18 @@ class Buchung:
     rechnung: Rechnung
 
 
+def _brutto_je_satz(r):
+    """(Satz, Bruttobetrag) je Steuersatz des eingefrorenen Belegs; Belege vor den
+    Steuersätzen je Position haben nur 19 % bzw. keine Umsatzsteuer."""
+    steuern = r.beleg.get("steuern") or []
+    if len(steuern) < 2:
+        return [(steuern[0]["satz"] if steuern else 19, r.brutto)]
+    return [(g["satz"], Decimal(g["netto"]) + Decimal(g["ust"])) for g in steuern]
+
+
 def buchungen(von, bis, einstellung):
-    """Eine Buchung je festgeschriebenem Beleg im Zeitraum, nach Datum und Nummer."""
+    """Je festgeschriebenem Beleg im Zeitraum eine Buchung je Steuersatz, nach Datum
+    und Nummer."""
     rechnungen = (
         Rechnung.objects.filter(
             status=Rechnung.Status.FESTGESCHRIEBEN, datum__range=(von, bis)
@@ -127,20 +139,21 @@ def buchungen(von, bis, einstellung):
     ergebnis = []
     for r in rechnungen:
         kunde = r.beleg.get("empfaenger", {}).get("name") or str(r.kontakt)
-        ergebnis.append(
-            Buchung(
-                datum=r.datum,
-                beleg=r.nummer,
-                art=r.bezeichnung,
-                text=kunde if r.ist_posten else f"{r.bezeichnung} {kunde}",
-                betrag=abs(r.brutto),
-                soll_haben="S" if r.brutto > 0 else "H",
-                konto=einstellung.debitor(r.kontakt),
-                gegenkonto=einstellung.erloeskonto(r.steuerfall),
-                leistungsdatum=r.leistung_bis or r.leistung_von,
-                rechnung=r,
+        for satz, brutto in _brutto_je_satz(r):
+            ergebnis.append(
+                Buchung(
+                    datum=r.datum,
+                    beleg=r.nummer,
+                    art=r.bezeichnung,
+                    text=kunde if r.ist_posten else f"{r.bezeichnung} {kunde}",
+                    betrag=abs(brutto),
+                    soll_haben="S" if brutto > 0 else "H",
+                    konto=einstellung.debitor(r.kontakt),
+                    gegenkonto=einstellung.erloeskonto(r.steuerfall, satz),
+                    leistungsdatum=r.leistung_bis or r.leistung_von,
+                    rechnung=r,
+                )
             )
-        )
     return ergebnis
 
 
@@ -215,9 +228,11 @@ def datei(einstellung, von, bis, bezeichnung, eintraege, jetzt):
 def mit_rechnungen(inhalt, dateiname, eintraege):
     """ZIP mit der DATEV-Datei und den Belegen (PDF, bei XRechnung auch die XML)."""
     puffer = BytesIO()
+    # Eine Rechnung mit zwei Steuersätzen hat zwei Buchungen, aber nur einmal Belege.
+    rechnungen = {b.rechnung.pk: b.rechnung for b in eintraege}
     with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(dateiname, inhalt)
-        for b in eintraege:
-            for name, pfad, _ in b.rechnung.anhaenge:
+        for rechnung in rechnungen.values():
+            for name, pfad, _ in rechnung.anhaenge:
                 z.write(Path(settings.DATA_DIR) / pfad, f"Rechnungen/{name}")
     return puffer.getvalue()

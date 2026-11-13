@@ -30,9 +30,11 @@ from invoicing.beleg import (
     rabatt_daten,
     schlusstext,
     setzen,
+    steuer_daten,
+    ust_spalte,
 )
 from invoicing.models import Position as Rechnungsposition
-from invoicing.models import Rechnung, steuerhinweis
+from invoicing.models import Rechnung, positionsfelder, steuerhinweis
 
 from .models import Auftragsbestaetigung, Position
 
@@ -79,6 +81,7 @@ def beleg_daten(auftrag, firma, nummer):
         ),
         "positionen": positionen_daten(auftrag.positionen.all()),
         "rabatt": rabatt_daten(auftrag),
+        "steuern": steuer_daten(auftrag),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
@@ -112,6 +115,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
         "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
+        "ust_spalte": ust_spalte(b),
         "summen": druck_summen(b),
         "summe_titel": "Auftragssumme",
         "brutto": euro(b["brutto"]),
@@ -171,15 +175,7 @@ def aus_angebot(angebot, firma):
             angebot=angebot,
         )
         Position.objects.bulk_create(
-            Position(
-                auftrag=auftrag,
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
+            Position(auftrag=auftrag, **positionsfelder(p))
             for p in angebot.positionen.all()
         )
         if not angebot.antwort:
@@ -211,15 +207,7 @@ def rechnung_erstellen(auftrag, firma):
             fusstext=grussformel(firma),
         )
         Rechnungsposition.objects.bulk_create(
-            Rechnungsposition(
-                rechnung=rechnung,
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
+            Rechnungsposition(rechnung=rechnung, **positionsfelder(p))
             for p in auftrag.positionen.all()
         )
         auftrag.rechnung = rechnung

@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -11,7 +12,36 @@ from contacts.models import Anschrift, Kontakt, ist_leitweg_id
 from core.templatetags.kf import euro
 
 CENT = Decimal("0.01")
-UST_SATZ = Decimal("19")
+
+
+class Steuersatz(models.IntegerChoices):
+    """Umsatzsteuer je Position; wirkt nur, wenn der Beleg Umsatzsteuer ausweist."""
+
+    VOLL = 19, "19 %"
+    ERMAESSIGT = 7, "7 %"
+
+
+def steuersatzfeld():
+    """Steuersatz an Positionen und Artikeln (B-1, B-4)."""
+    return models.PositiveSmallIntegerField(
+        "Steuersatz", choices=Steuersatz.choices, default=Steuersatz.VOLL
+    )
+
+
+# Was eine Position bei Kopie, Storno und jedem Übergang zwischen Belegarten übernimmt.
+POSITIONSFELDER = (
+    "nr",
+    "bezeichnung",
+    "beschreibung",
+    "menge",
+    "einheit",
+    "preis",
+    "steuersatz",
+)
+
+
+def positionsfelder(position):
+    return {feld: getattr(position, feld) for feld in POSITIONSFELDER}
 
 
 def runden(wert):
@@ -23,16 +53,45 @@ def rabatt_betrag(zwischensumme, prozent):
     return runden(zwischensumme * prozent / 100)
 
 
+@dataclass(frozen=True)
+class Steuergruppe:
+    """Beträge eines Steuersatzes; Satz 0, wenn der Beleg keine Umsatzsteuer ausweist."""
+
+    satz: int
+    zwischensumme: Decimal
+    rabatt: Decimal
+    netto: Decimal
+    ust: Decimal
+
+
+def steuergruppen(positionen, steuerfall, rabatt=Decimal("0")):
+    """Beträge je Steuersatz nach EN 16931, der höchste Satz zuerst.
+
+    Rabatt und Umsatzsteuer entstehen je Satz aus der Summe seiner Positionen,
+    kaufmännisch gerundet (BR-S-08, BR-S-09). Ohne ausgewiesene Umsatzsteuer bilden
+    alle Positionen eine Gruppe mit Satz 0.
+    """
+    regel = steuerfall == Rechnung.Steuerfall.REGEL
+    summe = {}
+    for p in positionen:
+        satz = p.steuersatz if regel else 0
+        summe[satz] = summe.get(satz, Decimal("0.00")) + p.gesamt
+    gruppen = []
+    for satz in sorted(summe, reverse=True):
+        abzug = rabatt_betrag(summe[satz], rabatt)
+        netto = summe[satz] - abzug
+        # Bei Storno und Korrektur ergäbe 0 % sonst -0.00, das die E-Rechnung ablehnt.
+        ust = runden(netto * satz / 100) or Decimal("0.00")
+        gruppen.append(Steuergruppe(satz, summe[satz], abzug, netto, ust))
+    return gruppen
+
+
 def summen(positionen, steuerfall, rabatt=Decimal("0")):
     """(netto, ust, brutto) aus den Positionen eines Belegs nach Abzug des Rabatts in
-    Prozent, kaufmännisch gerundet."""
-    zwischensumme = sum((p.gesamt for p in positionen), Decimal("0.00"))
-    netto = zwischensumme - rabatt_betrag(zwischensumme, rabatt)
-    ust = (
-        runden(netto * UST_SATZ / 100)
-        if steuerfall == Rechnung.Steuerfall.REGEL
-        else Decimal("0.00")
-    )
+    Prozent, je Steuersatz kaufmännisch gerundet."""
+    gruppen = steuergruppen(positionen, steuerfall, rabatt)
+    netto = sum((g.netto for g in gruppen), Decimal("0.00"))
+    ust = sum((g.ust for g in gruppen), Decimal("0.00"))
     return netto, ust, netto + ust
 
 
@@ -72,7 +131,7 @@ class Rechnung(models.Model):
 
     class Steuerfall(models.TextChoices):
         KLEINUNTERNEHMER = "kleinunternehmer", "§ 19 – Kleinunternehmer, keine USt"
-        REGEL = "regel", "19 % Umsatzsteuer ausweisen"
+        REGEL = "regel", "Umsatzsteuer ausweisen (19 % oder 7 %)"
         UMKEHR = "13b", "§ 13b – Kunde schuldet die Steuer"
         STEUERFREI = "steuerfrei", "§ 4 – steuerfreie Leistung, keine USt"
 
@@ -432,15 +491,7 @@ class Rechnung(models.Model):
             **{**{f: getattr(self, f) for f in self.KOPIERT}, **abweichend}
         )
         Position.objects.bulk_create(
-            Position(
-                rechnung=kopie,
-                nr=p.nr,
-                bezeichnung=p.bezeichnung,
-                beschreibung=p.beschreibung,
-                menge=p.menge,
-                einheit=p.einheit,
-                preis=p.preis,
-            )
+            Position(rechnung=kopie, **positionsfelder(p))
             for p in self.positionen.all()
         )
         return kopie
@@ -473,6 +524,7 @@ class Position(models.Model):
     menge = models.DecimalField(max_digits=12, decimal_places=3, default=1)
     einheit = models.CharField(max_length=20, blank=True)
     preis = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    steuersatz = steuersatzfeld()
 
     class Meta:
         ordering = ["nr"]

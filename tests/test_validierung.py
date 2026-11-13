@@ -35,6 +35,8 @@ LEITWEG_ID = "991-33333TEST-33"
 
 SKONTO = {"skonto_prozent": "2", "skonto_tage": "7"}
 RABATT = {"rabatt_prozent": "8"}
+# Webdesign zu 19 %, Hosting zu 7 % (B-4: mehrere Steuersätze auf einem Beleg).
+GEMISCHT = {"steuersatz": ["19", "7"]}
 
 # Name, Steuerfall, Angaben der Adresse, weitere Angaben der Rechnung;
 # dazu je eine Stornorechnung und Rechnungskorrektur.
@@ -48,6 +50,16 @@ FAELLE = [
     ("rabatt-kleinunternehmer", "kleinunternehmer", {}, RABATT),
     ("rabatt-regel", "regel", {}, {**RABATT, **SKONTO}),
     ("rabatt-13b", "13b", {"land": "Österreich", "ust_id": "ATU12345678"}, RABATT),
+    # Je Steuersatz eine Aufschlüsselung (BG-23) und ein Abschlag (BG-20).
+    ("gemischt", "regel", {}, GEMISCHT),
+    ("gemischt-rabatt", "regel", {}, {**GEMISCHT, **RABATT, **SKONTO}),
+    ("nur-7", "regel", {}, {"steuersatz": ["7", "7"]}),
+    (
+        "xrechnung-gemischt",
+        "regel",
+        {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
+        {**GEMISCHT, **RABATT},
+    ),
     (
         "xrechnung-rabatt",
         "regel",
@@ -181,7 +193,11 @@ def rechnungen(client, settings, unterschrift):
         entwurf = reverse(
             "invoicing:bearbeiten", args=[Rechnung.objects.get(korrektur_zu=zweite).pk]
         )
-        korrektur = festschreiben(client, entwurf, kunde, steuerfall, "-2,5", "-1")
+        # Die Korrektur übernimmt die Sätze des Originals, wie der Editor sie anbietet.
+        saetze = {"steuersatz": mehr["steuersatz"]} if "steuersatz" in mehr else {}
+        korrektur = festschreiben(
+            client, entwurf, kunde, steuerfall, "-2,5", "-1", **saetze
+        )
         for art, rechnung in (
             ("", original),
             ("-storno", storno),

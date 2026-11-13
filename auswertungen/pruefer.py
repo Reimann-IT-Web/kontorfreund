@@ -36,7 +36,7 @@ from eingang.models import Eingangsrechnung
 from invoicing.models import Rechnung
 from zahlungen.models import Mahnung, Zahlung
 
-from .buch import STEUER
+from .buch import steuer_text
 
 DTD = Path(__file__).parent / "daten" / "gdpdu-01-08-2002.dtd"
 DTD_SHA256 = "e93a716e8e022b8624b02f12b805f67c25e3fdd40fe422036f2abbea464e0b76"
@@ -137,7 +137,12 @@ def tabellen(von, bis):
             ("Kunde", TEXT, "Empfänger wie auf der Rechnung"),
             ("Leistung von", DATUM, "Leistungsdatum oder Beginn des Zeitraums"),
             ("Leistung bis", DATUM, "Ende des Leistungszeitraums"),
-            ("Umsatzsteuer", TEXT, "§ 19 UStG, 19 % oder § 13b UStG"),
+            (
+                "Umsatzsteuer",
+                TEXT,
+                "§ 19 UStG, § 13b UStG, steuerfrei oder die Steuersätze, "
+                "z. B. 19 % und 7 %",
+            ),
             (
                 "Rabatt",
                 BETRAG,
@@ -170,6 +175,11 @@ def tabellen(von, bis):
             ("Einheit", TEXT, ""),
             ("Einzelpreis", BETRAG, ""),
             ("Gesamt", BETRAG, "Menge mal Einzelpreis, kaufmännisch gerundet"),
+            (
+                "Steuersatz",
+                GANZ,
+                "Umsatzsteuer in Prozent; 0, wenn die Rechnung keine ausweist",
+            ),
         ],
         verweise=[("Rechnungsnummer", "Rechnungsausgang")],
     )
@@ -188,7 +198,7 @@ def tabellen(von, bis):
                 empfaenger.get("name", ""),
                 _datum(b.get("leistung_von")),
                 _datum(b.get("leistung_bis")),
-                STEUER[r.steuerfall],
+                steuer_text(r),
                 Decimal(b["rabatt"]["betrag"]) if b.get("rabatt") else Decimal("0"),
                 r.netto,
                 r.ust,
@@ -212,6 +222,9 @@ def tabellen(von, bis):
                     p["einheit"],
                     Decimal(p["preis"]),
                     Decimal(p["gesamt"]),
+                    p.get("steuersatz", 19)
+                    if r.steuerfall == Rechnung.Steuerfall.REGEL
+                    else 0,
                 ]
             )
         belege += [d for d in (r.datei, r.xml_datei) if d]

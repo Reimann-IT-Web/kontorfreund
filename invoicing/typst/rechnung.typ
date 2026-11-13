@@ -134,25 +134,26 @@
   }
 })
 
-// Zahlenspalten so breit wie ihr Inhalt; die Leistung bekommt den Rest.
+// Zahlenspalten so breit wie ihr Inhalt; die Leistung bekommt den Rest. Bei mehreren Steuersätzen
+// nennt jede Position ihren Satz; Mahnungen und ältere Belege kennen die Angabe nicht.
+#let ust-spalte = d.at("ust_spalte", default: false)
+#let mit-satz(vorne, satz, hinten) = if ust-spalte { vorne + (satz,) + hinten } else { vorne + hinten }
 #if d.positionen.len() > 0 { table(
-  columns: (7mm, 1fr, auto, auto, auto),
+  columns: mit-satz((7mm, 1fr, auto, auto), auto, (auto,)),
   column-gutter: 5mm,
   inset: (x: 0pt, y: 5.5pt),
   stroke: none,
-  align: (left, left, right, right, right),
+  align: mit-satz((left, left, right, right), right, (right,)),
   table.header(
-    ..([Pos.], [Leistung], [Menge], [Einzelpreis], [Gesamt]).map(t => text(size: 8.5pt, fill: leise, t)),
+    ..mit-satz(([Pos.], [Leistung], [Menge], [Einzelpreis]), [USt], ([Gesamt],))
+      .map(t => text(size: 8.5pt, fill: leise, t)),
     table.hline(stroke: 0.6pt + tinte),
   ),
   ..d.positionen
-    .map(p => (
-      p.nr,
-      leistung(p),
-      p.menge,
-      p.preis,
-      p.gesamt,
-      table.hline(stroke: 0.4pt + linie),
+    .map(p => mit-satz(
+      (p.nr, leistung(p), p.menge, p.preis),
+      p.at("satz", default: ""),
+      (p.gesamt, table.hline(stroke: 0.4pt + linie)),
     ))
     .flatten(),
 ) }

@@ -132,11 +132,13 @@ def anmeldung(aktion, wer, benutzer=None, grund=""):
 
 
 def positionen_text(positionen):
+    """Je Position eine Zeile; der Steuersatz nur, wenn er nicht 19 % ist."""
     return "\n".join(
         " ".join(
             t
             for t in (f"{p.nr}.", zahl(p.menge), p.einheit, p.bezeichnung)
             + ("à", euro(p.preis))
+            + ((f"({p.steuersatz} % USt)",) if p.steuersatz != 19 else ())
             if t
         )
         for p in positionen

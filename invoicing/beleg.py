@@ -34,7 +34,7 @@ from segno import helpers as qr
 from contacts.models import ist_leitweg_id
 from core.templatetags.kf import euro, zahl
 
-from .models import Rechnung, rabatt_betrag, runden, steuerhinweis
+from .models import Rechnung, Steuersatz, runden, steuergruppen, steuerhinweis
 
 # XRechnung 3.0 in der Syntax CII; gültig ist Version 3.0.2, Version 4.0 erst ab 2027.
 XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
@@ -98,24 +98,23 @@ LAND_CODE = {
     "Italien": "IT",
     "Spanien": "ES",
 }
-# Umsatzsteuer-Kategorie (UNTDID 5305), Satz, Befreiungsgrund und -code je Steuerfall.
+# Umsatzsteuer-Kategorie (UNTDID 5305), Befreiungsgrund und -code je Steuerfall. Den Satz
+# trägt jede Position; ohne ausgewiesene Steuer ist er 0.
 KATEGORIE = {
     Rechnung.Steuerfall.KLEINUNTERNEHMER: (
         "E",
-        Decimal("0"),
         "Kleinunternehmer gemäß § 19 UStG",
         "",
     ),
-    Rechnung.Steuerfall.REGEL: ("S", Decimal("19"), "", ""),
+    Rechnung.Steuerfall.REGEL: ("S", "", ""),
     Rechnung.Steuerfall.UMKEHR: (
         "AE",
-        Decimal("0"),
         "Steuerschuldnerschaft des Leistungsempfängers",
         "VATEX-EU-AE",
     ),
     # Befreiungsgrund (BT-120) ist der Hinweis des Belegs. Einen VATEX-Code setzt
     # Kontorfreund nicht, weil es die Rechtsgrundlage der Befreiung nicht kennt.
-    Rechnung.Steuerfall.STEUERFREI: ("E", Decimal("0"), None, ""),
+    Rechnung.Steuerfall.STEUERFREI: ("E", None, ""),
 }
 
 
@@ -302,21 +301,69 @@ def positionen_daten(positionen):
             "einheit": p.einheit,
             "preis": str(p.preis),
             "gesamt": str(p.gesamt),
+            "steuersatz": p.steuersatz,
         }
         for p in positionen
     ]
 
 
+def _gruppen(beleg):
+    return steuergruppen(beleg.positionen.all(), beleg.steuerfall, beleg.rabatt_prozent)
+
+
 def rabatt_daten(beleg):
-    """Rabatt auf die Summe der Positionen; None ohne Rabatt (wie in älteren Belegen)."""
+    """Rabatt auf die Summe der Positionen; None ohne Rabatt (wie in älteren Belegen).
+
+    Der Betrag ist die Summe der Rabatte je Steuersatz (steuer_daten).
+    """
     if not beleg.rabatt_prozent:
         return None
-    zwischensumme = sum((p.gesamt for p in beleg.positionen.all()), Decimal("0.00"))
+    gruppen = _gruppen(beleg)
     return {
         "prozent": f"{beleg.rabatt_prozent:.2f}",
-        "zwischensumme": str(zwischensumme),
-        "betrag": str(rabatt_betrag(zwischensumme, beleg.rabatt_prozent)),
+        "zwischensumme": str(sum((g.zwischensumme for g in gruppen), Decimal("0.00"))),
+        "betrag": str(sum((g.rabatt for g in gruppen), Decimal("0.00"))),
     }
+
+
+def steuer_daten(beleg):
+    """Beträge je Steuersatz (BG-23), der höchste zuerst; ohne Umsatzsteuer Satz 0."""
+    return [
+        {
+            "satz": g.satz,
+            "zwischensumme": str(g.zwischensumme),
+            "rabatt": str(g.rabatt),
+            "netto": str(g.netto),
+            "ust": str(g.ust),
+        }
+        for g in _gruppen(beleg)
+    ]
+
+
+def beleg_steuern(b):
+    """Beträge je Steuersatz eines eingefrorenen Belegs.
+
+    Belege vor den Steuersätzen je Position kennen nur 19 % bzw. keine Umsatzsteuer.
+    """
+    if "steuern" in b:
+        return b["steuern"]
+    rabatt = b.get("rabatt")
+    return [
+        {
+            "satz": Steuersatz.VOLL
+            if b["steuerfall"] == Rechnung.Steuerfall.REGEL
+            else 0,
+            "zwischensumme": rabatt["zwischensumme"] if rabatt else b["netto"],
+            "rabatt": rabatt["betrag"] if rabatt else "0.00",
+            "netto": b["netto"],
+            "ust": b["ust"],
+        }
+    ]
+
+
+def ust_spalte(b):
+    """Positionen mit verschiedenen Steuersätzen nennen ihren Satz (§ 14 Abs. 4 Nr. 8 UStG)."""
+    return len(beleg_steuern(b)) > 1
 
 
 def skonto_daten(rechnung, brutto):
@@ -381,6 +428,7 @@ def beleg_daten(rechnung, firma, nummer):
         "lieferanschrift": lieferanschrift_daten(k, rechnung.lieferanschrift),
         "positionen": positionen_daten(rechnung.positionen.all()),
         "rabatt": rabatt_daten(rechnung),
+        "steuern": steuer_daten(rechnung),
         "netto": str(netto),
         "ust": str(ust),
         "brutto": str(brutto),
@@ -486,6 +534,7 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
         "lieferanschrift": lieferzeile(b),
         "kopftext": absaetze(b["kopftext"]),
         "positionen": druck_positionen(b["positionen"]),
+        "ust_spalte": ust_spalte(b),
         "summen": druck_summen(b),
         "summe_titel": "Korrekturbetrag" if korrektur else "Rechnungsbetrag",
         "brutto": euro(b["brutto"]),
@@ -587,6 +636,8 @@ def druck_positionen(positionen):
             "menge": f"{zahl(p['menge'])} {p['einheit']}".strip(),
             "preis": euro(p["preis"]),
             "gesamt": euro(p["gesamt"]),
+            # Gedruckt nur bei mehreren Steuersätzen (ust_spalte).
+            "satz": f"{p.get('steuersatz', Steuersatz.VOLL)} %",
         }
         for p in positionen
     ]
@@ -594,19 +645,29 @@ def druck_positionen(positionen):
 
 def druck_summen(b):
     """Zeilen über dem Gesamtbetrag: Zwischensumme und Rabatt, falls es einen gibt,
-    Netto und Umsatzsteuer, wenn Steuer ausgewiesen wird."""
+    Netto und Umsatzsteuer, wenn Steuer ausgewiesen wird; bei mehreren Steuersätzen
+    beides je Satz (§ 14 Abs. 4 Nr. 7 und 8 UStG)."""
     zeilen = []
     if rabatt := b.get("rabatt"):
         zeilen += [
             ["Zwischensumme", euro(rabatt["zwischensumme"])],
             [f"Rabatt {zahl(rabatt['prozent'])} %", euro(-Decimal(rabatt["betrag"]))],
         ]
-    if b["steuerfall"] == Rechnung.Steuerfall.REGEL:
-        zeilen += [
-            ["Nettobetrag", euro(b["netto"])],
-            ["Umsatzsteuer 19 %", euro(b["ust"])],
-        ]
-    return zeilen
+    if b["steuerfall"] != Rechnung.Steuerfall.REGEL:
+        return zeilen
+    steuern = beleg_steuern(b)
+    if len(steuern) > 1:
+        for g in steuern:
+            zeilen += [
+                [f"Nettobetrag zu {g['satz']} %", euro(g["netto"])],
+                [f"Umsatzsteuer {g['satz']} %", euro(g["ust"])],
+            ]
+        return zeilen
+    satz = steuern[0]["satz"] if steuern else Steuersatz.VOLL
+    return zeilen + [
+        ["Nettobetrag", euro(b["netto"])],
+        [f"Umsatzsteuer {satz} %", euro(b["ust"])],
+    ]
 
 
 def setzen(druck, format="pdf", ppi=110):
@@ -647,6 +708,7 @@ def kopf_vorschau(firma):
         "betreff": "",
         "kopftext": [],
         "positionen": [],
+        "ust_spalte": False,
         "summen": [],
         "summe_titel": "",
         "brutto": "",
@@ -699,9 +761,11 @@ def zugferd(b):
     lieferung = b.get("lieferanschrift")
     if e["land"] not in LAND_CODE or (lieferung and lieferung["land"] not in LAND_CODE):
         return None
-    kategorie, satz, grund, grund_code = KATEGORIE[b["steuerfall"]]
+    kategorie, grund, grund_code = KATEGORIE[b["steuerfall"]]
     if grund is None:
         grund = b["steuerhinweis"]
+    regel = b["steuerfall"] == Rechnung.Steuerfall.REGEL
+    steuern = beleg_steuern(b)
     xrechnung = b.get("xrechnung", False)
 
     doc = Document()
@@ -790,7 +854,9 @@ def zugferd(b):
         )
         zeile.settlement.trade_tax.type_code = "VAT"
         zeile.settlement.trade_tax.category_code = kategorie
-        zeile.settlement.trade_tax.rate_applicable_percent = satz
+        zeile.settlement.trade_tax.rate_applicable_percent = Decimal(
+            p.get("steuersatz", Steuersatz.VOLL) if regel else 0
+        )
         zeile.settlement.monetary_summation.total_amount = Decimal(p["gesamt"])
         doc.trade.items.add(zeile)
 
@@ -817,33 +883,36 @@ def zugferd(b):
         abrechnung.terms.add(bedingung)
 
     rabatt = b.get("rabatt")
-    if rabatt:
-        # Abschlag auf Belegebene (BG-20) mit derselben Steuerkategorie wie die Positionen.
+    for g in steuern if rabatt else ():
+        # Abschlag auf Belegebene (BG-20) je Steuersatz, mit Kategorie und Satz der
+        # Positionen, auf die er sich bezieht (BR-S-08).
         abschlag = TradeAllowanceCharge()
         abschlag.indicator = False
         abschlag.calculation_percent = Decimal(rabatt["prozent"])
-        abschlag.basis_amount = Decimal(rabatt["zwischensumme"])
-        abschlag.actual_amount = Decimal(rabatt["betrag"])
+        abschlag.basis_amount = Decimal(g["zwischensumme"])
+        abschlag.actual_amount = Decimal(g["rabatt"])
         abschlag.reason_code = "95"  # Discount (UNTDID 5189)
         abschlag.reason = "Rabatt"
         abschlag_steuer = CategoryTradeTax()
         abschlag_steuer.type_code = "VAT"
         abschlag_steuer.category_code = kategorie
-        abschlag_steuer.rate_applicable_percent = satz
+        abschlag_steuer.rate_applicable_percent = Decimal(g["satz"])
         abschlag.trade_tax.add(abschlag_steuer)
         abrechnung.allowance_charge.add(abschlag)
 
-    steuer = ApplicableTradeTax()
-    steuer.calculated_amount = Decimal(b["ust"])
-    steuer.basis_amount = Decimal(b["netto"])
-    steuer.type_code = "VAT"
-    steuer.category_code = kategorie
-    steuer.rate_applicable_percent = satz
-    if grund:
-        steuer.exemption_reason = grund
-    if grund_code:
-        steuer.exemption_reason_code = grund_code
-    abrechnung.trade_tax.add(steuer)
+    # Aufschlüsselung je Steuersatz (BG-23).
+    for g in steuern:
+        steuer = ApplicableTradeTax()
+        steuer.calculated_amount = Decimal(g["ust"])
+        steuer.basis_amount = Decimal(g["netto"])
+        steuer.type_code = "VAT"
+        steuer.category_code = kategorie
+        steuer.rate_applicable_percent = Decimal(g["satz"])
+        if grund:
+            steuer.exemption_reason = grund
+        if grund_code:
+            steuer.exemption_reason_code = grund_code
+        abrechnung.trade_tax.add(steuer)
 
     summe = abrechnung.monetary_summation
     summe.line_total = Decimal(rabatt["zwischensumme"] if rabatt else b["netto"])

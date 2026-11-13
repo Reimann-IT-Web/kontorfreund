@@ -19,6 +19,7 @@ from core.models import Firmendaten
 from invoicing import beleg as rechnungsbeleg
 from invoicing import versand
 from invoicing.forms import VersandForm, datum_auf_heute, positionen_lesen
+from invoicing.models import Steuersatz
 from invoicing.views import EINHEITEN
 from protokoll.erfassen import positionen_geaendert, positionen_text
 
@@ -111,6 +112,7 @@ def _editor(request, angebot, firma):
             "positionen": positionen,
             "kontakte": kontakte,
             "einheiten": EINHEITEN,
+            "steuersaetze": Steuersatz.choices,
             "artikel": Artikel.objects.filter(aktiv=True),
             "naechste_nummer": Angebot.naechste_nummer(angebot.datum),
             "vorschau": rechnungsbeleg.seitenbilder(_entwurf_pdf(angebot, firma))
