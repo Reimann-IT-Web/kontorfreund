@@ -1,5 +1,9 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Behoben: Ließ sich eine Adresse nicht speichern, etwa weil bei „Rechnungen zusätzlich als XRechnung“ die Käuferreferenz fehlte, stand der Grund nur klein am Feld weit unten, und es sah aus, als passiere nichts. Jetzt meldet Kontorfreund oben auf der Seite „Nicht gespeichert“ und nennt das Feld.
+
 ## 0.46.0 – 13.11.2026
 
 - Verträge bieten Ihre Artikel an wie die Rechnung: beim Tippen der Bezeichnung oder mit „Artikel einfügen“ unter den Positionen. Die Position übernimmt Beschreibung, Einheit und Preis.

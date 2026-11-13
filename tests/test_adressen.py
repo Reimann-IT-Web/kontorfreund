@@ -56,6 +56,31 @@ def test_person_braucht_nachnamen(client):
     assert not Kontakt.objects.exists()
 
 
+def test_nicht_gespeichert_steht_oben_mit_dem_feld(client):
+    """Die Meldung am Feld steht weit unten; ohne Hinweis oben wirkt es wie nichts."""
+    kontakt = Kontakt.objects.create(art="firma", firmenname="Bäckerei Krume")
+
+    response = client.post(
+        reverse("contacts:bearbeiten", args=[kontakt.pk]),
+        {
+            "art": "firma",
+            "firmenname": "Bäckerei Krume",
+            "titel": "Dr.",
+            "xrechnung": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    meldungen = [str(m) for m in response.context["messages"]]
+    assert meldungen == [
+        "Nicht gespeichert. Bitte die markierten Angaben prüfen: "
+        "Käuferreferenz oder Leitweg-ID."
+    ]
+    assert "Für die XRechnung braucht es eine Käuferreferenz" in response.text
+    kontakt.refresh_from_db()
+    assert kontakt.titel == "" and not kontakt.xrechnung
+
+
 def test_dublettenwarnung_bei_gleicher_email(client):
     Kontakt.objects.create(
         art="person", vorname="Anna", nachname="Lindner", email="anna@post.example"

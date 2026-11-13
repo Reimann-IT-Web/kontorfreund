@@ -321,6 +321,14 @@ def bearbeiten(request, pk=None):
             if firma and kontakt.firma_id == firma.pk:
                 return redirect("historie:verlauf", firma.pk)
             return redirect(f"{reverse('contacts:liste')}?offen={kontakt.pk}")
+    elif request.method == "POST":
+        # Oben auf der Seite, sonst übersieht man eine Meldung weit unten im Formular.
+        felder = [form.fields[n].label for n in form.errors if n in form.fields]
+        messages.error(
+            request,
+            "Nicht gespeichert. Bitte die markierten Angaben prüfen"
+            + (f": {', '.join(felder)}." if felder else "."),
+        )
     return render(
         request,
         "contacts/formular.html",
