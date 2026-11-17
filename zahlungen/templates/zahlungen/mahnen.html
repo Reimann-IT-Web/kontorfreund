@@ -19,7 +19,7 @@
   </div>
 </div>
 
-<form class="beleg-ansicht" method="post" novalidate>
+<form class="beleg-ansicht" method="post" novalidate data-verzug-ab="{{ form.verzug_ab|date:'Y-m-d' }}">
   {% csrf_token %}
   <div class="stack">
     <div class="grid-2 grid-tight">
@@ -28,12 +28,15 @@
     </div>
     {% include "core/feld.html" with f=form.text %}
     <p class="hint">Die Anrede steht automatisch davor, Aufstellung, Betrag, Frist und Bankverbindung darunter.</p>
-    <div class="grid-2 grid-tight">
-      {% include "core/feld.html" with f=form.gebuehr %}
-      <div class="stack">
-        <label class="choice">{{ form.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">{% if rechnung.kontakt.ist_verbraucher %}5{% else %}9{% endif %} Prozentpunkte über dem Basiszinssatz{% if rechnung.kontakt.ist_verbraucher %}, weil der Kunde eine Privatperson ist{% endif %}.</span></span></label>
-        {% if not rechnung.kontakt.ist_verbraucher %}<label class="choice">{{ form.pauschale }}<span><strong>Verzugspauschale 40 €</strong><br><span class="muted">Steht Ihnen gegenüber Unternehmen zu (§ 288 Abs. 5 BGB); viele verzichten darauf, um die Kundenbeziehung zu schonen.</span></span></label>{% endif %}
+    <div>
+      <div class="grid-2 grid-tight">
+        {% include "core/feld.html" with f=form.gebuehr %}
+        <div class="stack">
+          <label class="choice">{{ form.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">{% if rechnung.kontakt.ist_verbraucher %}5{% else %}9{% endif %} Prozentpunkte über dem Basiszinssatz{% if rechnung.kontakt.ist_verbraucher %}, weil der Kunde eine Privatperson ist{% endif %}.</span></span></label>
+          {% if not rechnung.kontakt.ist_verbraucher %}<label class="choice">{{ form.pauschale }}<span><strong>Verzugspauschale 40 €</strong><br><span class="muted">Steht Ihnen gegenüber Unternehmen zu, die in Verzug sind (§ 288 Abs. 5 BGB); viele verzichten darauf, um die Kundenbeziehung zu schonen.</span></span></label>{% endif %}
+        </div>
       </div>
+      <p class="callout" data-verzug-hinweis{% if not form.ohne_verzug %} hidden{% endif %}>{% icon "clock" %}<span>Der Kunde ist erst ab dem <strong data-verzug-tag>{% if form.verzug_tag %}{{ form.verzug_tag|date:"d.m.Y" }}{% else %}Ablauf der Frist{% endif %}</strong> in Verzug<span data-verzug-frist{% if not form.verzug_durch_frist %} hidden{% endif %}>, wenn die Frist dieses Schreibens abgelaufen ist</span>. {% if rechnung.kontakt.ist_verbraucher %}Mahngebühr und Zinsen fallen{% else %}Mahngebühr, Zinsen und Pauschale fallen{% endif %} deshalb erst mit der nächsten Mahnung an.</span></p>
     </div>
   </div>
 
@@ -46,7 +49,7 @@
         </tbody>
         <tfoot><tr><td>Zu zahlen</td><td class="amount">{{ aufstellung.gesamt|euro }}</td></tr></tfoot>
       </table>
-      {% for h in aufstellung.hinweise %}<p class="small{% if forloop.first and not aufstellung.im_verzug and aufstellung.gebuehr %} is-warn-text{% endif %}">{{ h }}</p>{% endfor %}
+      {% for h in aufstellung.hinweise %}<p class="small">{{ h }}</p>{% endfor %}
       {% for f in aufstellung.fehler %}<p class="small is-warn-text">{{ f }}</p>{% endfor %}
       {% if basiszins_veraltet %}<p class="small is-warn-text">Der Basiszinssatz ist nicht aktuell{% if user.ist_inhaber %}; <a href="{% url 'zahlungen:einstellungen' %}">jetzt eintragen</a>{% endif %}.</p>{% endif %}
       <p class="small muted">Beträge werden nach Ihren Änderungen mit „Vorschau“ neu berechnet.</p>

@@ -18,7 +18,7 @@
   </div>
 </div>
 
-<p class="callout">{% icon "alert" %}<span>Mahngebühren dürfen nur tatsächliche Kosten wie Porto und Papier abdecken, nicht Ihre Arbeitszeit. Das Schreiben, das den Kunden erst in Verzug setzt – meist die Zahlungserinnerung –, darf nichts kosten. Per E-Mail entstehen kaum Kosten; im Zweifel 0 € eintragen.</span></p>
+<p class="callout">{% icon "alert" %}<span>Mahngebühren dürfen nur tatsächliche Kosten wie Porto und Papier abdecken, nicht Ihre Arbeitszeit. Das Schreiben, das den Kunden erst in Verzug setzt – meist die Zahlungserinnerung –, darf nichts kosten; Kontorfreund lässt die Gebühr dort weg. Per E-Mail entstehen kaum Kosten; im Zweifel 0 € eintragen.</span></p>
 
 <form method="post" novalidate>
   {% csrf_token %}
@@ -33,7 +33,7 @@
       {% include "core/feld.html" with f=f.gebuehr %}
       <div class="stack">
         <label class="choice">{{ f.zinsen }}<span><strong>Verzugszinsen berechnen</strong><br><span class="muted">Nur wenn der Kunde schon in Verzug ist; Kontorfreund prüft das selbst.</span></span></label>
-        <label class="choice">{{ f.pauschale }}<span><strong>Verzugspauschale 40 € bei Firmenkunden</strong><br><span class="muted">Der Haken ist im Schreiben an Firmenkunden schon gesetzt; Sie können ihn dort entfernen. Privatkunden zahlen sie nie.</span></span></label>
+        <label class="choice">{{ f.pauschale }}<span><strong>Verzugspauschale 40 € bei Firmenkunden</strong><br><span class="muted">Nur wenn der Kunde schon in Verzug ist; dann ist der Haken im Schreiben an Firmenkunden schon gesetzt, und Sie können ihn dort entfernen. Privatkunden zahlen sie nie.</span></span></label>
       </div>
     </div>
     {% include "core/feld.html" with f=f.text %}

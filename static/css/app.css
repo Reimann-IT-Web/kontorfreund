@@ -2007,6 +2007,18 @@ input:disabled {
   background: var(--accent-soft);
 }
 
+/* Gesperrt, etwa Zinsen und Pauschale vor dem Verzug: sichtbar, aber nicht wählbar. */
+.choice:has(input:disabled:not(:checked)) {
+  border-color: var(--line);
+  background: var(--bg-sunken);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.choice:has(input:disabled:not(:checked)) .muted {
+  color: inherit;
+}
+
 .choice input {
   width: 1.1rem;
   height: 1.1rem;
@@ -2127,6 +2139,18 @@ input:disabled {
 .editor-side .btn-block + .btn-block,
 .beleg-seite .btn-block + .btn-block {
   margin-top: var(--s2);
+}
+
+/* Text direkt über oder unter einem breiten Knopf klebt sonst an ihm. */
+.beleg-seite .panel > p + p {
+  margin-top: var(--s2);
+}
+
+.beleg-seite .panel > p + .btn-block,
+.beleg-seite .panel > .btn-block + p,
+.beleg-seite .panel > p + p:has(> .btn-block),
+.beleg-seite .panel > p:has(> .btn-block) + p {
+  margin-top: var(--s3);
 }
 
 /* ---------- Formulare und Meldungen ---------- */

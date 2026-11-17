@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django import forms
+from django.utils import formats
 
 from invoicing.forms import Betrag
 
@@ -73,9 +74,52 @@ class MahnungForm(forms.Form):
         label="Verzugspauschale 40 € (nur gegenüber Unternehmen)", required=False
     )
 
-    def __init__(self, *args, **kwargs):
+    # Fallen nur an, wenn der Kunde am Datum des Schreibens in Verzug ist (mahnen.berechnen).
+    NUR_IM_VERZUG = {"gebuehr": Decimal("0.00"), "zinsen": False, "pauschale": False}
+
+    def __init__(self, *args, verzug_ab=None, **kwargs):
+        """`verzug_ab`: erster Tag des Verzugs ohne dieses Schreiben (mahnen.verzug_vor).
+
+        Ist der Kunde am Datum des Schreibens nicht in Verzug, sind Mahngebühr, Zinsen
+        und Pauschale gesperrt und leer, damit nichts angekreuzt ist, das nicht wirkt.
+        `verzug_tag` ist dann der erste Tag des Verzugs mit diesem Schreiben: Ablauf der
+        Frist oder früher `verzug_ab`. Der Block `form[data-verzug-ab]` in
+        static/js/app.js macht dasselbe, sobald sich Datum oder Frist ändern; `data-wert`
+        hält die Vorgabe, die er beim Entsperren wieder einsetzt.
+        """
         kwargs.setdefault("auto_id", "%s")
         super().__init__(*args, **kwargs)
+        self.initial = dict(self.initial)
+        self.verzug_ab = verzug_ab
+        datum, frist = self._datum("datum"), self._datum("frist")
+        self.ohne_verzug = not (verzug_ab and datum and verzug_ab <= datum)
+        ende = frist + timedelta(days=1) if frist else None
+        tage = [t for t in (verzug_ab, ende) if t]
+        self.verzug_tag = min(tage) if tage else None
+        self.verzug_durch_frist = ende is not None and self.verzug_tag == ende
+        for name, leer in self.NUR_IM_VERZUG.items():
+            feld, vorgabe = self.fields[name], self.initial.get(name)
+            if isinstance(leer, bool):
+                feld.widget.attrs["data-wert"] = "1" if vorgabe else ""
+            else:
+                feld.widget.attrs["data-wert"] = formats.localize_input(vorgabe or leer)
+            if self.ohne_verzug:
+                feld.disabled = True
+                self.initial[name] = leer
+
+    def _datum(self, name):
+        """Datum aus Eingabe oder Vorgabe, None, wenn es sich nicht lesen lässt."""
+        if not self.is_bound:
+            return self.initial.get(name)
+        feld = self.fields[name]
+        try:
+            return feld.clean(
+                feld.widget.value_from_datadict(
+                    self.data, self.files, self.add_prefix(name)
+                )
+            )
+        except forms.ValidationError:
+            return None
 
     def clean(self):
         daten = super().clean()

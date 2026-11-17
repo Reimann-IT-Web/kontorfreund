@@ -755,6 +755,56 @@ if (zahlungDialog) {
   });
 }
 
+// Zahlungserinnerung und Mahnung: Mahngebühr, Zinsen und Pauschale nur im Verzug, wie
+// zahlungen.forms.MahnungForm. Ist der Kunde am Datum des Schreibens nicht in Verzug, sind
+// die Felder gesperrt und leer; der Hinweis nennt den ersten Tag des Verzugs (Tag nach der
+// Frist oder früher data-verzug-ab). Beim Entsperren kommt der Wert aus data-wert zurück.
+const mahnForm = document.querySelector("form[data-verzug-ab]");
+if (mahnForm) {
+  const { datum, frist } = mahnForm.elements;
+  const felder = mahnForm.querySelectorAll("[data-wert]");
+  const hinweis = mahnForm.querySelector("[data-verzug-hinweis]");
+  const naechsterTag = (iso) => {
+    const [j, m, t] = iso.split("-").map(Number);
+    return new Date(Date.UTC(j, m - 1, t + 1)).toISOString().slice(0, 10);
+  };
+  const pruefen = (melden) => {
+    const ab = mahnForm.dataset.verzugAb;
+    const imVerzug = Boolean(ab && datum.value && datum.value >= ab);
+    let geaendert = false;
+    felder.forEach((feld) => {
+      if (feld.disabled === !imVerzug) return;
+      const box = feld.type === "checkbox";
+      if (imVerzug) {
+        if (box) feld.checked = feld.dataset.wert === "1";
+        else feld.value = feld.dataset.wert;
+      } else {
+        feld.dataset.wert = box ? (feld.checked ? "1" : "") : feld.value;
+        if (box) feld.checked = false;
+        else feld.value = "0,00";
+      }
+      feld.disabled = !imVerzug;
+      geaendert = true;
+    });
+    hinweis.hidden = imVerzug;
+    if (!imVerzug) {
+      const ende = frist.value ? naechsterTag(frist.value) : "";
+      const tag = [ab, ende].filter(Boolean).sort()[0];
+      hinweis.querySelector("[data-verzug-tag]").textContent = tag
+        ? tag.split("-").reverse().join(".")
+        : "Ablauf der Frist";
+      hinweis.querySelector("[data-verzug-frist]").hidden = !ende || tag !== ende;
+    }
+    if (melden && geaendert) {
+      ansage(imVerzug ? "Der Kunde ist an diesem Datum in Verzug, die gesperrten Felder sind frei." : hinweis.textContent.trim());
+    }
+  };
+  mahnForm.addEventListener("input", (e) => {
+    if (e.target === datum || e.target === frist) pruefen(true);
+  });
+  pruefen(false);
+}
+
 // Firmenwechsel: warten, bis der Server mit der gewählten Firma wieder läuft.
 const firmaWarten = document.querySelector("[data-firma-warten]");
 if (firmaWarten) {

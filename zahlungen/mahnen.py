@@ -73,11 +73,23 @@ def offene_nebenkosten(rechnung):
     return max(letzte.nebenkosten - gezahlt, Decimal("0.00"))
 
 
+def verzug_vor(rechnung, stufe):
+    """Erster Tag des Verzugs nach den Schreiben vor `stufe`, oder None."""
+    return verzug_ab(rechnung, [m for m in rechnung.mahnungen.all() if m.stufe < stufe])
+
+
 def berechnen(rechnung, stufe, datum, gebuehr, mit_zinsen, mit_pauschale):
-    """Aufstellung der Forderung am Mahntag und Hinweise für das Formular."""
+    """Aufstellung der Forderung am Mahntag und Hinweise für das Formular.
+
+    Mahngebühr, Zinsen und Pauschale nur, wenn der Kunde am Mahntag in Verzug ist:
+    Mahnkosten sind Verzugsschaden, das Schreiben, das den Verzug erst auslöst, kostet
+    nichts. `MahnungForm` sperrt die Felder dann; hier gilt es auch für Telegram.
+    """
     frueher = [m for m in rechnung.mahnungen.all() if m.stufe < stufe]
     beginn = verzug_ab(rechnung, frueher)
     im_verzug = beginn is not None and beginn <= datum
+    if not im_verzug:
+        gebuehr = Decimal("0.00")
     unternehmen = not rechnung.kontakt.ist_verbraucher
     hinweise, fehler = [], []
 
@@ -133,29 +145,14 @@ def berechnen(rechnung, stufe, datum, gebuehr, mit_zinsen, mit_pauschale):
         zeilen.append(("Verzugspauschale nach § 288 Abs. 5 BGB", PAUSCHALE))
         if not schon_gefordert:
             pauschale = PAUSCHALE
-    elif mit_pauschale:
-        hinweise.append(
-            "Die Pauschale von 40 € steht Ihnen nur gegenüber Unternehmen zu, "
-            "die in Verzug sind."
-        )
 
     gezahlt_neben = sum((z.nebenkosten for z in rechnung.zahlungen.all()), Decimal("0"))
     if gezahlt_neben:
         zeilen.append(("abzüglich gezahlter Mahnkosten und Zinsen", -gezahlt_neben))
 
+    # Ohne Verzug steht der Hinweis im Formular unter den gesperrten Feldern.
     if im_verzug:
-        hinweise.insert(0, f"Der Kunde ist seit dem {beginn:%d.%m.%Y} in Verzug.")
-    else:
-        hinweise.insert(
-            0,
-            "Erst dieses Schreiben setzt den Kunden in Verzug, und zwar mit Ablauf "
-            "der Frist. Zinsen und Pauschale fallen deshalb noch nicht an"
-            + (
-                ", und auch eine Mahngebühr darf es noch nicht kosten."
-                if gebuehr
-                else "."
-            ),
-        )
+        hinweise.append(f"Der Kunde ist seit dem {beginn:%d.%m.%Y} in Verzug.")
 
     nebenkosten = gebuehren + zinsen + (PAUSCHALE if schon_gefordert else pauschale)
     return {

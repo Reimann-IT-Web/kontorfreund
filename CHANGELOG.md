@@ -1,5 +1,10 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Zahlungserinnerung und Mahnung: Ist der Kunde am Datum des Schreibens noch nicht in Verzug, sind Mahngebühr, Verzugszinsen und Verzugspauschale gesperrt. Darunter steht, ab wann er in Verzug ist, etwa „Der Kunde ist erst ab dem 28.11.2026 in Verzug, wenn die Frist dieses Schreibens abgelaufen ist.“ Bisher ließ sich die Pauschale ankreuzen, erschien aber nicht im Schreiben. Ändern Sie das Datum des Schreibens, gibt Kontorfreund die Felder sofort frei, sobald der Kunde an diesem Tag in Verzug ist.
+- Eine Mahngebühr berechnet Kontorfreund nur noch, wenn der Kunde schon in Verzug ist, auch beim Senden über Telegram. Das Schreiben, das den Verzug erst auslöst, darf nichts kosten.
+
 ## 0.47.0 – 13.11.2026
 
 - Neu: 7 % Umsatzsteuer und mehrere Steuersätze auf einem Beleg. Weist ein Beleg Umsatzsteuer aus, wählen Sie je Position 19 % oder 7 %, in Rechnung, Angebot, Auftragsbestätigung und Vertrag. Mit beiden Sätzen nennt jede Position auf dem PDF ihren Satz, und Nettobetrag und Umsatzsteuer stehen je Satz über dem Gesamtbetrag. Die E-Rechnung schlüsselt die Steuer je Satz auf; ein Rabatt gilt je Satz. Bisherige Belege und Entwürfe rechnen weiter mit 19 %.

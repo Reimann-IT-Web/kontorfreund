@@ -341,7 +341,11 @@ def mahnung_neu(request, pk):
         # Gegenüber Verbrauchern gibt es keine Pauschale (§ 288 Abs. 5 BGB).
         "pauschale": stufe.pauschale and not rechnung.kontakt.ist_verbraucher,
     }
-    form = MahnungForm(request.POST or None, initial=vorgabe)
+    form = MahnungForm(
+        request.POST or None,
+        initial=vorgabe,
+        verzug_ab=mahnen.verzug_vor(rechnung, stufe.stufe),
+    )
     gueltig = request.method == "POST" and form.is_valid()
     werte = form.cleaned_data if gueltig else vorgabe
     aufstellung = mahnen.berechnen(

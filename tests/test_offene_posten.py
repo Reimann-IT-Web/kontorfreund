@@ -16,6 +16,7 @@ from core.models import Firmendaten
 from core.templatetags.kf import euro
 from invoicing.models import Rechnung
 from zahlungen import mahnen
+from zahlungen.forms import MahnungForm
 from zahlungen.models import Basiszins, Mahnstufe, Mahnung, Zahlung
 from zahlungen.zinsen import verzug_ab, verzugszinsen
 
@@ -275,7 +276,10 @@ def test_verbraucher_erst_nach_mahnung_in_verzug(client, firma, privatkunde):
     assert not erinnerung["im_verzug"]
     assert erinnerung["zinsen"] == 0
     assert erinnerung["pauschale"] == 0
-    assert "darf es noch nicht kosten" in erinnerung["hinweise"][0]
+    # Das Schreiben, das den Verzug erst auslöst, kostet nichts.
+    assert erinnerung["gebuehr"] == 0
+    assert erinnerung["gesamt"] == Decimal("1000.00")
+    assert not any("Mahngebühr" in text for text, _ in erinnerung["zeilen"])
 
     client.post(
         reverse("zahlungen:mahnen", args=[rechnung.pk]),
@@ -389,6 +393,90 @@ def test_pauschale_nur_bei_firmenkunden_vorgeschlagen(
     zahlungserinnerung.save()
     assert angehakt(fuer_firma)
     assert not angehakt(fuer_person)
+
+
+def test_ohne_verzug_sind_gebuehr_zinsen_und_pauschale_gesperrt(
+    client, firma, firmenkunde
+):
+    stufe = Mahnstufe.alle()[1]
+    stufe.gebuehr, stufe.zinsen, stufe.pauschale = Decimal("2.50"), True, True
+    stufe.save()
+    heute = date.today()
+    rechnung = rechnung_schreiben(client, firmenkunde, datum=heute.isoformat())
+
+    seite = client.get(reverse("zahlungen:mahnen", args=[rechnung.pk]))
+    form = seite.context["form"]
+    assert form.ohne_verzug
+    assert all(form.fields[n].disabled for n in ("gebuehr", "zinsen", "pauschale"))
+    assert not form["zinsen"].value()
+    assert not form["pauschale"].value()
+    assert 'value="0,00"' in str(form["gebuehr"])
+    # Die Vorgaben der Stufe warten, bis ein späteres Datum den Verzug erreicht.
+    assert 'data-wert="1"' in str(form["pauschale"])
+    assert 'data-wert="2,50"' in str(form["gebuehr"])
+    ende = heute + timedelta(days=stufe.frist + 1)
+    assert f"<strong data-verzug-tag>{ende:%d.%m.%Y}</strong>" in seite.text
+    assert "data-verzug-hinweis hidden" not in seite.text
+    assert "data-verzug-frist hidden" not in seite.text
+
+    # Auch was trotzdem gesendet wird, kommt nicht ins Schreiben.
+    frist = heute + timedelta(days=stufe.frist)
+    client.post(
+        reverse("zahlungen:mahnen", args=[rechnung.pk]),
+        {
+            "datum": heute.isoformat(),
+            "frist": frist.isoformat(),
+            "text": "Bitte zahlen Sie.",
+            "gebuehr": "2,50",
+            "zinsen": "on",
+            "pauschale": "on",
+            "aktion": "erstellen",
+        },
+    )
+    erinnerung = Mahnung.objects.get()
+    assert (erinnerung.gebuehr, erinnerung.zinsen, erinnerung.pauschale) == (0, 0, 0)
+    assert erinnerung.gesamt == Decimal("1000.00")
+
+    # Nach Ablauf der Frist ist der Kunde in Verzug: Die 1. Mahnung darf kosten.
+    spaeter = frist + timedelta(days=7)
+    client.post(
+        reverse("zahlungen:mahnen", args=[rechnung.pk]),
+        {
+            "datum": spaeter.isoformat(),
+            "frist": (spaeter + timedelta(days=10)).isoformat(),
+            "text": "Bitte zahlen Sie.",
+            "gebuehr": "2,50",
+            "pauschale": "on",
+            "aktion": "erstellen",
+        },
+    )
+    mahnung = Mahnung.objects.get(stufe=2)
+    assert mahnung.gebuehr == Decimal("2.50")
+    assert mahnung.pauschale == Decimal("40.00")
+    assert mahnung.gesamt == Decimal("1042.50")
+
+
+def test_verzug_vor_ablauf_der_frist():
+    vorgabe = {
+        "datum": date(2026, 9, 1),
+        "frist": date(2026, 9, 11),
+        "text": "Bitte zahlen Sie.",
+        "gebuehr": Decimal("0.00"),
+        "zinsen": True,
+        "pauschale": False,
+    }
+    # 30 Tage nach Fälligkeit und Zugang, noch vor dem Ende der Frist.
+    form = MahnungForm(initial=vorgabe, verzug_ab=date(2026, 9, 5))
+    assert form.ohne_verzug
+    assert form.verzug_tag == date(2026, 9, 5)
+    assert not form.verzug_durch_frist
+
+    form = MahnungForm(
+        initial={**vorgabe, "datum": date(2026, 9, 5)}, verzug_ab=date(2026, 9, 5)
+    )
+    assert not form.ohne_verzug
+    assert not form.fields["zinsen"].disabled
+    assert form["zinsen"].value()
 
 
 def test_mahnung_traegt_die_unterschrift(
