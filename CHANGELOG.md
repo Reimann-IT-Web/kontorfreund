@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.48.1 – 18.11.2026
+
+- Übersicht: Bei überfälligen Rechnungen steht jetzt immer „Zahlung buchen“. Bisher gab es nur den Knopf für die Zahlungserinnerung oder Mahnung, sobald eines dieser Schreiben fällig war, und eine eingegangene Zahlung ließ sich dort nicht buchen. Ist ein Schreiben fällig, steht sein Knopf darunter.
+
 ## 0.48.0 – 18.11.2026
 
 - Neu: SEPA-Lastschrift. Tragen Sie unter Einstellungen Ihre Gläubiger-ID ein und an der Adresse das Mandat des Kunden mit Mandatsreferenz und Datum der Unterschrift. Neue Rechnungen an diese Adresse zieht Kontorfreund dann per Lastschrift ein; im Entwurf wählen Sie den Zahlweg unter „Zahlweg“. Auf der Rechnung steht statt der Bitte zu überweisen, wann welcher Betrag eingezogen wird, mit Mandatsreferenz und Gläubiger-ID; den Wortlaut ändern Sie in den Einstellungen. Einen GiroCode gibt es dann nicht, und die E-Rechnung nennt die Lastschrift (Zahlart 59) mit Mandat und Gläubiger-ID. Buchen Sie eine Zahlung per Lastschrift, merkt sich Kontorfreund den Tag; ein Mandat, das 36 Monate nicht genutzt wurde, gilt als verfallen, und Kontorfreund schlägt wieder Überweisung vor.
