@@ -127,8 +127,9 @@ Ablauf:
 Teilnehmer erkennen:
 
 - Ein Teilnehmer ist eine Zeile mit Name und dazu Kd-Nr. oder Anschrift. Zeilen, in denen nur Termin, Thema oder Link vorausgefüllt sind, gelten als leer.
-- Eine Zeile mit Text in nur einer Zelle und ohne Name ist eine Abschnittsüberschrift. Unter „Stornierung“ oder „Storno“ ist jede Zeile storniert. Steht „storn“ in einer Zelle einer Teilnehmerzeile, ist auch sie storniert. Stornierte Zeilen bekommen keine Rechnung.
-- Steht in „Sepa erteilt“ etwas anderes als ein Datum, zeigt die Vorschau den Text als Hinweis und wählt die Zeile ab.
+- Eine Zeile mit Text in nur einer Zelle und ohne Name ist eine Abschnittsüberschrift. Unter „Stornierung“ oder „Storno“ ist jede Zeile storniert. Steht Storno, storniert, Stornierung oder „storn.“ in einer Zelle einer Teilnehmerzeile (außer Termin, Thema und Link), ist auch sie storniert; ein Ort wie Storndorf zählt nicht. Stornierte Zeilen bekommen keine Rechnung.
+- Steht in „Sepa erteilt“ etwas anderes als ein Datum, zeigt die Vorschau den Text als Hinweis und wählt die Zeile ab. Weicht das Datum von einem Mandat an der Adresse ab, nennt die Vorschau beide; es gilt das der Liste.
+- Zeilenumbrüche in Termin und Thema (aus einer Excel-Zelle) werden zu Leerzeichen.
 - Farben wie rote Schrift wertet Kontorfreund nicht aus. Werte außerhalb der Tabelle (Zeilen ohne Name) liest es nicht; die Vorschau nennt sie als übersprungen.
 - Stehen über den Überschriften weitere Zeilen, etwa ein Titel, beginnt die Tabelle mit der ersten Zeile, die „Name“ und zwei weitere bekannte Überschriften enthält.
 - Vierstellige PLZ bekommen die Null vorn zurück, wie beim Import (M-6).
@@ -136,9 +137,11 @@ Teilnehmer erkennen:
 Kontakte:
 
 - Die Kd-Nr. der Liste wird die Nummer des Kontakts (9002 wird K-9002). Gibt es ihn schon, gilt er; weichen Name, Anschrift oder E-Mail ab, zeigt die Vorschau beides und übernimmt auf Wunsch die Liste (Vorgabe: die Liste, sie ist neuer). Ohne Kd-Nr. sucht Kontorfreund Dubletten wie beim Import; passt genau eine Adresse, gilt sie, sonst entsteht eine neue mit der nächsten Nummer.
-- Neue und geänderte Adressen prüft Kontorfreund mit denselben Regeln wie das Formular. Eine archivierte Adresse wird wieder aktiv, eine gesperrte (D-1) bekommt keine Rechnung; die Vorschau nennt sie als übersprungen.
+- Heißt die Adresse mit dieser Kd-Nr. in Kontorfreund anders (Nachname einer Person, Firmenname einer Firma), ist es womöglich ein anderer Kunde: Die Vorschau nennt den Namen, wählt die Zeile ab und übernimmt nichts, bis der Nutzer sie wählt.
+- Neue Adressen prüft Kontorfreund mit denselben Regeln wie das Formular, an vorhandenen die Felder, die die Liste ändert. Eine archivierte Adresse wird wieder aktiv, eine gesperrte (D-1) bekommt keine Rechnung; die Vorschau nennt sie als übersprungen.
 - Mit einem Eintrag in „Verein/Büro“ wird der Kontakt eine Firma mit diesem Namen und dem Teilnehmer als Ansprechpartner, ohne Eintrag eine Person.
-- Teilen sich mehrere Zeilen eine Kd-Nr. (Verein mit mehreren Teilnehmern), gibt es einen Kontakt und je Zeile eine Rechnung an ihn. Anschrift und Briefanrede jeder Rechnung nennen den Teilnehmer ihrer Zeile, die E-Mail geht an seine Adresse.
+- Teilen sich mehrere Zeilen eine Kd-Nr. (Verein mit mehreren Teilnehmern), gibt es einen Kontakt und je Zeile eine Rechnung an ihn. Anschrift und Briefanrede jeder Rechnung nennen den Teilnehmer ihrer Zeile, die E-Mail geht an seine Adresse. Stornorechnung, Rechnungskorrektur und Mahnung zu dieser Rechnung gehen ebenso an ihn.
+- Auskunft und Löschung (D-1) einer Adresse umfassen die Teilnehmer ihrer Rechnungen; deren Einträge im Protokoll werden mit geschwärzt, auch wenn die Aufbewahrungsfrist abläuft.
 - Gibt es für denselben Teilnehmer (Kontakt und Name) schon eine Rechnung oder einen Entwurf mit gleichem Termin und Thema, warnt die Vorschau und wählt die Zeile ab. So erzeugt dieselbe Liste kein zweites Mal Rechnungen.
 
 Texte und Beilage:

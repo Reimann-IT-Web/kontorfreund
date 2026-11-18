@@ -176,7 +176,7 @@ OHNE_ADRESSE = (
 
 
 def _mahnung(rechnung, stufe):
-    adresse = bool(rechnung.kontakt.email)
+    adresse = bool(rechnung.email_an)
     return Nachricht(
         f"{_kopf()}: Zu mahnen: Rechnung {rechnung.nummer} {euro(rechnung.offen)} "
         f"({stufe})" + ("" if adresse else OHNE_ADRESSE),

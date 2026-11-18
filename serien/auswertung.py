@@ -26,7 +26,7 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
-from contacts.forms import nummer_lesen
+from contacts.forms import HOECHSTE_KUNDENNUMMER, nummer_lesen
 from contacts.models import (
     MANDAT_MONATE,
     Kontakt,
@@ -90,6 +90,8 @@ SERIENFELDER = ("termin", "thema", "link")
 # Ohne diese Spalten lässt sich kein Teilnehmer erkennen.
 PFLICHT = ("name",)
 
+# Storno, storniert, Stornierung, stornieren, storn. – nicht aber ein Ort wie Storndorf.
+STORNO = re.compile(r"\bstorn(?:o|iert|ierung|ieren|\.)", re.IGNORECASE)
 DATUM = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2})")
 NUR_DATUM = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2})(?: \d{1,2}:\d{2})?")
 
@@ -279,6 +281,21 @@ def abweichungen(kontakt, daten):
     ]
 
 
+def _anderer_kunde(kontakt, daten):
+    """Ob die gefundene Adresse nach ihrem Namen jemand anderes ist.
+
+    Bei Personen zählt der Nachname, bei Firmen der Firmenname; eine Firma mit
+    Verein oder Büro in der Liste ist derselbe Kunde, wenn der Name gleich ist.
+    """
+    if kontakt.art == Kontakt.Art.PERSON:
+        name = daten["nachname"]
+        return bool(name) and name.casefold() != kontakt.nachname.casefold()
+    if daten["art"] == Kontakt.Art.PERSON:
+        return not _gleiche_person(kontakt, daten)
+    name = daten["firmenname"]
+    return bool(name) and name.casefold() != kontakt.firmenname.casefold()
+
+
 def _referenz(kontakt, werte, kdnr):
     """Mandatsreferenz: vorhandene der Adresse, sonst die Kd-Nr. der Liste."""
     if kontakt and kontakt.mandat_referenz:
@@ -318,23 +335,19 @@ def auswerten(spalten, zeilen, zuordnung, firma, termin="", thema=""):
             continue
         if art == "abschnitt":
             abschnitt = next(w for w in werte_liste if w.strip()).strip()
-            storno_abschnitt = "storn" in abschnitt.casefold()
+            storno_abschnitt = bool(STORNO.search(abschnitt))
             ergebnis.append(Zeile(nr, werte, "abschnitt", abschnitt=abschnitt))
             continue
         if art == "ohne_name":
             ergebnis.append(Zeile(nr, werte, "uebersprungen", abschnitt, "ohne Namen"))
             continue
         storno = storno_abschnitt or any(
-            "storn" in w.casefold()
-            for i, w in enumerate(werte_liste)
-            if i not in ohne_storno
+            STORNO.search(w) for i, w in enumerate(werte_liste) if i not in ohne_storno
         )
         if storno:
-            grund = (
-                f"storniert (Abschnitt „{abschnitt}“)"
-                if storno_abschnitt
-                else ("storniert")
-            )
+            grund = "storniert"
+            if storno_abschnitt:
+                grund += f" (Abschnitt „{abschnitt}“)"
             ergebnis.append(Zeile(nr, werte, "storniert", abschnitt, grund))
             continue
         if not (werte.get("kdnr") or werte.get("adresse")):
@@ -370,6 +383,8 @@ def _teilnehmer(z, gruppen, firma, termin, thema, heute):
     werte = z.werte
     kdnr_text = werte.get("kdnr", "")
     z.kdnr = nummer_lesen(kdnr_text) if kdnr_text else None
+    if z.kdnr and z.kdnr > HOECHSTE_KUNDENNUMMER:
+        z.kdnr = None
     if kdnr_text and not z.kdnr:
         z.hinweise.append(f"Die Kd-Nr. „{kdnr_text}“ ist keine Nummer.")
     z.schluessel = f"k{z.kdnr}" if z.kdnr else f"z{z.nr}"
@@ -403,6 +418,14 @@ def _teilnehmer(z, gruppen, firma, termin, thema, heute):
         z.art = "uebersprungen"
         z.grund = f"Adresse {k.kundennummer} ist gesperrt (Datenschutz)"
         return
+    if k and _anderer_kunde(k, z.daten):
+        # Nie die Adresse eines anderen Kunden überschreiben oder ihm eine Rechnung
+        # schreiben, nur weil die Nummer passt: der Nutzer entscheidet.
+        z.waehlen = z.uebernehmen = False
+        z.hinweise.append(
+            f"Die Kd-Nr. gehört in Kontorfreund zu „{k.anzeigename}“. Ist das derselbe "
+            "Kunde, wählen Sie die Zeile; sonst korrigieren Sie die Kd-Nr. in der Liste."
+        )
 
     _mandat(z, firma, heute)
 
@@ -441,6 +464,11 @@ def _mandat(z, firma, heute):
                 "An der Adresse ist ein Mandat eingetragen, in der Liste nicht."
             )
         return
+    if k and k.mandat_datum and k.mandat_datum != z.mandat_datum:
+        z.hinweise.append(
+            f"An der Adresse steht ein Mandat vom {k.mandat_datum:%d.%m.%Y}; "
+            f"Kontorfreund übernimmt das Datum der Liste ({z.mandat_datum:%d.%m.%Y})."
+        )
     z.mandat_referenz = _referenz(k, z.werte, z.kdnr)
     if not z.mandat_referenz:
         z.hinweise.append("Ohne Kd-Nr. gibt es keine Mandatsreferenz.")

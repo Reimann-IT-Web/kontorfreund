@@ -98,6 +98,11 @@ def senden(beleg, firma, an, betreff, text, kopie, beilagen=()):
 
 def fehlertext(fehler):
     """Verständliche Meldung zu einem Versandfehler."""
+    if isinstance(fehler, ValueError):
+        return (
+            "Empfänger oder Betreff enthalten ein Zeichen, das in einer E-Mail nicht "
+            "erlaubt ist, etwa einen Zeilenumbruch. Bitte die Angaben prüfen."
+        )
     if isinstance(fehler, smtplib.SMTPAuthenticationError):
         return (
             "Der E-Mail-Server hat die Anmeldung abgelehnt. Bitte Benutzername und "

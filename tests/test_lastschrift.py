@@ -7,6 +7,7 @@ from io import BytesIO
 import pytest
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django.utils import timezone
 from pypdf import PdfReader
 
 from contacts.models import Kontakt, monate_zurueck
@@ -349,3 +350,15 @@ def test_ueberweisung_aendert_das_mandat_nicht(client, firma, kunde, daten):
     text, xml = pdf_und_xml(rechnung, daten)
     assert "Bitte überweisen Sie den Betrag" in text
     assert "<ram:TypeCode>58</ram:TypeCode>" in xml
+
+
+def test_gesperrte_adresse_bleibt_unveraendert(client, firma, kunde, daten):
+    client.post(reverse("invoicing:neu"), formular(kunde))
+    rechnung = Rechnung.objects.get()
+    Kontakt.objects.filter(pk=kunde.pk).update(gesperrt_am=timezone.now())
+
+    Zahlung.objects.create(
+        rechnung=rechnung, betrag=Decimal("89.00"), art=Zahlung.Art.LASTSCHRIFT
+    )
+    kunde.refresh_from_db()
+    assert kunde.mandat_zuletzt is None

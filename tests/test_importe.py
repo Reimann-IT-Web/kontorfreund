@@ -490,6 +490,10 @@ def test_rundreise_mit_der_adressliste(client):
         plz="01067",
         ort="Dresden",
         email="info@korn.test",
+        mandat_referenz="9003",
+        mandat_datum=date(2025, 2, 3),
+        mandat_zuletzt=date(2026, 6, 1),
+        mandat_iban="DE89370400440532013000",
     ).kategorien.add(Kategorie.vorgabe(Kategorie.Kennung.LIEFERANT))
     Kontakt.objects.create(
         art="person", anrede="Herr", vorname="Tom", nachname="Lind", ort="Bonn"
@@ -515,6 +519,13 @@ def test_rundreise_mit_der_adressliste(client):
         "01067",
         "info@korn.test",
     )
+    # Das SEPA-Mandat (B-12) kommt mit.
+    assert (
+        korn.mandat_referenz,
+        korn.mandat_datum,
+        korn.mandat_zuletzt,
+        korn.mandat_iban,
+    ) == ("9003", date(2025, 2, 3), date(2026, 6, 1), "DE89370400440532013000")
     assert (lind.kundennummer, lind.art, lind.anrede, lind.firmenname) == (
         "K-0002",
         "person",

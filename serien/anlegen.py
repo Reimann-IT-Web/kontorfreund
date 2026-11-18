@@ -66,26 +66,33 @@ def _kontakt(z, kunde):
                     wert=wert[:254],
                 )
         return kontakt
+    geaendert = set()
     if z.uebernehmen:
         for feld, _, wert, _ in z.abweichungen:
             setattr(kontakt, feld, wert)
+            geaendert.add(feld)
     # Eine Firma ohne Ansprechpartner bekommt den ersten Teilnehmer.
     if kontakt.art == Kontakt.Art.FIRMA and not kontakt.nachname:
         for feld in ("anrede", "titel", "vorname", "nachname"):
             setattr(kontakt, feld, daten[feld])
+            geaendert.add(feld)
     # Archiviert sind Adressen mit Belegen; für neue Rechnungen werden sie wieder aktiv.
     kontakt.archiviert = False
-    _pruefen(kontakt)
+    _pruefen(kontakt, geaendert)
     kontakt.save()
     return kontakt
 
 
-def _pruefen(kontakt):
+def _pruefen(kontakt, felder=None):
     """Dieselben Regeln wie im Formular (Länge, E-Mail, Pflichtfelder), vor dem Speichern.
 
-    Nummer und Anzeigename setzt `Kontakt.save` selbst.
+    Bei einer vorhandenen Adresse nur die Felder, die die Liste ändert, damit ein
+    älterer Fehler an anderer Stelle die Serie nicht aufhält. Nummer und Anzeigename
+    setzt `Kontakt.save` selbst.
     """
-    kontakt.full_clean(exclude=["nummer", "anzeigename"], validate_unique=False)
+    alle = {f.name for f in Kontakt._meta.concrete_fields}
+    ohne = {"nummer", "anzeigename"} | (alle - felder if felder is not None else set())
+    kontakt.full_clean(exclude=sorted(ohne), validate_unique=False)
 
 
 def _mandat_merken(kontakt, z):

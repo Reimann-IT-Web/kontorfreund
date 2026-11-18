@@ -410,8 +410,16 @@ class Rechnung(models.Model):
 
     @property
     def teilnehmer_daten(self):
-        """Teilnehmer, wenn die Rechnung aus einer Serie stammt (B-11), sonst None."""
-        return getattr(self, "teilnehmer", None) if self.pk else None
+        """Teilnehmer, wenn die Rechnung aus einer Serie stammt (B-11), sonst None.
+
+        Stornorechnung und Rechnungskorrektur gehen an den Teilnehmer des Originals.
+        """
+        if not self.pk:
+            return None
+        if eigener := getattr(self, "teilnehmer", None):
+            return eigener
+        original = self.storno_zu or self.korrektur_zu
+        return original.teilnehmer_daten if original else None
 
     @property
     def email_an(self):

@@ -23,6 +23,7 @@ from invoicing.beleg import (
     kopf_druck,
     schlusstext,
     setzen,
+    zu_haenden,
 )
 from invoicing.models import Rechnung
 
@@ -179,14 +180,17 @@ def beleg_daten(rechnung, firma, stufe, datum, frist, text, aufstellung):
         "datum": datum.isoformat(),
         "frist": frist.isoformat(),
         "text": text,
-        "anrede": briefanrede(rechnung.kontakt),
+        "anrede": briefanrede(rechnung.teilnehmer_daten or rechnung.kontakt),
         "rechnung": {
             "nummer": rechnung.nummer,
             "datum": rechnung.datum.isoformat(),
             "faellig": rechnung.faellig.isoformat(),
         },
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(rechnung.kontakt, rechnung.anschrift),
+        # Bei einer Serienrechnung an einen Verein: zu Händen des Teilnehmers (B-11).
+        "empfaenger": empfaenger_daten(
+            rechnung.kontakt, rechnung.anschrift, zu_haenden(rechnung)
+        ),
         "zeilen": [[t, str(b)] for t, b in aufstellung["zeilen"]],
         "gesamt": str(aufstellung["gesamt"]),
         "grussformel": grussformel(firma),
@@ -279,10 +283,10 @@ def mail_vorschlag(mahnung, firma):
     r = mahnung.rechnung
     gruss = "\n".join(z for z in (firma.inhaber, firma.name) if z)
     return {
-        "an": r.kontakt.email if r.kontakt else "",
+        "an": r.email_an,
         "betreff": f"{mahnung.bezeichnung} zur Rechnung {r.nummer}",
         "text": (
-            f"{briefanrede(r.kontakt)}\n\n"
+            f"{briefanrede(r.teilnehmer_daten or r.kontakt)}\n\n"
             f"anbei erhalten Sie meine {mahnung.bezeichnung} zur Rechnung {r.nummer} "
             f"vom {r.datum:%d.%m.%Y}. Bitte überweisen Sie {euro(mahnung.gesamt)} "
             f"bis zum {mahnung.frist:%d.%m.%Y}.\n\n"

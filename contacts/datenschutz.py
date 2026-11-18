@@ -48,6 +48,7 @@ from invoicing.beleg import (
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen, schwaerzen
 from protokoll.models import Eintrag
+from serien.models import Teilnehmer
 from vertraege.models import Vertrag
 from zahlungen.models import Mahnung, Zahlung
 
@@ -178,6 +179,19 @@ def auskunft_daten(kontakt, alle, jetzt):
             }
             for v in kontakt.vertraege.prefetch_related("positionen")
         ],
+        # Serienrechnungen an Vereine nennen Teilnehmer, die keine eigene Adresse haben.
+        "Teilnehmer": [
+            {
+                "Rechnung": t.rechnung.nummer or "Entwurf",
+                "Veranstaltung": str(t.serie),
+                "Anrede": t.anrede,
+                "Name": t.name,
+                "E-Mail": t.email,
+            }
+            for t in Teilnehmer.objects.filter(rechnung__kontakt=kontakt)
+            .select_related("rechnung", "serie")
+            .order_by("serie__erstellt", "zeile", "pk")
+        ],
         "Zahlungen": [
             {
                 "Rechnung": z.rechnung.nummer,
@@ -287,6 +301,8 @@ def _hinweise(kontakt, daten, ende):
         arten.append("Wiedervorlagen")
     if daten["Verträge"]:
         arten.append("Verträge über wiederkehrende Leistungen")
+    if daten["Teilnehmer"]:
+        arten.append("Teilnehmer an Veranstaltungen mit Name und E-Mail-Adresse")
     empfaenger = (
         "Behörden wie das Finanzamt, wenn ein Gesetz es verlangt, etwa bei einer "
         "Betriebsprüfung"
@@ -420,6 +436,19 @@ def druckdaten(kontakt, daten, ende, jetzt, logo=b"", kopf=None):
                     for v in daten["Verträge"]
                 ],
                 breit=[0],
+            )
+        )
+    if daten["Teilnehmer"]:
+        abschnitte.append(
+            _tabelle(
+                "Teilnehmer an Veranstaltungen",
+                ["Rechnung", "Name", "E-Mail", "Veranstaltung"],
+                [
+                    [zeilen(t["Rechnung"]), zeilen(t["Name"])]
+                    + [zeilen(t["E-Mail"]), zeilen(t["Veranstaltung"])]
+                    for t in daten["Teilnehmer"]
+                ],
+                breit=[3],
             )
         )
     if daten["Wiedervorlagen"]:

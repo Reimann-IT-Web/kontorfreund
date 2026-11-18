@@ -1,8 +1,12 @@
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 
 from django import forms
+from django.core.exceptions import SuspiciousFileOperation
 from django.utils.text import get_valid_filename
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from invoicing.forms import ZAHLUNGSZIELE, Betrag
 from invoicing.models import Steuersatz
@@ -50,8 +54,15 @@ class AngabenForm(forms.Form):
         empty_value=Steuersatz.VOLL,
     )
 
+    def clean_termin(self):
+        # Zeilenumbrüche aus einer Excel-Zelle gehören nicht in Betreff und Position.
+        return " ".join(self.cleaned_data["termin"].split())
+
+    def clean_thema(self):
+        return " ".join(self.cleaned_data["thema"].split())
+
     def clean_link(self):
-        return self.cleaned_data["link"].strip()
+        return "".join(self.cleaned_data["link"].split())
 
 
 class ZuordnungForm(forms.Form):
@@ -161,7 +172,19 @@ class VorlageForm(forms.ModelForm):
         inhalt = datei.read()
         if not inhalt.startswith(b"%PDF"):
             raise forms.ValidationError("Bitte eine PDF-Datei wählen.")
-        name = get_valid_filename(Path(datei.name).name)[-200:]
+        # Sie wird beim Drucken an Rechnungen gehängt; was pypdf nicht liest, gilt nicht.
+        try:
+            if not PdfReader(BytesIO(inhalt)).pages:
+                raise PdfReadError
+        except (PdfReadError, ValueError, OSError):
+            raise forms.ValidationError(
+                "Die PDF-Datei lässt sich nicht lesen. Bitte neu speichern und erneut "
+                "hochladen."
+            ) from None
+        try:
+            name = get_valid_filename(Path(datei.name).name)[-200:]
+        except SuspiciousFileOperation:
+            name = "Beilage.pdf"
         return name if name.lower().endswith(".pdf") else f"{name}.pdf", inhalt
 
     def save(self, commit=True):

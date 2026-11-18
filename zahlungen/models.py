@@ -55,6 +55,7 @@ class Zahlung(models.Model):
             self.art == self.Art.LASTSCHRIFT
             and kontakt
             and kontakt.mandat_vorhanden
+            and not kontakt.gesperrt_am  # gesperrte Adressen ändert niemand (D-1)
             and (not kontakt.mandat_zuletzt or kontakt.mandat_zuletzt < self.datum)
         ):
             kontakt.mandat_zuletzt = self.datum

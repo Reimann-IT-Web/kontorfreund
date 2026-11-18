@@ -87,7 +87,8 @@ def mail(t, vorlage, firma):
     gruss = "\n".join(z for z in (firma.inhaber, firma.name) if z)
     text = texte.fuellen(vorlage.mail_text, werte)
     return (
-        texte.fuellen(vorlage.mail_betreff, werte)[:200],
+        # Eine Kopfzeile verträgt keinen Zeilenumbruch, etwa aus einer Excel-Zelle.
+        " ".join(texte.fuellen(vorlage.mail_betreff, werte).split())[:200],
         f"{beleg.briefanrede(t)}\n\n{text}\n\nMit freundlichen Grüßen\n{gruss}",
     )
 
@@ -130,7 +131,7 @@ def senden(serie, firma, vorlage, kopie):
                 kopie,
                 beilagen(t, vorlage),
             )
-        except (smtplib.SMTPException, OSError) as grund:
+        except (smtplib.SMTPException, OSError, ValueError) as grund:
             logger.warning("Versand fehlgeschlagen: %s", grund)
             fehler.append((t, versand.fehlertext(grund)))
             continue

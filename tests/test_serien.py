@@ -5,6 +5,7 @@ Anschriften und Nummern ausgedacht, E-Mails auf example.org, Telefonnummern aus 
 Bereichen für Film und Fernsehen. Echte Listen gehören nicht ins Repository.
 """
 
+import json
 import smtplib
 from datetime import date, timedelta
 from decimal import Decimal
@@ -15,17 +16,21 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail.backends import locmem
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
 
+from contacts import datenschutz
 from contacts.models import Kontakt
 from core.models import Firmendaten
 from invoicing import versand
 from invoicing.models import Rechnung
+from protokoll.models import Eintrag
 from serien import auswertung
 from serien.models import Liste, Serie, Teilnehmer, Vorlage
-from zahlungen.models import Zahlung
+from zahlungen import mahnen
+from zahlungen.models import Mahnung, Zahlung
 
 pytestmark = pytest.mark.django_db
 
@@ -70,6 +75,15 @@ TEILNEHMER = [
      "Hauptstraße 88", 14467, "Potsdam", "030 23125 701", None,
      "f.neumann@example.org"),
 ]  # fmt: skip
+
+
+def pdf_datei():
+    """Eine leere PDF-Seite als Beilage."""
+    schreiber = PdfWriter()
+    schreiber.add_blank_page(width=595, height=842)
+    ausgabe = BytesIO()
+    schreiber.write(ausgabe)
+    return ausgabe.getvalue()
 
 
 def teilnehmerliste(titelzeile=False):
@@ -440,7 +454,7 @@ def postfach(monkeypatch, firma):
 
 def test_alle_senden_mit_beilage(client, firma, daten, postfach):
     vorlage = Vorlage.laden()
-    vorlage.beilage = b"%PDF-1.4 Hinweise"
+    vorlage.beilage = pdf_datei()
     vorlage.beilage_name = "Hinweise.pdf"
     vorlage.save()
     serie = serie_anlegen(client)
@@ -558,14 +572,17 @@ def test_vorlage_prueft_platzhalter_und_beilage(client):
     assert "Bitte eine PDF-Datei wählen." in seite
 
     werte["betreff"] = "Rechnung für {termin}"
-    werte["beilage_datei"] = SimpleUploadedFile("Hinweise.pdf", b"%PDF-1.4 x")
+    werte["beilage_datei"] = SimpleUploadedFile("Hinweise.pdf", b"%PDF-1.4 kaputt")
+    antwort = client.post(reverse("serien:vorlage"), werte)
+    assert "lässt sich nicht lesen" in antwort.content.decode()
+    werte["beilage_datei"] = SimpleUploadedFile("Hinweise.pdf", pdf_datei())
     client.post(reverse("serien:vorlage"), werte)
     vorlage = Vorlage.laden()
     assert (vorlage.betreff, vorlage.beilage_name) == (
         "Rechnung für {termin}",
         "Hinweise.pdf",
     )
-    assert bytes(vorlage.beilage) == b"%PDF-1.4 x"
+    assert bytes(vorlage.beilage) == pdf_datei()
 
 
 def test_liste_gehoert_dem_der_sie_hochlud(client, firma, django_user_model):
@@ -575,3 +592,138 @@ def test_liste_gehoert_dem_der_sie_hochlud(client, firma, django_user_model):
     )
     liste.save()
     assert client.get(reverse("serien:vorschau", args=[liste.pk])).status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("text", "storniert"),
+    [
+        ("Storno 20.11.26 wg. Krankheit", True),
+        ("15.11.26 per Mail storniert", True),
+        ("Stornierung", True),
+        ("storn. am 3.11.", True),
+        ("Storndorf", False),  # ein Ort in Hessen
+        ("Am Stornbach 2", False),
+    ],
+)
+def test_storno_erkennen(text, storniert):
+    assert bool(auswertung.STORNO.search(text)) == storniert
+
+
+def test_kd_nr_eines_anderen_kunden_wird_nicht_ueberschrieben(client, firma, daten):
+    fremd = Kontakt.objects.create(
+        nummer=9001,
+        art=Kontakt.Art.PERSON,
+        nachname="Fremd",
+        strasse="Andere Straße 1",
+        plz="10115",
+        ort="Berlin",
+    )
+    liste = hochladen(client)
+    antwort = client.get(reverse("serien:vorschau", args=[liste.pk]))
+    z = next(z for z in antwort.context["teilnehmer"] if z.kdnr == 9001)
+
+    assert not z.waehlen and not z.uebernehmen
+    assert any("gehört in Kontorfreund zu „Fremd“" in h for h in z.hinweise)
+
+    client.post(reverse("serien:vorschau", args=[liste.pk]), vorschau_formular(antwort))
+    fremd.refresh_from_db()
+    assert (fremd.nachname, fremd.strasse) == ("Fremd", "Andere Straße 1")
+    assert not fremd.rechnungen.exists()
+    assert Serie.objects.get().teilnehmer.count() == 7
+
+
+def test_alter_fehler_an_einer_adresse_haelt_die_serie_nicht_auf(client, firma, daten):
+    Kontakt.objects.create(
+        nummer=9006,
+        art=Kontakt.Art.FIRMA,
+        firmenname="Betreuungsbüro Krüger",
+        vorname="Elke",
+        nachname="Krüger",
+        strasse="Alte Straße 1",
+        ust_id="DE1",  # ungültig, aus einer älteren Version
+    )
+    serie = serie_anlegen(client)
+
+    assert serie.teilnehmer.count() == 8
+    assert Kontakt.objects.get(nummer=9006).strasse == "Weißeritzstraße 15"
+
+
+def test_storno_und_mahnung_gehen_an_den_teilnehmer(client, firma, daten):
+    serie = serie_anlegen(client)
+    client.post(reverse("serien:festschreiben", args=[serie.pk]))
+    original = serie.teilnehmer.get(nachname="Albrecht").rechnung
+
+    betrag = Decimal("89.00")
+    mahnung = Mahnung(
+        rechnung=original,
+        stufe=1,
+        frist=HEUTE + timedelta(days=7),
+        offen=betrag,
+        gesamt=betrag,
+    )
+    vorschlag = mahnen.mail_vorschlag(mahnung, firma)
+    assert vorschlag["an"] == "s.albrecht@example.org"
+    assert vorschlag["text"].startswith("Sehr geehrte Frau Albrecht,")
+
+    client.post(reverse("invoicing:stornieren", args=[original.pk]))
+    storno = Rechnung.objects.get(storno_zu=original)
+    assert "Frau Sabine Albrecht" in storno.beleg["empfaenger"]["zeilen"]
+    assert storno.kopftext.startswith("Sehr geehrte Frau Albrecht,")
+    assert storno.email_an == "s.albrecht@example.org"
+
+
+def test_editor_nennt_den_teilnehmer(client, firma, daten):
+    serie = serie_anlegen(client)
+    entwurf = serie.teilnehmer.get(nachname="Albrecht").rechnung
+
+    seite = client.get(reverse("invoicing:bearbeiten", args=[entwurf.pk]))
+    assert "zu Händen Frau Sabine Albrecht" in seite.content.decode()
+
+
+def test_loeschung_auf_verlangen_schwaerzt_auch_die_teilnehmer(client, firma, daten):
+    serie_anlegen(client)
+    verein = Kontakt.objects.get(nummer=9002)
+    daten_vorher = datenschutz.auskunft_daten(
+        verein, datenschutz.belege(verein), timezone.now()
+    )
+    assert [t["Name"] for t in daten_vorher["Teilnehmer"]] == [
+        "Tobias Lindner",
+        "Sabine Albrecht",
+    ]
+
+    datenschutz.loeschen(verein)
+
+    assert not Teilnehmer.objects.filter(nachname__in=["Lindner", "Albrecht"]).exists()
+    inhalt = json.dumps(
+        list(Eintrag.objects.values("beschreibung", "aenderungen")),
+        ensure_ascii=False,
+    )
+    for spur in ("Albrecht", "Lindner", "s.albrecht@example.org"):
+        assert spur not in inhalt, spur
+
+
+def test_zeilenumbruch_in_termin_und_thema(client, firma, daten, postfach):
+    serie = serie_anlegen(
+        client, termin="03.12.2026,\r\n10-13 Uhr", thema="Digitale\nAkten"
+    )
+    assert (serie.termin, serie.thema) == ("03.12.2026, 10-13 Uhr", "Digitale Akten")
+    client.post(reverse("serien:festschreiben", args=[serie.pk]))
+    client.post(reverse("serien:senden", args=[serie.pk]))
+    assert len(mail.outbox) == 8
+    assert all("\n" not in m.subject for m in mail.outbox)
+
+
+def test_abweichendes_mandatsdatum_wird_genannt(client, firma):
+    Kontakt.objects.create(
+        nummer=9003,
+        art=Kontakt.Art.FIRMA,
+        firmenname="Betreuungsbüro",
+        vorname="Jana",
+        nachname="Kaminski",
+        mandat_referenz="9003",
+        mandat_datum=date(2024, 1, 2),
+    )
+    liste = hochladen(client)
+    antwort = client.get(reverse("serien:vorschau", args=[liste.pk]))
+    z = next(z for z in antwort.context["teilnehmer"] if z.kdnr == 9003)
+    assert any("Mandat vom 02.01.2024" in h for h in z.hinweise)

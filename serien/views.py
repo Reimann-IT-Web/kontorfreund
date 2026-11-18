@@ -118,8 +118,8 @@ def vorschau(request, pk):
             liste.zeilen,
             zuordnung,
             firma,
-            request.POST.get("termin", ""),
-            request.POST.get("thema", ""),
+            " ".join(request.POST.get("termin", "").split()),
+            " ".join(request.POST.get("thema", "").split()),
         )
         wahl_uebernehmen(auswertung, request.POST)
         if request.POST.get("aktion") == "anlegen":

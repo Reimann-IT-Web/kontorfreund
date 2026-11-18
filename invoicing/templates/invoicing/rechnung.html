@@ -51,6 +51,7 @@
           </div>
           {% include "invoicing/anschrift_wahl.html" with f=form.anschrift leer="Standardanschrift" vorgabe="rechnung" gesperrt=rechnung.ist_korrektur %}
           <address class="address-card" data-address-card hidden></address>
+          {% with t=rechnung.teilnehmer_daten %}{% if t and rechnung.kontakt.art == "firma" %}<p class="hint">Aus der <a href="{% url 'serien:serie' t.serie_id %}">Serie</a>: zu Händen {{ t.anschriftzeile }}{% if rechnung.email_an %}, per E-Mail an {{ rechnung.email_an }}{% endif %}.</p>{% endif %}{% endwith %}
           <p class="hint is-warn-text" data-address-missing hidden>Für die Rechnung fehlen Straße, PLZ oder Ort. <a href="#" data-address-edit>Adresse ergänzen</a></p>
           {% include "invoicing/anschrift_wahl.html" with f=form.lieferanschrift leer="Keine eigene Lieferanschrift" vorgabe="lieferung" hinweis="Steht auf dem Beleg unter dem Betreff." gesperrt=rechnung.ist_korrektur %}
           <div class="field">

@@ -1046,7 +1046,7 @@ def stornieren(original, firma):
             skonto_prozent=0,
             skonto_tage=0,
             girocode=False,
-            kopftext=f"{briefanrede(original.kontakt)}\n\n"
+            kopftext=f"{briefanrede(original.teilnehmer_daten or original.kontakt)}\n\n"
             f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
             "wird hiermit vollständig storniert.",
             fusstext=grussformel(firma),
@@ -1066,7 +1066,7 @@ def korrektur_anlegen(original, firma):
             skonto_prozent=0,
             skonto_tage=0,
             girocode=False,
-            kopftext=f"{briefanrede(original.kontakt)}\n\n"
+            kopftext=f"{briefanrede(original.teilnehmer_daten or original.kontakt)}\n\n"
             f"die Rechnung {original.nummer} vom {original.datum:%d.%m.%Y} "
             "wird wie folgt korrigiert:",
             fusstext=grussformel(firma),

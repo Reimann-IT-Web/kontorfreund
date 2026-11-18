@@ -29,6 +29,7 @@ from eingang.models import Eingangsrechnung
 from invoicing.models import Rechnung
 from protokoll.erfassen import eintragen, schwaerzen
 from protokoll.models import Eintrag
+from serien.models import Teilnehmer
 from zahlungen.models import Mahnung, Zahlung
 
 from .models import Altbeleg
@@ -271,15 +272,17 @@ def entfernen(objekte):
     gehen; Zahlungen mit ihrer Rechnung. Die Dateien verschwinden nach dem Commit.
     Gibt alles Gelöschte zurück, mit seiner Nummer fürs Schwärzen."""
     objekte = list(objekte)
-    objekte += Zahlung.objects.filter(
-        rechnung__in=[o for o in objekte if isinstance(o, Rechnung)]
-    )
+    rechnungen = [o for o in objekte if isinstance(o, Rechnung)]
+    objekte += Zahlung.objects.filter(rechnung__in=rechnungen)
+    # Teilnehmer einer Serie (B-11) gehen mit ihrer Rechnung; ihre Protokolleinträge
+    # nennen Namen und E-Mail und werden deshalb mit geschwärzt.
+    teilnehmer = list(Teilnehmer.objects.filter(rechnung__in=rechnungen))
     objekte.sort(key=lambda o: (REIHENFOLGE.index(type(o)), -o.pk))
     for o in objekte:
         type(o).objects.filter(pk=o.pk).delete()
     pfade = [p for o in objekte for p in dateien(o)]
     transaction.on_commit(lambda: wegraeumen(pfade))
-    return objekte
+    return objekte + teilnehmer
 
 
 def vermerken(text):
