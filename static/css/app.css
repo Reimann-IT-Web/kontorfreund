@@ -962,6 +962,13 @@ kbd {
   gap: var(--s2);
 }
 
+/* Überfällige Rechnungen: „Zahlung buchen“ und Mahnung übereinander, gleich breit */
+.row-actions-stapel {
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: end;
+}
+
 .row-actions select {
   width: auto;
   min-height: 2.25rem;
@@ -3132,6 +3139,11 @@ input[type="color"] {
   .row-actions {
     grid-area: action;
     justify-content: flex-start;
+  }
+
+  .row-actions-stapel {
+    flex-direction: row;
+    justify-self: start;
   }
 
   .col-ort,
