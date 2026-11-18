@@ -559,6 +559,13 @@ class Rechnung(models.Model):
             Position(rechnung=kopie, **positionsfelder(p))
             for p in self.positionen.all()
         )
+        # Eine Kopie zum Korrigieren gehört zur selben Serie und zum selben Teilnehmer
+        # (B-11); Storno und Korrektur nehmen ihn vom Original (teilnehmer_daten).
+        teilnehmer = getattr(self, "teilnehmer", None)
+        if teilnehmer and not (kopie.storno_zu_id or kopie.korrektur_zu_id):
+            teilnehmer.pk = None
+            teilnehmer.rechnung = kopie
+            teilnehmer.save()
         return kopie
 
     @staticmethod

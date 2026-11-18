@@ -111,6 +111,7 @@ def zu_senden(serie):
         t
         for t in _rechnungen(serie)
         if not t.rechnung.ist_entwurf
+        and not t.rechnung.storniert
         and t.rechnung.email_an
         and not t.rechnung.versendet_am
     ]
@@ -144,7 +145,9 @@ def zum_drucken(serie):
     return [
         t
         for t in _rechnungen(serie)
-        if not t.rechnung.ist_entwurf and not t.rechnung.email_an
+        if not t.rechnung.ist_entwurf
+        and not t.rechnung.storniert
+        and not t.rechnung.email_an
     ]
 
 

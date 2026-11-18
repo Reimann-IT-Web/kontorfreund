@@ -13,7 +13,8 @@ from pypdf import PdfReader
 from contacts.models import Kontakt, monate_zurueck
 from core.models import Firmendaten, glaeubiger_pruefen
 from invoicing.models import Rechnung
-from zahlungen.models import Zahlung
+from zahlungen import mahnen
+from zahlungen.models import Mahnstufe, Zahlung
 
 pytestmark = pytest.mark.django_db
 
@@ -362,3 +363,19 @@ def test_gesperrte_adresse_bleibt_unveraendert(client, firma, kunde, daten):
     )
     kunde.refresh_from_db()
     assert kunde.mandat_zuletzt is None
+
+
+def test_lastschrift_wird_nicht_von_selbst_gemahnt(client, firma, kunde, daten):
+    alt = (date.today() - timedelta(days=60)).isoformat()
+    client.post(reverse("invoicing:neu"), formular(kunde, datum=alt, leistung_von=alt))
+    client.post(
+        reverse("invoicing:neu"),
+        formular(kunde, datum=alt, leistung_von=alt, zahlweg="ueberweisung"),
+    )
+    lastschrift, ueberweisung = Rechnung.objects.order_by("pk")
+    assert lastschrift.ueberfaellig and ueberweisung.ueberfaellig
+
+    vorschlaege = mahnen.vorschlaege([lastschrift, ueberweisung], Mahnstufe.alle())
+    assert [r for r, _ in vorschlaege] == [ueberweisung]
+    # Nach einer Rücklastschrift mahnt der Nutzer selbst; das geht weiter.
+    assert mahnen.naechste_stufe(lastschrift, Mahnstufe.alle())

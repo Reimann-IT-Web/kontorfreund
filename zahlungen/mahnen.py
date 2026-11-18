@@ -296,11 +296,22 @@ def mail_vorschlag(mahnung, firma):
     }
 
 
+def ohne_vorschlag(rechnung):
+    """Lastschrift ohne Mahnung: Ob der Einzug geklappt hat, weiß nur der Nutzer (B-12).
+
+    Nach einer Rücklastschrift erstellt er die Zahlungserinnerung an der Rechnung;
+    weitere Stufen schlägt Kontorfreund dann wie gewohnt vor.
+    """
+    return rechnung.ist_lastschrift and not rechnung.mahnungen.exists()
+
+
 def vorschlaege(rechnungen, stufen, heute=None):
     """Rechnungen, bei denen das nächste Schreiben fällig ist: [(Rechnung, Mahnstufe)]."""
     heute = heute or date.today()
     liste = []
     for rechnung in rechnungen:
+        if ohne_vorschlag(rechnung):
+            continue
         naechste = naechste_stufe(rechnung, stufen)
         if naechste and naechste[1] <= heute:
             liste.append((rechnung, naechste[0]))

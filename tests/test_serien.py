@@ -24,7 +24,7 @@ from pypdf import PdfReader, PdfWriter
 from contacts import datenschutz
 from contacts.models import Kontakt
 from core.models import Firmendaten
-from invoicing import versand
+from invoicing import beleg, versand
 from invoicing.models import Rechnung
 from protokoll.models import Eintrag
 from serien import auswertung
@@ -83,6 +83,21 @@ def pdf_datei():
     schreiber.add_blank_page(width=595, height=842)
     ausgabe = BytesIO()
     schreiber.write(ausgabe)
+    return ausgabe.getvalue()
+
+
+def kleine_liste(*zeilen):
+    """Liste mit wenigen Spalten: (Kd-Nr., Verein, Name, Vorname, Anrede, Adresse, Ort)."""
+    mappe = Workbook()
+    blatt = mappe.active
+    blatt.append(["Kd-Nr.", "Betreuungsverein/-büro", "Name", "Vorname", "Anrede",
+                  "Adresse", "PLZ", "Ort", "E-Mail", "Termin", "Thema"])  # fmt: skip
+    for kdnr, verein, name, vorname, anrede, adresse, ort in zeilen:
+        email = f"{vorname.lower()}@example.org"
+        blatt.append([kdnr, verein, name, vorname, anrede, adresse, "53111", ort,
+                      email, TERMIN, THEMA])  # fmt: skip
+    ausgabe = BytesIO()
+    mappe.save(ausgabe)
     return ausgabe.getvalue()
 
 
@@ -201,8 +216,8 @@ def vorschau_formular(antwort, **mehr):
     return {**werte, **mehr}
 
 
-def serie_anlegen(client, **mehr):
-    liste = hochladen(client)
+def serie_anlegen(client, inhalt=None, **mehr):
+    liste = hochladen(client, inhalt)
     antwort = client.get(reverse("serien:vorschau", args=[liste.pk]))
     client.post(
         reverse("serien:vorschau", args=[liste.pk]), vorschau_formular(antwort, **mehr)
@@ -238,7 +253,7 @@ def test_vorschau_erkennt_teilnehmer_und_fallen(client, firma):
     }
     wegener = next(z for z in a.teilnehmer if z.kdnr == 9004)
     assert wegener.lastschrift_moeglich
-    assert any("vom 12.05.2019" in h for h in wegener.hinweise)
+    assert any("unterschrieben am 12.05.2019" in h for h in wegener.hinweise)
     assert [z.daten["plz"] for z in a.teilnehmer][:4] == [
         "06108",
         "39104",
@@ -727,3 +742,87 @@ def test_abweichendes_mandatsdatum_wird_genannt(client, firma):
     antwort = client.get(reverse("serien:vorschau", args=[liste.pk]))
     z = next(z for z in antwort.context["teilnehmer"] if z.kdnr == 9003)
     assert any("Mandat vom 02.01.2024" in h for h in z.hinweise)
+
+
+def test_neue_adresse_ohne_kd_nr_nimmt_keine_nummer_der_liste(client, firma, daten):
+    Kontakt.objects.create(nummer=9001, firmenname="Vorhanden")
+    inhalt = kleine_liste(
+        (9002, "", "Albers", "Anna", "Frau", "Weg 1", "Bonn"),
+        (None, "", "Berger", "Bert", "Herr", "Weg 2", "Bonn"),
+        (9003, "", "Conrad", "Clara", "Frau", "Weg 3", "Bonn"),
+    )
+    serie = serie_anlegen(client, inhalt)
+
+    assert serie.teilnehmer.count() == 3
+    nummern = {k.nachname: k.nummer for k in Kontakt.objects.exclude(nummer=9001)}
+    assert nummern == {"Albers": 9002, "Conrad": 9003, "Berger": 9004}
+
+
+def test_verein_ohne_kd_nr_wird_eine_adresse(client, firma, daten):
+    vorhanden = Kontakt.objects.create(firmenname="BV Alt", ort="Bonn")
+    inhalt = kleine_liste(
+        (None, "BV Alt", "Erst", "Eva", "Frau", "Ring 1", "Bonn"),
+        (None, "BV Alt", "Zweit", "Zoe", "Frau", "Ring 1", "Bonn"),
+        (None, "BV Neu", "Dritt", "Dora", "Frau", "Ring 2", "Bonn"),
+        (None, "BV Neu", "Viert", "Vera", "Frau", "Ring 2", "Bonn"),
+    )
+    serie = serie_anlegen(client, inhalt)
+
+    assert serie.teilnehmer.count() == 4
+    vorhanden.refresh_from_db()
+    assert vorhanden.nachname == "Erst"  # der erste Teilnehmer, nicht der letzte
+    assert vorhanden.rechnungen.count() == 2
+    neu = Kontakt.objects.get(firmenname="BV Neu")
+    assert neu.rechnungen.count() == 2
+
+
+def test_stornierte_rechnung_wird_nicht_gesendet_die_kopie_schon(
+    client, firma, daten, postfach
+):
+    serie = serie_anlegen(client)
+    client.post(reverse("serien:festschreiben", args=[serie.pk]))
+    original = serie.teilnehmer.get(nachname="Albrecht").rechnung
+    client.post(reverse("invoicing:stornieren", args=[original.pk]), {"kopie": "on"})
+
+    kopie = Rechnung.objects.filter(status="entwurf").get()
+    assert kopie.teilnehmer_daten.nachname == "Albrecht"
+    assert kopie.email_an == "s.albrecht@example.org"
+    assert (
+        "Frau Sabine Albrecht"
+        in beleg.beleg_daten(kopie, firma, "")["empfaenger"]["zeilen"]
+    )
+    client.post(reverse("serien:festschreiben", args=[serie.pk]))
+    client.post(reverse("serien:senden", args=[serie.pk]))
+
+    an_albrecht = [m for m in mail.outbox if m.to == ["s.albrecht@example.org"]]
+    kopie.refresh_from_db()
+    assert [m.subject for m in an_albrecht] == [f"Rechnung {kopie.nummer} – {THEMA}"]
+    assert len(mail.outbox) == 8
+
+
+def test_betrag_in_der_position(client, firma, daten):
+    vorlage = Vorlage.laden()
+    vorlage.position = "Teilnahme an {thema} ({betrag})"
+    vorlage.save()
+    serie = serie_anlegen(client)
+
+    position = serie.teilnehmer.first().rechnung.positionen.get()
+    assert "{betrag}" not in position.bezeichnung
+    assert "89,00" in position.bezeichnung
+
+
+def test_rechnungstexte_kennen_kein_datum(client):
+    werte = {
+        "betreff": "Rechnung vom {datum}",
+        "position": "Teilnahme",
+        "kopftext": "",
+        "fusstext": "Einzug am {faellig}",
+        "mail_betreff": "Rechnung {nummer} vom {datum}",
+        "mail_text": "Fällig am {faellig}.",
+    }
+    seite = client.post(reverse("serien:vorlage"), werte).content.decode()
+    assert "kennt Kontorfreund hier nicht: {datum}" in seite
+    assert "kennt Kontorfreund hier nicht: {faellig}" in seite
+    werte.update(betreff="Rechnung", fusstext="")
+    client.post(reverse("serien:vorlage"), werte)
+    assert Vorlage.laden().mail_betreff == "Rechnung {nummer} vom {datum}"

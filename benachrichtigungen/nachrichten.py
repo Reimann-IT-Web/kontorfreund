@@ -90,7 +90,11 @@ def tagesuebersicht(einstellung, jetzt):
         if not _gemeldet("mahnstufe", f"{r.pk}:{stufe.stufe}")
     ]
     rechnungen = [
-        r for r in posten if r.ueberfaellig and not _gemeldet("rechnung", str(r.pk))
+        r
+        for r in posten
+        if r.ueberfaellig
+        and not mahnen.ohne_vorschlag(r)
+        and not _gemeldet("rechnung", str(r.pk))
     ]
     # Steht eine Rechnung schon unter „Zu mahnen“, nicht noch einmal als nicht bezahlt.
     gemahnt = {r.pk for r, _ in zu_mahnen}

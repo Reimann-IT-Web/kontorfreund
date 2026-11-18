@@ -1,19 +1,17 @@
 """Platzhalter in den Texten der Serienrechnungen (B-11).
 
 Die Texte der Rechnung füllt Kontorfreund beim Anlegen der Entwürfe; danach sind sie
-im Entwurf frei änderbar. Die Nummer gibt es erst beim Festschreiben, deshalb kennt
-nur die E-Mail {nummer}.
+im Entwurf frei änderbar. Nummer, Rechnungsdatum und Fälligkeit stehen erst beim
+Festschreiben fest (das Datum rückt dann womöglich auf heute), deshalb kennt sie nur
+die E-Mail, die danach entsteht.
 """
 
-import re
+from invoicing.beleg import unbekannte_platzhalter as unbekannte
 
-RECHNUNG = ("termin", "thema", "link", "betrag", "datum", "faellig", "kundennummer")
-MAIL = RECHNUNG + ("nummer",)
+RECHNUNG = ("termin", "thema", "link", "betrag", "kundennummer")
+MAIL = RECHNUNG + ("nummer", "datum", "faellig")
 
-
-def unbekannte(text, erlaubt):
-    namen = dict.fromkeys(re.findall(r"\{([^{}]*)\}", text))
-    return [n for n in namen if n not in erlaubt]
+__all__ = ["MAIL", "RECHNUNG", "fuellen", "liste", "unbekannte"]
 
 
 def liste(namen):

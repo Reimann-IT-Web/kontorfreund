@@ -21,6 +21,7 @@ from .anlegen import anlegen
 from .auswertung import (
     FELDER,
     auswerten,
+    erste_teilnehmerzeile,
     erstes_datum,
     kopf_finden,
     vorschlagen,
@@ -83,13 +84,13 @@ def hochladen(request):
     return redirect("serien:vorschau", neu.pk)
 
 
-def _vorgaben(auswertung, vorlage):
+def _vorgaben(liste, zuordnung, vorlage):
     """Angaben zur Serie aus der ersten Teilnehmerzeile und der letzten Serie."""
-    erste = auswertung.teilnehmer[0].werte if auswertung.teilnehmer else {}
-    termin = erste.get("termin", "")
+    erste = erste_teilnehmerzeile(liste.spalten, liste.zeilen, zuordnung)
+    termin = " ".join(erste.get("termin", "").split())
     return {
         "termin": termin[:100],
-        "thema": erste.get("thema", "")[:300],
+        "thema": " ".join(erste.get("thema", "").split())[:300],
         "link": erste.get("link", "")[:500],
         "leistungsdatum": erstes_datum(termin),
         "datum": date.today(),
@@ -130,8 +131,7 @@ def vorschau(request, pk):
                 return antwort
     else:
         zuordnung = vorschlagen(liste.spalten, vorlage.zuordnung)
-        vorlaeufig = auswerten(liste.spalten, liste.zeilen, zuordnung, firma)
-        vorgaben = _vorgaben(vorlaeufig, vorlage)
+        vorgaben = _vorgaben(liste, zuordnung, vorlage)
         auswertung = auswerten(
             liste.spalten,
             liste.zeilen,

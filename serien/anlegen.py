@@ -1,13 +1,11 @@
 """Adressen und Rechnungsentwürfe aus der Vorschau anlegen (Spezifikation B-11)."""
 
-from datetime import timedelta
-
 from django.db import transaction
 
 from contacts.models import Anschrift, Kategorie, Kontakt, Kontaktweg
 from core.templatetags.kf import euro
 from invoicing.beleg import briefanrede, grussformel
-from invoicing.models import Position, Rechnung
+from invoicing.models import Position, Rechnung, summen
 
 from . import texte
 from .models import Serie, Teilnehmer
@@ -26,14 +24,15 @@ def anlegen(liste, auswertung, angaben, vorlage, firma, zuordnung):
             zahlungsziel=angaben["zahlungsziel"],
         )
         kunde = Kategorie.vorgabe(Kategorie.Kennung.KUNDE)
+        gewaehlt = [z for z in auswertung.teilnehmer if z.waehlen]
+        # Erst die Adressen mit Kd-Nr. der Liste: Eine neue ohne bekommt die nächste
+        # freie Nummer und darf keine nehmen, die eine spätere Zeile braucht.
         kontakte = {}
-        for z in auswertung.teilnehmer:
-            if not z.waehlen:
-                continue
-            kontakt = kontakte.get(z.schluessel)
-            if kontakt is None:
-                kontakt = _kontakt(z, kunde)
-                kontakte[z.schluessel] = kontakt
+        for z in sorted(gewaehlt, key=lambda z: z.kdnr is None):
+            if z.schluessel not in kontakte:
+                kontakte[z.schluessel] = _kontakt(z, kunde)
+        for z in gewaehlt:
+            kontakt = kontakte[z.schluessel]
             _mandat_merken(kontakt, z)
             _entwurf(serie, z, kontakt, angaben, vorlage, firma)
         vorlage.preis = angaben["preis"]
@@ -114,12 +113,16 @@ def _mandat_merken(kontakt, z):
 
 
 def _entwurf(serie, z, kontakt, angaben, vorlage, firma):
+    position = Position(
+        nr=1, menge=1, einheit="", preis=serie.preis, steuersatz=angaben["steuersatz"]
+    )
+    # Rechnungsdatum und Fälligkeit stehen nicht im Text: Beim Festschreiben an einem
+    # späteren Tag ändern sie sich, der Text nicht.
     werte = {
         "termin": serie.termin,
         "thema": serie.thema,
         "link": serie.link,
-        "datum": f"{serie.datum:%d.%m.%Y}",
-        "faellig": f"{serie.datum + timedelta(days=serie.zahlungsziel):%d.%m.%Y}",
+        "betrag": euro(summen([position], firma.umsatzsteuer)[2]),
         "kundennummer": kontakt.kundennummer,
     }
     rechnung = Rechnung.objects.create(
@@ -131,16 +134,9 @@ def _entwurf(serie, z, kontakt, angaben, vorlage, firma):
         zahlweg=z.zahlweg,
         steuerfall=firma.umsatzsteuer,
     )
-    Position.objects.create(
-        rechnung=rechnung,
-        nr=1,
-        bezeichnung=texte.fuellen(vorlage.position, werte)[:200],
-        menge=1,
-        einheit="",
-        preis=serie.preis,
-        steuersatz=angaben["steuersatz"],
-    )
-    werte["betrag"] = euro(rechnung.summen()[2])
+    position.rechnung = rechnung
+    position.bezeichnung = texte.fuellen(vorlage.position, werte)[:200]
+    position.save()
     teilnehmer = Teilnehmer.objects.create(
         serie=serie,
         rechnung=rechnung,

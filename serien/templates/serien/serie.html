@@ -66,7 +66,7 @@
         <td class="voll"><strong>{{ t.name }}</strong>{% if r.kontakt.art == "firma" %}<br><span class="small muted">{{ r.kontakt }}</span>{% endif %}</td>
         <td>{% if r.kontakt %}<a href="{% url 'contacts:bearbeiten' r.kontakt.pk %}">{{ r.kontakt.kundennummer }}</a>{% endif %}</td>
         <td>{{ r.get_zahlweg_display }}</td>
-        <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{% if r.ist_entwurf %}Entwurf{% else %}{{ r.nummer }}{% endif %}</a></td>
+        <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{% if r.ist_entwurf %}Entwurf{% else %}{{ r.nummer }}{% endif %}</a>{% if r.storniert %} <span class="small muted">storniert</span>{% endif %}</td>
         <td class="num"><span class="amount">{% if r.ist_entwurf %}{{ r.summen.2|euro }}{% else %}{{ r.brutto|euro }}{% endif %}</span></td>
         <td>{% if r.versendet_am %}{{ r.versendet_am|date:"d.m.Y" }}{% elif r.email_an %}<span class="small muted">{{ r.email_an }}</span>{% else %}<span class="small muted">zum Drucken</span>{% endif %}</td>
       </tr>

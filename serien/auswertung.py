@@ -27,12 +27,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
 from contacts.forms import HOECHSTE_KUNDENNUMMER, nummer_lesen
-from contacts.models import (
-    MANDAT_MONATE,
-    Kontakt,
-    mandatsreferenz_pruefen,
-    monate_zurueck,
-)
+from contacts.models import Kontakt, mandatsreferenz_pruefen
 from contacts.views import moegliche_dubletten
 from importe.lesen import _titel
 from invoicing.models import Rechnung
@@ -281,6 +276,40 @@ def abweichungen(kontakt, daten):
     ]
 
 
+def _namensschluessel(daten):
+    """Erkennt dieselbe neue Adresse in mehreren Zeilen ohne Kd-Nr."""
+    if daten["art"] == Kontakt.Art.FIRMA:
+        felder = ("firmenname", "strasse", "plz", "ort")
+    else:
+        felder = ("vorname", "nachname", "strasse", "plz", "ort")
+    return "|".join(daten[f].casefold() for f in felder)
+
+
+def erste_teilnehmerzeile(spalten, zeilen, zuordnung):
+    """Werte der ersten Zeile, die ein Teilnehmer sein kann, ohne Datenbank (Vorgaben)."""
+    index = {f: spalten.index(t) for f, t in zuordnung.items() if t in spalten}
+    ohne_storno = {index[f] for f in SERIENFELDER if f in index}
+    storno_abschnitt = False
+    for _, werte_liste in zeilen:
+        werte = {f: werte_liste[i].strip() for f, i in index.items()}
+        art = _art_der_zeile(werte_liste, werte)
+        if art == "abschnitt":
+            ueberschrift = next(w for w in werte_liste if w.strip())
+            storno_abschnitt = bool(STORNO.search(ueberschrift))
+        elif (
+            art is None
+            and not storno_abschnitt
+            and (werte.get("kdnr") or werte.get("adresse"))
+            and not any(
+                STORNO.search(w)
+                for i, w in enumerate(werte_liste)
+                if i not in ohne_storno
+            )
+        ):
+            return werte
+    return {}
+
+
 def _anderer_kunde(kontakt, daten):
     """Ob die gefundene Adresse nach ihrem Namen jemand anderes ist.
 
@@ -387,12 +416,28 @@ def _teilnehmer(z, gruppen, firma, termin, thema, heute):
         z.kdnr = None
     if kdnr_text and not z.kdnr:
         z.hinweise.append(f"Die Kd-Nr. „{kdnr_text}“ ist keine Nummer.")
-    z.schluessel = f"k{z.kdnr}" if z.kdnr else f"z{z.nr}"
     z.daten = kontakt_daten(werte)
     email = email_lesen(werte.get("email", ""))
     if email is None:
         z.hinweise.append(f"„{werte['email']}“ ist keine gültige E-Mail-Adresse.")
     z.email = email or ""
+
+    # Vorhandene Adresse: über die Kd-Nr., ohne sie über Name oder E-Mail (ein Treffer).
+    kontakt, gefunden = None, ""
+    if z.kdnr:
+        kontakt, gefunden = Kontakt.objects.filter(nummer=z.kdnr).first(), "Kd-Nr."
+    else:
+        treffer = moegliche_dubletten(Kontakt(**z.daten))
+        if len(treffer) == 1:
+            kontakt, gefunden = treffer[0], "Name oder E-Mail"
+    # Zeilen derselben Adresse teilen sich einen Kontakt (Verein mit mehreren
+    # Teilnehmern), neue ohne Kd-Nr. über Name und Anschrift.
+    if kontakt:
+        z.schluessel = f"p{kontakt.pk}"
+    elif z.kdnr:
+        z.schluessel = f"k{z.kdnr}"
+    else:
+        z.schluessel = "n" + _namensschluessel(z.daten)
 
     erste = gruppen.get(z.schluessel)
     if erste:
@@ -403,13 +448,7 @@ def _teilnehmer(z, gruppen, firma, termin, thema, heute):
             z.waehlen = False
     else:
         gruppen[z.schluessel] = z
-        if z.kdnr:
-            z.kontakt = Kontakt.objects.filter(nummer=z.kdnr).first()
-            z.gefunden = "Kd-Nr."
-        else:
-            treffer = moegliche_dubletten(Kontakt(**z.daten))
-            if len(treffer) == 1:
-                z.kontakt, z.gefunden = treffer[0], "Name oder E-Mail"
+        z.kontakt, z.gefunden = kontakt, gefunden
         if z.kontakt:
             z.abweichungen = abweichungen(z.kontakt, z.daten)
             z.uebernehmen = bool(z.abweichungen)
@@ -488,19 +527,18 @@ def _mandat(z, firma, heute):
         )
         return
     z.lastschrift_moeglich = True
-    genutzt = max(d for d in (z.mandat_datum, k.mandat_zuletzt if k else None) if d)
-    if genutzt > monate_zurueck(heute, MANDAT_MONATE):
+    # Dieselbe Regel wie an der Adresse, mit dem Datum aus der Liste.
+    mandat = Kontakt(
+        mandat_referenz=z.mandat_referenz,
+        mandat_datum=z.mandat_datum,
+        mandat_zuletzt=k.mandat_zuletzt if k else None,
+    )
+    if mandat.mandat_gueltig(heute):
         z.zahlweg = Rechnung.Zahlweg.LASTSCHRIFT
-        return
-    seit = (
-        f"zuletzt eingezogen am {k.mandat_zuletzt:%d.%m.%Y}"
-        if k and k.mandat_zuletzt
-        else f"vom {z.mandat_datum:%d.%m.%Y}, seitdem kein Einzug bekannt"
-    )
-    z.hinweise.append(
-        f"Mandat {seit}. Nach {MANDAT_MONATE} Monaten ohne Einzug verfällt es; "
-        "ist es noch gültig, wählen Sie Lastschrift."
-    )
+    else:
+        z.hinweise.append(
+            f"{mandat.mandat_verfallen_text(heute)} Oder wählen Sie hier Lastschrift."
+        )
 
 
 def wahl_uebernehmen(auswertung, post):
