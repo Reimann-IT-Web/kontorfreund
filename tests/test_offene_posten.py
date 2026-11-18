@@ -121,7 +121,7 @@ def test_festgeschriebene_rechnung_ist_offen_und_ueberfaellig(
     assert "Mahnung fällig" in liste
     start = client.get(reverse("core:start")).text
     assert "Überfällige Rechnungen" in start
-    assert "Zahlungserinnerung" in start
+    assert "Zahlungserinnerung schreiben" in start
     assert reverse("zahlungen:mahnen", args=[rechnung.pk]) in start
     # Auch wenn ein Schreiben fällig ist, kann das Geld schon da sein.
     assert reverse("invoicing:bearbeiten", args=[rechnung.pk]) + "#zahlungen" in start

@@ -962,11 +962,20 @@ kbd {
   gap: var(--s2);
 }
 
-/* Überfällige Rechnungen: „Zahlung buchen“ und Mahnung übereinander, gleich breit */
-.row-actions-stapel {
-  flex-direction: column;
-  align-items: stretch;
-  justify-self: end;
+/* Überfällige Rechnungen: Rechts steht immer „Zahlung buchen“, ein fälliges
+   Mahnschreiben als Link unter der Rechnung. */
+.row-hinweis {
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+}
+
+.row-hinweis .link {
+  gap: var(--s1);
+}
+
+.row-hinweis .icon {
+  width: 1.125em;
+  height: 1.125em;
 }
 
 .row-actions select {
@@ -1025,6 +1034,20 @@ kbd {
     .row-aufgabe .row-actions {
       grid-column: 2;
       justify-content: flex-start;
+    }
+  }
+
+  /* Belegzeilen (überfällige Rechnungen, offene Angebote): Der Knopf rückt unter
+     den Text, bevor die Textspalte zu schmal für den Namen wird. */
+  @container (max-width: 46rem) {
+    .row:not(.row-aufgabe, .row-verlauf) {
+      grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+      row-gap: var(--s2);
+    }
+
+    .row:not(.row-aufgabe, .row-verlauf) > .btn {
+      grid-column: 2;
+      justify-self: start;
     }
   }
 }
@@ -3139,11 +3162,6 @@ input[type="color"] {
   .row-actions {
     grid-area: action;
     justify-content: flex-start;
-  }
-
-  .row-actions-stapel {
-    flex-direction: row;
-    justify-self: start;
   }
 
   .col-ort,

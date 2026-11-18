@@ -107,13 +107,11 @@
             <span class="status status-danger">{% icon "alert" %}seit {{ r.faellig|date:"d.m.Y" }}</span>
             <div class="row-main">
               <p class="row-title">{{ r.kontakt }}</p>
-              <p class="row-meta">Rechnung {{ r.nummer }} vom {{ r.datum|date:"d.m.Y" }}{% if r.mahnstufe %} · {{ r.mahnstufe }} fällig{% endif %}</p>
+              <p class="row-meta">Rechnung {{ r.nummer }} vom {{ r.datum|date:"d.m.Y" }}</p>
+              {% if r.mahnstufe %}<p class="row-hinweis"><a class="link" href="{% url 'zahlungen:mahnen' r.pk %}">{% icon "mail" %}{{ r.mahnstufe }} schreiben</a></p>{% endif %}
             </div>
             <span class="amount">{{ r.offen|euro }}</span>
-            <div class="row-actions row-actions-stapel">
-              <a class="btn btn-sm" href="{% url 'invoicing:bearbeiten' r.pk %}#zahlungen">{% icon "banknote" %}Zahlung buchen</a>
-              {% if r.mahnstufe %}<a class="btn btn-sm" href="{% url 'zahlungen:mahnen' r.pk %}">{% icon "mail" %}{{ r.mahnstufe }}</a>{% endif %}
-            </div>
+            <a class="btn btn-sm" href="{% url 'invoicing:bearbeiten' r.pk %}#zahlungen">{% icon "banknote" %}Zahlung buchen</a>
           </li>
           {% endfor %}
         </ul>
