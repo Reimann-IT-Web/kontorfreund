@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.48.2 – 18.11.2026
+
+- Übersicht: Überfällige Rechnungen sehen ruhiger aus. Rechts steht in jeder Zeile genau ein Knopf „Zahlung buchen“, gleich breit und an derselben Stelle. Ist eine Zahlungserinnerung oder Mahnung fällig, steht sie als Link unter der Rechnung, etwa „Zahlungserinnerung schreiben“.
+- Übersicht: In schmaleren Fenstern rückt der Knopf bei überfälligen Rechnungen und offenen Angeboten unter den Text. Bisher wurden lange Namen dort Wort für Wort umbrochen.
+
 ## 0.48.1 – 18.11.2026
 
 - Übersicht: Bei überfälligen Rechnungen steht jetzt immer „Zahlung buchen“. Bisher gab es nur den Knopf für die Zahlungserinnerung oder Mahnung, sobald eines dieser Schreiben fällig war, und eine eingegangene Zahlung ließ sich dort nicht buchen. Ist ein Schreiben fällig, steht sein Knopf darunter.
