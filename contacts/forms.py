@@ -119,6 +119,10 @@ class KontaktForm(forms.ModelForm):
             "ust_id",
             "kaeuferreferenz",
             "xrechnung",
+            "mandat_referenz",
+            "mandat_datum",
+            "mandat_zuletzt",
+            "mandat_iban",
             "notiz",
         ]
         widgets = {
@@ -132,12 +136,20 @@ class KontaktForm(forms.ModelForm):
             ),
             "land": forms.TextInput(attrs={"data-land": ""}),
             "notiz": forms.Textarea(attrs={"rows": 3}),
+            "mandat_datum": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "mandat_zuletzt": forms.DateInput(
+                format="%Y-%m-%d", attrs={"type": "date"}
+            ),
         }
         help_texts = {
             "ust_id": "Nur nötig bei Geschäften mit Unternehmen im EU-Ausland oder § 13b.",
             "kaeuferreferenz": "Steht auf jeder Rechnung an diese Adresse. Behörden nennen Ihnen dafür ihre Leitweg-ID, z. B. 991-01234-38.",
             "xrechnung": "Für Behörden und Kunden, die eine XRechnung verlangen. Zu jeder Rechnung legt Kontorfreund dann die XML-Datei bei, die Sie im Portal der Behörde hochladen oder mitschicken.",
             "firma": "Dann steht die Person bei der Firma, und ihre Einträge erscheinen auch im Verlauf der Firma.",
+            "mandat_referenz": "Wie auf dem unterschriebenen Mandat, oft die Kundennummer.",
+            "mandat_zuletzt": "Setzt Kontorfreund selbst, wenn Sie eine Zahlung per Lastschrift "
+            "buchen. Nach 36 Monaten ohne Einzug verfällt ein Mandat.",
+            "mandat_iban": "Freiwillig. Nötig nur für die XRechnung mit Lastschrift.",
         }
 
     def __init__(self, *args, **kwargs):
@@ -176,6 +188,36 @@ class KontaktForm(forms.ModelForm):
         if Kontakt.objects.filter(nummer=nummer).exclude(pk=self.instance.pk).exists():
             raise ValidationError(f"K-{nummer:04d} ist schon vergeben.")
         return nummer
+
+    def clean(self):
+        daten = super().clean()
+        referenz = daten.get("mandat_referenz")
+        datum = daten.get("mandat_datum")
+        uebrige = daten.get("mandat_zuletzt") or daten.get("mandat_iban")
+        if datum and not referenz and "mandat_referenz" not in self.errors:
+            self.add_error("mandat_referenz", "Bitte die Mandatsreferenz eintragen.")
+        elif uebrige and not referenz and "mandat_referenz" not in self.errors:
+            self.add_error(
+                "mandat_referenz", "Ohne Mandatsreferenz gibt es keine Lastschrift."
+            )
+        if referenz and not datum and "mandat_datum" not in self.errors:
+            self.add_error(
+                "mandat_datum", "Bitte das Datum der Unterschrift eintragen."
+            )
+        return daten
+
+    def clean_mandat_referenz(self):
+        referenz = self.cleaned_data["mandat_referenz"].strip()
+        if (
+            referenz
+            and Kontakt.objects.filter(mandat_referenz=referenz)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise ValidationError(
+                "Diese Mandatsreferenz hat schon eine andere Adresse."
+            )
+        return referenz
 
     def clean_neue_kategorie(self):
         name = self.cleaned_data["neue_kategorie"]

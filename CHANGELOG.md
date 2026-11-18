@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Neu: SEPA-Lastschrift. Tragen Sie unter Einstellungen Ihre Gläubiger-ID ein und an der Adresse das Mandat des Kunden mit Mandatsreferenz und Datum der Unterschrift. Neue Rechnungen an diese Adresse zieht Kontorfreund dann per Lastschrift ein; im Entwurf wählen Sie den Zahlweg unter „Zahlweg“. Auf der Rechnung steht statt der Bitte zu überweisen, wann welcher Betrag eingezogen wird, mit Mandatsreferenz und Gläubiger-ID; den Wortlaut ändern Sie in den Einstellungen. Einen GiroCode gibt es dann nicht, und die E-Rechnung nennt die Lastschrift (Zahlart 59) mit Mandat und Gläubiger-ID. Buchen Sie eine Zahlung per Lastschrift, merkt sich Kontorfreund den Tag; ein Mandat, das 36 Monate nicht genutzt wurde, gilt als verfallen, und Kontorfreund schlägt wieder Überweisung vor.
+- Neu: Serienrechnungen aus einer Teilnehmerliste, unter Angebote & Rechnungen im Reiter „Serien“. Laden Sie die Liste eines Termins hoch (Excel, LibreOffice oder CSV). Die Vorschau zeigt jeden Teilnehmer mit Adresse, Zahlweg und E-Mail: Steht in „Sepa erteilt“ ein Datum, wird eingezogen, sonst überwiesen. Zeilen unter „Stornierung“ und vorausgefüllte leere Zeilen bekommen keine Rechnung, und Kontorfreund speichert nichts davon. Teilen sich mehrere Teilnehmer eine Kd-Nr., geht jede Rechnung an den Verein, zu Händen des Teilnehmers. Danach schreiben Sie alle Entwürfe auf einmal fest, mit Nummern in der Reihenfolge der Liste, und senden jede als eigene E-Mail, auf Wunsch mit einer PDF-Beilage. Rechnungen ohne E-Mail-Adresse gibt es als ein PDF zum Drucken, die Übersicht mit allen Nummern als Excel-Datei.
+- Export und Import der Adressen haben Spalten für das SEPA-Mandat.
+
 ## 0.47.1 – 17.11.2026
 
 - Zahlungserinnerung und Mahnung: Ist der Kunde am Datum des Schreibens noch nicht in Verzug, sind Mahngebühr, Verzugszinsen und Verzugspauschale gesperrt. Darunter steht, ab wann er in Verzug ist, etwa „Der Kunde ist erst ab dem 28.11.2026 in Verzug, wenn die Frist dieses Schreibens abgelaufen ist.“ Bisher ließ sich die Pauschale ankreuzen, erschien aber nicht im Schreiben. Ändern Sie das Datum des Schreibens, gibt Kontorfreund die Felder sofort frei, sobald der Kunde an diesem Tag in Verzug ist.

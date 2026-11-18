@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Angebote &amp; Rechnungen{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Angebote &amp; Rechnungen</h1>
+    <p class="muted">Serienrechnungen aus einer Teilnehmerliste: Laden Sie die Liste eines Termins hoch, und Kontorfreund legt je Teilnehmer einen Rechnungsentwurf an, bei erteiltem SEPA-Mandat zum Einzug per Lastschrift.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{% url 'serien:vorlage' %}">{% icon "pencil" %}Texte und Beilage</a>
+  </div>
+</div>
+
+{% include "invoicing/belegarten.html" %}
+
+<form class="panel upload" method="post" action="{% url 'serien:hochladen' %}" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="field">
+    <label for="datei">Teilnehmerliste</label>
+    <div class="upload-zeile">
+      <input type="file" id="datei" name="datei" accept=".xlsx,.ods,.csv" required aria-describedby="datei-hinweis">
+      <button class="btn btn-primary" type="submit">{% icon "upload" %}Hochladen</button>
+    </div>
+    <p class="hint" id="datei-hinweis">Excel (.xlsx), LibreOffice (.ods) oder CSV, höchstens {{ groesste_mb }} MB. Bevor etwas angelegt wird, zeigt eine Vorschau jeden Teilnehmer. Die Datei selbst bewahrt Kontorfreund nicht auf.</p>
+  </div>
+</form>
+
+{% if serien %}
+<div class="table-wrap">
+  <table class="table archive stapel">
+    <thead>
+      <tr>
+        <th scope="col">Termin</th>
+        <th scope="col">Thema</th>
+        <th scope="col" class="num">Rechnungen</th>
+        <th scope="col">Stand</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in serien %}
+      <tr class="data-row">
+        <td><a href="{% url 'serien:serie' s.pk %}">{{ s.termin }}</a></td>
+        <td class="voll">{{ s.thema }}</td>
+        <td class="num">{{ s.anzahl }}</td>
+        <td>{% if s.entwuerfe %}<span class="status status-open">{{ s.entwuerfe }} Entw{{ s.entwuerfe|pluralize:"urf,ürfe" }}</span>{% elif s.versendet == s.anzahl %}<span class="status status-ok">{% icon "check" %}versendet</span>{% else %}<span class="status">festgeschrieben, {{ s.versendet }} versendet</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <h2>Noch keine Serie</h2>
+  <p class="muted">Kontorfreund erkennt die Spalten an üblichen Überschriften wie „Kd-Nr.“, „Name“, „PLZ“ oder „Sepa erteilt“. Steht in „Sepa erteilt“ ein Datum, wird der Betrag per Lastschrift eingezogen, sonst überwiesen. Zeilen unter „Stornierung“ bekommen keine Rechnung.</p>
+</div>
+{% endif %}
+{% endblock %}

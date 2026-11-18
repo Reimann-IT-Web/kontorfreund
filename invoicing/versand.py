@@ -36,10 +36,10 @@ def vorschlag(rechnung, firma):
             f"vom {rechnung.datum:%d.%m.%Y} über {euro(rechnung.brutto)}."
         )
     return {
-        "an": rechnung.kontakt.email if rechnung.kontakt else "",
+        "an": rechnung.email_an,
         "betreff": str(rechnung),
         "text": (
-            f"{briefanrede(rechnung.kontakt)}\n\n{inhalt}\n\n"
+            f"{briefanrede(rechnung.teilnehmer_daten or rechnung.kontakt)}\n\n{inhalt}\n\n"
             f"Mit freundlichen Grüßen\n{gruss}"
         ),
         "kopie": True,
@@ -73,8 +73,12 @@ def testen(firma):
     verbindung(firma).send_messages([nachricht])
 
 
-def senden(beleg, firma, an, betreff, text, kopie):
-    """Rechnung oder Angebot mit den Dateien aus `beleg.anhaenge` senden."""
+def senden(beleg, firma, an, betreff, text, kopie, beilagen=()):
+    """Rechnung oder Angebot mit den Dateien aus `beleg.anhaenge` senden.
+
+    `beilagen` sind weitere Dateien als (Name, Inhalt, MIME-Typ), etwa die Beilage
+    einer Serienrechnung (B-11).
+    """
     nachricht = EmailMessage(
         subject=betreff,
         body=text,
@@ -84,6 +88,8 @@ def senden(beleg, firma, an, betreff, text, kopie):
     )
     for name, pfad, art in beleg.anhaenge:
         nachricht.attach(name, (Path(settings.DATA_DIR) / pfad).read_bytes(), art)
+    for name, inhalt, art in beilagen:
+        nachricht.attach(name, inhalt, art)
     verbindung(firma).send_messages([nachricht])
     beleg.versendet_am = timezone.now()
     beleg.versendet_an = an

@@ -47,6 +47,19 @@ class Zahlung(models.Model):
     def __str__(self):
         return f"{self.get_art_display()} {self.betrag} € zu {self.rechnung}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Ein Einzug hält das SEPA-Mandat gültig (B-12).
+        kontakt = self.rechnung.kontakt
+        if (
+            self.art == self.Art.LASTSCHRIFT
+            and kontakt
+            and kontakt.mandat_vorhanden
+            and (not kontakt.mandat_zuletzt or kontakt.mandat_zuletzt < self.datum)
+        ):
+            kontakt.mandat_zuletzt = self.datum
+            kontakt.save(update_fields=["mandat_zuletzt", "geaendert"])
+
     @property
     def ist_ausbuchung(self):
         """Kein Geldeingang: ausgebuchter Rest oder abgezogenes Skonto."""

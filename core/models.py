@@ -28,6 +28,28 @@ def iban_pruefen(wert):
         )
 
 
+def glaeubiger_pruefen(wert):
+    """Gläubiger-Identifikationsnummer für SEPA-Lastschriften (B-12).
+
+    Ländercode, zwei Prüfziffern, drei Zeichen Geschäftsbereich und die nationale
+    Kennung, in Deutschland elf Ziffern (z. B. DE98ZZZ09999999999). Die Prüfziffern
+    rechnen wie bei der IBAN (Modulo 97), aber ohne den Geschäftsbereich.
+    """
+    kennung = wert.replace(" ", "").upper()
+    if not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28}", kennung) or (
+        kennung.startswith("DE")
+        and not re.fullmatch(r"DE\d{2}[A-Z0-9]{3}\d{11}", kennung)
+    ):
+        raise ValidationError(
+            "Bitte die vollständige Gläubiger-ID eingeben, z. B. DE98ZZZ09999999999."
+        )
+    umgestellt = kennung[7:] + kennung[:4]
+    if int("".join(str(int(z, 36)) for z in umgestellt)) % 97 != 1:
+        raise ValidationError(
+            "Die Prüfziffer der Gläubiger-ID stimmt nicht. Bitte auf Tippfehler prüfen."
+        )
+
+
 def daten_url(daten):
     """Bild als Daten-URL für die Ansicht in den Einstellungen."""
     daten = bytes(daten)
@@ -79,6 +101,12 @@ class Firmendaten(models.Model):
     bank = models.CharField("Bank", max_length=100, blank=True)
     # Leer druckt die Rechnung Zahlungsziel und Bankverbindung im eigenen Wortlaut.
     zahlungstext = models.TextField("Zahlungshinweis auf Rechnungen", blank=True)
+    # SEPA-Lastschrift (B-12): ohne Gläubiger-ID lässt sich keine Lastschrift wählen.
+    glaeubiger_id = models.CharField(
+        "Gläubiger-ID", max_length=35, blank=True, validators=[glaeubiger_pruefen]
+    )
+    # Leer druckt die Rechnung den festen Wortlaut (invoicing.beleg.LASTSCHRIFT_BEISPIEL).
+    lastschrifttext = models.TextField("Zahlungshinweis bei Lastschrift", blank=True)
     # In der Datenbank statt als Datei, damit es mit jeder Sicherung erhalten bleibt.
     logo = models.BinaryField("Logo", blank=True, default=b"")
 
@@ -160,6 +188,7 @@ class Firmendaten(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1
         self.iban = self.iban.replace(" ", "").upper()
+        self.glaeubiger_id = self.glaeubiger_id.replace(" ", "").upper()
         super().save(*args, **kwargs)
 
     @classmethod

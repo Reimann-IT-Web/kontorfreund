@@ -27,6 +27,9 @@ from .models import Rechnung, Steuersatz
 
 logger = logging.getLogger(__name__)
 
+# Vorabinformation vor einer SEPA-Lastschrift, sofern nichts Kürzeres vereinbart ist.
+VORABINFORMATION_TAGE = 14
+
 # Leer heißt „ohne“: Der Beleg zeigt nur die Zahl, die E-Rechnung den Code C62.
 EINHEITEN = ["Stück", "Std.", "Tag", "Monat", "Pauschale", ""]
 
@@ -60,6 +63,7 @@ def neu(request):
         else None,
         # Die Auswahl in den Firmendaten ist zugleich der Steuerfall.
         steuerfall=firma.umsatzsteuer,
+        zahlweg=Rechnung.zahlweg_fuer(kontakt),
         kopftext=f"{beleg.briefanrede(kontakt)}\n\n"
         "vielen Dank für Ihren Auftrag. Ich berechne Ihnen folgende Leistungen:",
         fusstext=beleg.grussformel(firma),
@@ -105,9 +109,11 @@ def _editor(request, rechnung, firma):
         datum_auf_heute(form)
         positionen = list(rechnung.positionen.all()) if rechnung.pk else []
     kontakte = list(form.fields["kontakt"].queryset)
+    lastschrift_moeglich = bool(firma.glaeubiger_id)
     for kontakt in kontakte:
         kontakt.briefanrede = beleg.briefanrede(kontakt)
         kontakt.weitere = beleg.anschriften_wahl(kontakt)
+        kontakt.lastschrift = lastschrift_moeglich and kontakt.mandat_gueltig()
     return render(
         request,
         "invoicing/rechnung.html",
@@ -126,6 +132,7 @@ def _editor(request, rechnung, firma):
             "steuersaetze": Steuersatz.choices,
             "artikel": Artikel.objects.filter(aktiv=True),
             "naechste_nummer": Rechnung.naechste_nummer(rechnung.datum),
+            "lastschrift_hinweise": lastschrift_hinweise(rechnung, firma),
             "grenz_hinweise": umsatz.hinweise(rechnung.datum.year, _netto(rechnung))
             if _ohne_umsatzsteuer(rechnung)
             else [],
@@ -134,6 +141,32 @@ def _editor(request, rechnung, firma):
             else [],
         },
     )
+
+
+def lastschrift_hinweise(rechnung, firma):
+    """Was bei einer Lastschrift zu beachten ist, ohne das Festschreiben zu sperren (B-12)."""
+    if not rechnung.ist_lastschrift:
+        return []
+    hinweise = []
+    if not firma.glaeubiger_id:
+        hinweise.append(
+            "Für Lastschriften fehlt Ihre Gläubiger-ID in den Einstellungen."
+        )
+    k = rechnung.kontakt
+    if k and not k.mandat_vorhanden:
+        hinweise.append(
+            "Die Adresse hat kein SEPA-Mandat. Tragen Sie Mandatsreferenz und Datum "
+            "an der Adresse ein."
+        )
+    elif k and (text := k.mandat_verfallen_text()):
+        hinweise.append(text)
+    if rechnung.zahlungsziel < VORABINFORMATION_TAGE:
+        hinweise.append(
+            f"Eingezogen wird am {rechnung.faellig:%d.%m.%Y}. Die Rechnung kündigt die "
+            f"Lastschrift an und muss dem Kunden {VORABINFORMATION_TAGE} Tage vorher "
+            "vorliegen, wenn Sie nichts Kürzeres vereinbart haben."
+        )
+    return hinweise
 
 
 def _ohne_umsatzsteuer(rechnung):

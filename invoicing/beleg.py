@@ -53,6 +53,13 @@ ZAHLUNG_BEISPIEL = (
     "Bitte überweisen Sie den Betrag auf folgendes Konto: {bank}, IBAN {iban}\n"
     "Verwendungszweck: Rechnung {nummer}"
 )
+# Zahlungshinweis bei Lastschrift (B-12): dazu Mandat, Gläubiger-ID und Kundennummer.
+LASTSCHRIFT_PLATZHALTER = ZAHLUNG_PLATZHALTER + ("mandat", "glaeubiger", "kundennummer")
+# Ohne eigenen Text der feste Wortlaut; die Rechnung ist die Vorabinformation.
+LASTSCHRIFT_BEISPIEL = (
+    "Der Betrag von {betrag} wird am {faellig} per SEPA-Lastschrift von Ihrem Konto "
+    "eingezogen.\nMandatsreferenz {mandat}, Gläubiger-ID {glaeubiger}"
+)
 
 VORLAGE = Path(__file__).parent / "typst" / "rechnung.typ"
 SCHRIFTEN = Path(__file__).parent / "schrift"
@@ -247,11 +254,11 @@ def zuschneiden(daten):
     return ausgabe.getvalue()
 
 
-def empfaenger_daten(k, anschrift=None):
+def empfaenger_daten(k, anschrift=None, zu_haenden=""):
     """Empfänger mit einer weiteren Anschrift (K-1) oder der Standardanschrift."""
     a = anschrift or k
     return {
-        "zeilen": k.anschrift_zeilen(anschrift) if k else [],
+        "zeilen": k.anschrift_zeilen(anschrift, zu_haenden) if k else [],
         "name": k.anzeigename if k else "",
         "kundennummer": k.kundennummer if k else "",
         "strasse": a.strasse if k else "",
@@ -388,12 +395,35 @@ def beleg_steuerhinweis(rechnung, firma):
     return steuerhinweis(rechnung.steuerfall, firma)
 
 
+def lastschrift_daten(rechnung, firma):
+    """Mandat und Gläubiger-ID für eine Lastschrift-Rechnung (B-12), sonst None."""
+    k = rechnung.kontakt
+    if not (rechnung.ist_lastschrift and k):
+        return None
+    return {
+        "mandat": k.mandat_referenz,
+        "glaeubiger": firma.glaeubiger_id,
+        "iban": k.mandat_iban,
+        "text": firma.lastschrifttext,
+    }
+
+
+def zu_haenden(rechnung):
+    """Bei einer Serienrechnung an eine Firma der Teilnehmer statt des Ansprechpartners."""
+    teilnehmer = rechnung.teilnehmer_daten
+    k = rechnung.kontakt
+    if teilnehmer and k and k.art == k.Art.FIRMA:
+        return teilnehmer.anschriftzeile
+    return ""
+
+
 def beleg_daten(rechnung, firma, nummer):
     """Alle Angaben des Belegs. Beim Festschreiben eingefroren, danach nie neu berechnet."""
     netto, ust, brutto = rechnung.summen()
     k = rechnung.kontakt
     o = rechnung.storno_zu
     r = rechnung.korrektur_zu
+    lastschrift = lastschrift_daten(rechnung, firma)
     return {
         "nummer": nummer,
         "storno_zu": {"nummer": o.nummer, "datum": o.datum.isoformat()} if o else None,
@@ -403,11 +433,17 @@ def beleg_daten(rechnung, firma, nummer):
         "datum": rechnung.datum.isoformat(),
         "faellig": rechnung.faellig.isoformat(),
         "zahlungsziel": rechnung.zahlungsziel,
-        "skonto": skonto_daten(rechnung, brutto),
+        # Bei Lastschrift kein Skonto und kein Verzug: Der Betrag wird eingezogen.
+        "skonto": None if lastschrift else skonto_daten(rechnung, brutto),
         # Ohne diesen Hinweis kommen Verbraucher erst durch eine Mahnung in Verzug.
         "verzugshinweis": bool(
-            rechnung.verzugshinweis and k and k.ist_verbraucher and brutto > 0
+            rechnung.verzugshinweis
+            and k
+            and k.ist_verbraucher
+            and brutto > 0
+            and not lastschrift
         ),
+        "lastschrift": lastschrift,
         "leistung_von": rechnung.leistung_von.isoformat()
         if rechnung.leistung_von
         else "",
@@ -422,9 +458,10 @@ def beleg_daten(rechnung, firma, nummer):
         "kopftext": rechnung.kopftext,
         "fusstext": rechnung.fusstext,
         "zahlungstext": firma.zahlungstext,
-        "girocode": bool(rechnung.girocode and firma.iban),
+        # Wer per Lastschrift zahlt, soll nicht zusätzlich überweisen.
+        "girocode": bool(rechnung.girocode and firma.iban and not lastschrift),
         "absender": absender_daten(firma),
-        "empfaenger": empfaenger_daten(k, rechnung.anschrift),
+        "empfaenger": empfaenger_daten(k, rechnung.anschrift, zu_haenden(rechnung)),
         "lieferanschrift": lieferanschrift_daten(k, rechnung.lieferanschrift),
         "positionen": positionen_daten(rechnung.positionen.all()),
         "rabatt": rabatt_daten(rechnung),
@@ -483,7 +520,14 @@ def druckdaten(b, entwurf=False, logo=b"", unterschrift=b"", kopf=None):
 
     iban = iban_lesbar(a["iban"])
     eigener = b.get("zahlungstext", "").strip()  # ältere Belege kennen ihn nicht
-    if storno:
+    if lastschrift := b.get("lastschrift"):
+        eigener = "lastschrift"  # keine Bitte zu überweisen
+        zahlung = zahlungshinweis(
+            lastschrift["text"].strip() or LASTSCHRIFT_BEISPIEL,
+            b,
+            LASTSCHRIFT_PLATZHALTER,
+        )
+    elif storno:
         zahlung = [
             f"Die Rechnung {storno['nummer']} ist damit nicht mehr zu bezahlen. "
             "Einen bereits gezahlten Betrag erhalten Sie zurück."
@@ -551,15 +595,16 @@ def iban_lesbar(iban):
     return " ".join(iban[i : i + 4] for i in range(0, len(iban), 4))
 
 
-def unbekannte_platzhalter(text):
+def unbekannte_platzhalter(text, erlaubt=ZAHLUNG_PLATZHALTER):
     """Namen in geschweiften Klammern, die der Zahlungshinweis nicht kennt."""
     namen = dict.fromkeys(re.findall(r"\{([^{}]*)\}", text))
-    return [n for n in namen if n not in ZAHLUNG_PLATZHALTER]
+    return [n for n in namen if n not in erlaubt]
 
 
-def zahlungshinweis(text, b):
+def zahlungshinweis(text, b, platzhalter=ZAHLUNG_PLATZHALTER):
     """Eigener Zahlungshinweis mit den Angaben des Belegs, als Zeilen."""
     a = b["absender"]
+    lastschrift = b.get("lastschrift") or {}
     werte = {
         "betrag": euro(b["brutto"]),
         "nummer": b["nummer"] or "(wird vergeben)",
@@ -567,8 +612,11 @@ def zahlungshinweis(text, b):
         "faellig": datum_de(b["faellig"]),
         "iban": iban_lesbar(a["iban"]),
         "bank": a["bank"],
+        "mandat": lastschrift.get("mandat", ""),
+        "glaeubiger": lastschrift.get("glaeubiger", ""),
+        "kundennummer": b.get("empfaenger", {}).get("kundennummer", ""),
     }
-    for name in ZAHLUNG_PLATZHALTER:
+    for name in platzhalter:
         text = text.replace("{" + name + "}", werte[name])
     return text.strip().splitlines()
 
@@ -866,7 +914,17 @@ def zugferd(b):
     # Zahlungsangaben nur, wenn der Kunde etwas zu zahlen hat (nicht beim Storno);
     # die XRechnung verlangt den Zahlungsweg immer (BR-DE-1).
     zu_zahlen = Decimal(b["brutto"]) > 0
-    if a["iban"] and (zu_zahlen or xrechnung):
+    lastschrift = b.get("lastschrift")
+    if lastschrift and zu_zahlen:
+        # SEPA-Lastschrift (B-12): Gläubiger-ID (BT-90), Konto des Kunden (BT-91),
+        # Mandatsreferenz in den Zahlungsbedingungen (BT-89).
+        zahlweg = PaymentMeans()
+        zahlweg.type_code = "59"
+        if lastschrift["iban"]:
+            zahlweg.payer_account.iban = lastschrift["iban"]
+        abrechnung.payment_means.add(zahlweg)
+        abrechnung.creditor_reference_id = lastschrift["glaeubiger"]
+    elif a["iban"] and (zu_zahlen or xrechnung):
         zahlweg = PaymentMeans()
         zahlweg.type_code = "58"  # SEPA-Überweisung
         zahlweg.payee_account.iban = a["iban"]
@@ -874,6 +932,8 @@ def zugferd(b):
     if zu_zahlen:
         bedingung = PaymentTerms()
         bedingung.due = date.fromisoformat(b["faellig"])
+        if lastschrift:
+            bedingung.debit_mandate_id = lastschrift["mandat"]
         if skonto := b.get("skonto"):
             # Skonto in BT-20 in der Form, die die XRechnung vorgibt (BR-DE-18).
             prozent = Decimal(skonto["prozent"])
@@ -980,6 +1040,8 @@ def stornieren(original, firma):
     with transaction.atomic():
         storno = original.kopieren(
             storno_zu=original,
+            # Eine Erstattung läuft als Überweisung (B-12).
+            zahlweg=Rechnung.Zahlweg.UEBERWEISUNG,
             zahlungsziel=0,
             skonto_prozent=0,
             skonto_tage=0,
@@ -999,6 +1061,7 @@ def korrektur_anlegen(original, firma):
     with transaction.atomic():
         korrektur = original.kopieren(
             korrektur_zu=original,
+            zahlweg=Rechnung.Zahlweg.UEBERWEISUNG,
             zahlungsziel=0,
             skonto_prozent=0,
             skonto_tage=0,

@@ -196,6 +196,7 @@ def rechnung_erstellen(auftrag, firma):
             or auftrag.anschrift,
             lieferanschrift=auftrag.lieferanschrift,
             steuerfall=auftrag.steuerfall,
+            zahlweg=Rechnung.zahlweg_fuer(auftrag.kontakt),
             rabatt_prozent=auftrag.rabatt_prozent,
             leistung_von=auftrag.leistung_von,
             leistung_bis=auftrag.leistung_bis,

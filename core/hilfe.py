@@ -21,7 +21,8 @@ THEMEN = [
         "slug": "rechnungen",
         "titel": "Rechnungen",
         "kurz": "Schreiben, festschreiben, senden, stornieren und korrigieren; "
-        "wiederkehrende Rechnungen aus Verträgen.",
+        "SEPA-Lastschrift, wiederkehrende Rechnungen aus Verträgen und "
+        "Serienrechnungen aus einer Teilnehmerliste.",
         "icon": "file",
     },
     {

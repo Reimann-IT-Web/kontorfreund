@@ -1,8 +1,16 @@
+import calendar
 import re
+from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Q
+
+from core.models import iban_pruefen
+
+# Ein SEPA-Mandat verfällt, wenn so lange keine Lastschrift darauf eingezogen wurde
+# (SEPA-Regelwerk für die Basislastschrift, B-12).
+MANDAT_MONATE = 36
 
 
 def ust_id_pruefen(wert):
@@ -34,6 +42,22 @@ def kaeuferreferenz_pruefen(wert):
         raise ValidationError(
             "Die Prüfziffer der Leitweg-ID stimmt nicht. Bitte auf Tippfehler prüfen."
         )
+
+
+def mandatsreferenz_pruefen(wert):
+    """Höchstens 35 Zeichen, nur Buchstaben ohne Umlaute, Ziffern und + ? / - : ( ) . , '."""
+    if not re.fullmatch(r"[A-Za-z0-9+?/\-:().,']{1,35}", wert):
+        raise ValidationError(
+            "Bitte höchstens 35 Zeichen ohne Leerzeichen und Umlaute: Buchstaben, "
+            "Ziffern und + ? / - : ( ) . , '"
+        )
+
+
+def monate_zurueck(tag, monate):
+    """Derselbe Tag `monate` Monate früher; gibt es ihn nicht, der letzte des Monats."""
+    jahr, monat = divmod(tag.year * 12 + tag.month - 1 - monate, 12)
+    letzter = calendar.monthrange(jahr, monat + 1)[1]
+    return date(jahr, monat + 1, min(tag.day, letzter))
 
 
 class Kategorie(models.Model):
@@ -130,6 +154,18 @@ class Kontakt(models.Model):
         "Rechnungen zusätzlich als XRechnung", default=False
     )
     notiz = models.TextField("Notiz", blank=True)
+    # SEPA-Lastschriftmandat (B-12); ohne Referenz und Datum gibt es keine Lastschrift.
+    mandat_referenz = models.CharField(
+        "Mandatsreferenz",
+        max_length=35,
+        blank=True,
+        validators=[mandatsreferenz_pruefen],
+    )
+    mandat_datum = models.DateField("Mandat unterschrieben am", null=True, blank=True)
+    mandat_zuletzt = models.DateField("Zuletzt eingezogen am", null=True, blank=True)
+    mandat_iban = models.CharField(
+        "IBAN des Kunden", max_length=42, blank=True, validators=[iban_pruefen]
+    )
     archiviert = models.BooleanField(default=False)
     # Auf Verlangen der Person, solange Belege aufbewahrt werden müssen (contacts/datenschutz.py).
     gesperrt_am = models.DateTimeField(
@@ -144,12 +180,22 @@ class Kontakt(models.Model):
         ordering = ["anzeigename"]
         verbose_name = "Adresse"
         verbose_name_plural = "Adressen"
+        constraints = [
+            # Die Referenz muss je Gläubiger eindeutig sein.
+            models.UniqueConstraint(
+                fields=["mandat_referenz"],
+                condition=~Q(mandat_referenz=""),
+                name="mandatsreferenz_eindeutig",
+            )
+        ]
 
     def __str__(self):
         return self.anzeigename
 
     def save(self, *args, **kwargs):
         self.ust_id = self.ust_id.replace(" ", "").upper()
+        self.mandat_iban = self.mandat_iban.replace(" ", "").upper()
+        self.mandat_referenz = self.mandat_referenz.strip()
         self.kaeuferreferenz = self.kaeuferreferenz.strip()
         if ist_leitweg_id(self.kaeuferreferenz):
             self.kaeuferreferenz = self.kaeuferreferenz.upper()
@@ -248,10 +294,40 @@ class Kontakt(models.Model):
         """Personen gelten beim Verzug als Verbraucher (§ 288 Abs. 1 und 2 BGB)."""
         return self.art == self.Art.PERSON
 
-    def anschrift_zeilen(self, anschrift=None):
+    @property
+    def mandat_vorhanden(self):
+        return bool(self.mandat_referenz and self.mandat_datum)
+
+    def mandat_genutzt(self):
+        """Unterschrift oder letzter Einzug, je nachdem, was später war."""
+        return max(d for d in (self.mandat_datum, self.mandat_zuletzt) if d)
+
+    def mandat_gueltig(self, stichtag=None):
+        """Mandat mit Referenz und Datum, genutzt in den letzten 36 Monaten (B-12)."""
+        if not self.mandat_vorhanden:
+            return False
+        stichtag = stichtag or date.today()
+        return self.mandat_genutzt() > monate_zurueck(stichtag, MANDAT_MONATE)
+
+    def mandat_verfallen_text(self, stichtag=None):
+        """Grund, warum das Mandat nicht mehr gilt; leer, wenn es gilt oder fehlt."""
+        if not self.mandat_vorhanden or self.mandat_gueltig(stichtag):
+            return ""
+        if self.mandat_zuletzt:
+            seit = f"zuletzt eingezogen am {self.mandat_zuletzt:%d.%m.%Y}"
+        else:
+            seit = f"unterschrieben am {self.mandat_datum:%d.%m.%Y}, seitdem kein Einzug bekannt"
+        return (
+            f"Mandat {seit}. Nach {MANDAT_MONATE} Monaten ohne Einzug verfällt es; "
+            "ist es noch gültig, tragen Sie den letzten Einzug an der Adresse ein."
+        )
+
+    def anschrift_zeilen(self, anschrift=None, zu_haenden=""):
         """Anschrift für Belege, Zeile für Zeile; ohne `anschrift` die Standardanschrift.
 
         Die Zusatzzeile einer weiteren Anschrift steht anstelle des Ansprechpartners.
+        `zu_haenden` ersetzt bei Firmen den Ansprechpartner, etwa den Teilnehmer einer
+        Serienrechnung (B-11).
         """
         quelle = anschrift or self
         zeilen = [self.anzeigename]
@@ -259,6 +335,8 @@ class Kontakt(models.Model):
             zeilen.append(self.zusatz)
         if anschrift and anschrift.zusatz:
             zeilen.append(anschrift.zusatz)
+        elif self.art == self.Art.FIRMA and zu_haenden:
+            zeilen.append(zu_haenden)
         elif self.art == self.Art.FIRMA and self.ansprechpartner:
             zeilen.append(" ".join(t for t in [self.anrede, self.ansprechpartner] if t))
         if quelle.strasse:

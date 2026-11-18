@@ -18,6 +18,7 @@ APPS = [
     "angebote",
     "auftraege",
     "vertraege",
+    "serien",
     "zahlungen",
     "artikel",
     "archive",

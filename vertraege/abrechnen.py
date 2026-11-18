@@ -51,6 +51,7 @@ def entwurf(vertrag, beginn, heute):
         leistung_von=von,
         leistung_bis=bis,
         zahlungsziel=vertrag.zahlungsziel,
+        zahlweg=Rechnung.zahlweg_fuer(kontakt, heute),
         rabatt_prozent=vertrag.rabatt_prozent,
         steuerfall=vertrag.steuerfall,
         betreff=vertrag.betreff,

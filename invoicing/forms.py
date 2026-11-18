@@ -79,6 +79,10 @@ class RechnungForm(RabattMixin, forms.ModelForm):
         widget=forms.TextInput(attrs={"inputmode": "numeric"}),
     )
     rabatt_prozent = rabattfeld()
+    # Fehlt das Feld (ältere Formulare, Telegram), gilt Überweisung.
+    zahlweg = forms.ChoiceField(
+        label="Zahlweg", choices=Rechnung.Zahlweg.choices, required=False
+    )
 
     class Meta:
         model = Rechnung
@@ -90,6 +94,7 @@ class RechnungForm(RabattMixin, forms.ModelForm):
             "leistung_von",
             "leistung_bis",
             "zahlungsziel",
+            "zahlweg",
             "skonto_prozent",
             "skonto_tage",
             "rabatt_prozent",
@@ -137,12 +142,16 @@ class RechnungForm(RabattMixin, forms.ModelForm):
                 "lieferanschrift",
                 "steuerfall",
                 "zahlungsziel",
+                "zahlweg",
                 "skonto_prozent",
                 "skonto_tage",
                 "rabatt_prozent",
                 "girocode",
             ):
                 self.fields[name].disabled = True
+
+    def clean_zahlweg(self):
+        return self.cleaned_data["zahlweg"] or Rechnung.Zahlweg.UEBERWEISUNG
 
     def clean(self):
         daten = super().clean()
@@ -152,6 +161,8 @@ class RechnungForm(RabattMixin, forms.ModelForm):
         ziel = daten.get("zahlungsziel")
         if not prozent:
             tage = 0
+        elif daten.get("zahlweg") == Rechnung.Zahlweg.LASTSCHRIFT:
+            self.add_error("skonto_prozent", "Bei Lastschrift gibt es kein Skonto.")
         elif ziel == 0:
             self.add_error("skonto_prozent", "Bei „sofort“ gibt es kein Skonto.")
         elif not tage:

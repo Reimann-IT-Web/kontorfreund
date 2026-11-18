@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Vorlage für Serienrechnungen{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'serien:liste' %}">Serien</a></li>
+    <li aria-current="page">Texte und Beilage</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Texte und Beilage</h1>
+    <p class="muted">Gilt für jede neue Serie. Die Platzhalter füllt Kontorfreund beim Anlegen der Entwürfe; danach können Sie jeden Entwurf noch ändern.</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <section class="form-section" aria-labelledby="t-rechnung">
+    <h2 class="form-title" id="t-rechnung">Rechnung</h2>
+    <p class="muted form-hint">Platzhalter: {{ platzhalter_rechnung }}.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.betreff breit=True %}
+      {% include "core/feld.html" with f=form.position breit=True %}
+      {% include "core/feld.html" with f=form.kopftext optional=True breit=True %}
+      {% include "core/feld.html" with f=form.fusstext optional=True breit=True %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-mail">
+    <h2 class="form-title" id="t-mail">E-Mail</h2>
+    <p class="muted form-hint">Platzhalter: {{ platzhalter_mail }}.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.mail_betreff breit=True %}
+      {% include "core/feld.html" with f=form.mail_text breit=True %}
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="t-beilage">
+    <h2 class="form-title" id="t-beilage">Beilage</h2>
+    {% if vorlage.beilage %}<p>Gespeichert: <a href="{% url 'serien:beilage' %}">{{ vorlage.beilage_name|default:"Beilage.pdf" }}</a></p>{% endif %}
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.beilage_datei optional=True breit=True %}
+      {% if vorlage.beilage %}<label class="choice field-wide">{{ form.beilage_entfernen }} <span>{{ form.beilage_entfernen.label }}</span></label>{% endif %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% icon "check" %}Speichern</button>
+    <a class="btn btn-ghost" href="{% url 'serien:liste' %}">Zurück</a>
+  </div>
+</form>
+{% endblock %}

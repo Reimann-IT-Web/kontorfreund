@@ -173,6 +173,7 @@ def test_alle_geschaeftsdaten_kommen_mit():
         "konten.Benutzer",
         "auswertungen.Datev",
         "benachrichtigungen.Einstellung",
+        "serien.Vorlage",
     }
     assert set(ERFASST) - einstellungen <= exportiert
 

@@ -22,7 +22,7 @@ Quelloffen (AGPL-3.0), ohne Microsoft und ohne Cloud-Zwang: läuft lokal auf dem
 
 - Schreibtisch-PC im Homeoffice, Browser, oft ein einzelner Nutzer.
 - Belege: Rechnungen als ZUGFeRD-PDF (PDF/A-3 mit XML), Briefpapier nach DIN 5008, Versand per E-Mail.
-- Umfeld: Steuerberater (DATEV-Export), Finanzamt (Betriebsprüfung, Aufbewahrung 8 Jahre), Bank (Zahlungseingänge, GiroCode).
+- Umfeld: Steuerberater (DATEV-Export), Finanzamt (Betriebsprüfung, Aufbewahrung 8 Jahre), Bank (Zahlungseingänge, GiroCode, SEPA-Lastschrift).
 - Herkunft vieler Nutzer: ältere Desktop-Bürosoftware mit vielen Reitern und kleinen Formularen, Excel-Listen, Papierordner.
 
 ## Capabilities and Constraints

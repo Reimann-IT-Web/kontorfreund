@@ -44,7 +44,7 @@
             <select id="kontakt" name="kontakt"{% if rechnung.ist_korrektur %} disabled{% endif %}>
               <option value="">Adresse wählen …</option>
               {% for k in kontakte %}
-                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}" data-verbraucher="{{ k.ist_verbraucher|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.auswahlname }}</option>
+                <option value="{{ k.pk }}" data-anschrift="{{ k.anschrift_zeilen|join:'|' }}" data-vollstaendig="{{ k.anschrift_vollstaendig|yesno:'1,0' }}" data-briefanrede="{{ k.briefanrede }}" data-referenz="{{ k.kaeuferreferenz }}" data-xrechnung="{{ k.xrechnung|yesno:'1,0' }}" data-verbraucher="{{ k.ist_verbraucher|yesno:'1,0' }}" data-lastschrift="{{ k.lastschrift|yesno:'1,0' }}"{% if k.pk|stringformat:'s' == form.kontakt.value|stringformat:'s' %} selected{% endif %}>{{ k.auswahlname }}</option>
               {% endfor %}
             </select>
             {% if not kontakte %}<p class="hint">Noch keine Adressen. <a href="{% url 'contacts:neu' %}">Erste Adresse anlegen</a></p>{% endif %}
@@ -75,6 +75,12 @@
             <label for="zahlungsziel">Zahlungsziel</label>
             {{ form.zahlungsziel }}
             <p class="hint">fällig am <span data-due>{{ rechnung.faellig|date:"d.m.Y" }}</span></p>
+          </div>
+          <div class="field{% if form.zahlweg.errors %} has-error{% endif %}"{% if rechnung.ist_korrektur %} hidden{% endif %}>
+            <label for="zahlweg">Zahlweg</label>
+            {{ form.zahlweg }}
+            <p class="hint">Lastschrift braucht ein SEPA-Mandat an der Adresse und Ihre Gläubiger-ID. Fälligkeit ist dann der Tag des Einzugs.</p>
+            {% for hinweis in lastschrift_hinweise %}<p class="hint is-warn-text">{{ hinweis }}</p>{% endfor %}
           </div>
           <fieldset class="field{% if form.skonto_prozent.errors or form.skonto_tage.errors %} has-error{% endif %}"{% if rechnung.ist_korrektur %} hidden{% endif %}>
             <legend>Skonto <span class="optional">optional</span></legend>
@@ -150,11 +156,11 @@
       <div class="field">
         <label for="fusstext">Text nach den Positionen</label>
         {{ form.fusstext }}
-        <p class="hint">Zahlungsfrist und Bankverbindung druckt Kontorfreund automatisch darüber.</p>
+        <p class="hint">Zahlungsfrist und Bankverbindung druckt Kontorfreund automatisch darüber, bei Lastschrift Einzugstag, Mandatsreferenz und Gläubiger-ID.</p>
       </div>
       <label class="choice"{% if rechnung.ist_korrektur %} hidden{% endif %}>
         {{ form.girocode }}
-        <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen.{% else %}Dafür fehlt Ihre IBAN in den {% if user.ist_inhaber %}<a href="{% url 'core:einstellungen' %}">Einstellungen</a>{% else %}Einstellungen; der Inhaber trägt sie ein{% endif %}.{% endif %}</span></span>
+        <span><strong>GiroCode drucken</strong><br><span class="muted">{% if firma.iban %}Ihr Kunde scannt den Code mit der Banking-App und überweist ohne Abtippen. Bei Lastschrift entfällt er.{% else %}Dafür fehlt Ihre IBAN in den {% if user.ist_inhaber %}<a href="{% url 'core:einstellungen' %}">Einstellungen</a>{% else %}Einstellungen; der Inhaber trägt sie ein{% endif %}.{% endif %}</span></span>
       </label>
       {% if not rechnung.ist_korrektur %}
       <label class="choice" data-verzugshinweis hidden>

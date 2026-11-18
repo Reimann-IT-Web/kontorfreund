@@ -2,6 +2,8 @@ from django import forms
 
 from contacts.forms import PLZ_ATTRS
 from invoicing.beleg import (
+    LASTSCHRIFT_BEISPIEL,
+    LASTSCHRIFT_PLATZHALTER,
     ZAHLUNG_BEISPIEL,
     ZAHLUNG_PLATZHALTER,
     logo_lesbar,
@@ -77,6 +79,8 @@ class FirmendatenForm(forms.ModelForm):
             "iban",
             "bank",
             "zahlungstext",
+            "glaeubiger_id",
+            "lastschrifttext",
             "mail_server",
             "mail_port",
             "mail_verschluesselung",
@@ -104,6 +108,12 @@ class FirmendatenForm(forms.ModelForm):
             "zahlungstext": forms.Textarea(
                 attrs={"rows": 3, "placeholder": ZAHLUNG_BEISPIEL}
             ),
+            "glaeubiger_id": forms.TextInput(
+                attrs={"placeholder": "DE98ZZZ09999999999"}
+            ),
+            "lastschrifttext": forms.Textarea(
+                attrs={"rows": 3, "placeholder": LASTSCHRIFT_BEISPIEL}
+            ),
         }
         help_texts = {
             "unterschrift_text": "Zum Beispiel Ihr Name und in der zweiten Zeile Ihre Funktion.",
@@ -115,6 +125,11 @@ class FirmendatenForm(forms.ModelForm):
             "internetadresse": "Steht auf jedem Beleg in der Fußzeile unter Telefon und E-Mail.",
             "zahlungstext": "Ersetzt auf Rechnungen die Zeilen unter dem Rechnungsbetrag. "
             f"Platzhalter: {PLATZHALTER_TEXT}. Leer lassen für den Text im Beispiel.",
+            "glaeubiger_id": "Für Rechnungen, deren Betrag Sie per SEPA-Lastschrift einziehen. "
+            "Sie bekommen sie bei der Deutschen Bundesbank.",
+            "lastschrifttext": "Steht auf Rechnungen, die Sie per Lastschrift einziehen, und "
+            "kündigt den Einzug an. Platzhalter wie oben und dazu {mandat}, {glaeubiger} "
+            "und {kundennummer}. Leer lassen für den Text im Beispiel.",
             "mail_server": "Steht in der Hilfe Ihres E-Mail-Anbieters, z. B. smtp.ionos.de.",
             "mail_benutzer": "Meist Ihre vollständige E-Mail-Adresse.",
         }
@@ -154,6 +169,17 @@ class FirmendatenForm(forms.ModelForm):
                 f"{'Diesen Platzhalter' if len(unbekannt) == 1 else 'Diese Platzhalter'} "
                 f"kennt Kontorfreund nicht: {namen}. "
                 f"Möglich sind {PLATZHALTER_TEXT}."
+            )
+        return text
+
+    def clean_lastschrifttext(self):
+        text = self.cleaned_data["lastschrifttext"].strip()
+        if unbekannt := unbekannte_platzhalter(text, LASTSCHRIFT_PLATZHALTER):
+            namen = ", ".join("{" + n + "}" for n in unbekannt)
+            moeglich = ", ".join("{" + n + "}" for n in LASTSCHRIFT_PLATZHALTER)
+            raise forms.ValidationError(
+                f"{'Diesen Platzhalter' if len(unbekannt) == 1 else 'Diese Platzhalter'} "
+                f"kennt Kontorfreund nicht: {namen}. Möglich sind {moeglich}."
             )
         return text
 

@@ -129,6 +129,10 @@ class Rechnung(models.Model):
         ENTWURF = "entwurf", "Entwurf"
         FESTGESCHRIEBEN = "festgeschrieben", "Festgeschrieben"
 
+    class Zahlweg(models.TextChoices):
+        UEBERWEISUNG = "ueberweisung", "Überweisung"
+        LASTSCHRIFT = "lastschrift", "SEPA-Lastschrift"
+
     class Steuerfall(models.TextChoices):
         KLEINUNTERNEHMER = "kleinunternehmer", "§ 19 – Kleinunternehmer, keine USt"
         REGEL = "regel", "Umsatzsteuer ausweisen (19 % oder 7 %)"
@@ -152,6 +156,7 @@ class Rechnung(models.Model):
         "leistung_von",
         "leistung_bis",
         "zahlungsziel",
+        "zahlweg",
         "skonto_prozent",
         "skonto_tage",
         "rabatt_prozent",
@@ -197,6 +202,10 @@ class Rechnung(models.Model):
     leistung_von = models.DateField("Leistung von", null=True, blank=True)
     leistung_bis = models.DateField("Leistung bis", null=True, blank=True)
     zahlungsziel = models.PositiveSmallIntegerField("Zahlungsziel in Tagen", default=14)
+    # B-12: Bei Lastschrift ist die Fälligkeit das Einzugsdatum.
+    zahlweg = models.CharField(
+        "Zahlweg", max_length=12, choices=Zahlweg.choices, default=Zahlweg.UEBERWEISUNG
+    )
     skonto_prozent = models.DecimalField(
         "Skonto in Prozent", max_digits=4, decimal_places=2, default=0
     )
@@ -400,6 +409,41 @@ class Rechnung(models.Model):
         )
 
     @property
+    def teilnehmer_daten(self):
+        """Teilnehmer, wenn die Rechnung aus einer Serie stammt (B-11), sonst None."""
+        return getattr(self, "teilnehmer", None) if self.pk else None
+
+    @property
+    def email_an(self):
+        """Empfänger beim Versand: der Teilnehmer einer Serie, sonst die Adresse."""
+        teilnehmer = self.teilnehmer_daten
+        if teilnehmer and teilnehmer.email:
+            return teilnehmer.email
+        return self.kontakt.email if self.kontakt else ""
+
+    @property
+    def ist_lastschrift(self):
+        """Lastschrift gilt nur für Rechnungen, die bezahlt werden müssen."""
+        return (
+            self.zahlweg == self.Zahlweg.LASTSCHRIFT
+            and not self.ist_storno
+            and not self.ist_korrektur
+        )
+
+    @staticmethod
+    def zahlweg_fuer(kontakt, stichtag=None):
+        """Vorgabe für neue Rechnungen: Lastschrift bei gültigem Mandat (B-12)."""
+        from core.models import Firmendaten
+
+        if (
+            kontakt
+            and kontakt.mandat_gueltig(stichtag)
+            and Firmendaten.laden().glaeubiger_id
+        ):
+            return Rechnung.Zahlweg.LASTSCHRIFT
+        return Rechnung.Zahlweg.UEBERWEISUNG
+
+    @property
     def kaeuferreferenz(self):
         """Käuferreferenz (BT-10): von der Rechnung, sonst aus der Adresse."""
         return self.referenz or (self.kontakt.kaeuferreferenz if self.kontakt else "")
@@ -470,8 +514,21 @@ class Rechnung(models.Model):
         # Die Korrektur übernimmt den Hinweis des Originals (beleg.beleg_daten).
         if not self.ist_korrektur and hinweis_fehlt(self.steuerfall, firma):
             fehlt.append(HINWEIS_FEHLT)
+        if self.ist_lastschrift:
+            fehlt += self._fehlt_fuer_lastschrift(firma)
         if self.kontakt and self.kontakt.xrechnung:
             fehlt += self._fehlt_fuer_xrechnung(firma)
+        return fehlt
+
+    def _fehlt_fuer_lastschrift(self, firma):
+        """Gläubiger-ID, Mandat und bei der XRechnung das Konto des Kunden (BT-89 bis BT-91)."""
+        fehlt = []
+        if not firma.glaeubiger_id:
+            fehlt.append("Ihre Gläubiger-ID für die Lastschrift")
+        if self.kontakt and not self.kontakt.mandat_vorhanden:
+            fehlt.append("SEPA-Mandat des Empfängers (Mandatsreferenz und Datum)")
+        elif self.kontakt and self.kontakt.xrechnung and not self.kontakt.mandat_iban:
+            fehlt.append("IBAN des Empfängers für die XRechnung mit Lastschrift")
         return fehlt
 
     def _fehlt_fuer_xrechnung(self, firma):

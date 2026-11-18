@@ -151,6 +151,7 @@ def rechnung_erstellen(angebot, firma):
             or angebot.anschrift,
             lieferanschrift=angebot.lieferanschrift,
             steuerfall=angebot.steuerfall,
+            zahlweg=Rechnung.zahlweg_fuer(angebot.kontakt),
             rabatt_prozent=angebot.rabatt_prozent,
             betreff=angebot.betreff,
             kopftext=f"{briefanrede(angebot.kontakt)}\n\n"

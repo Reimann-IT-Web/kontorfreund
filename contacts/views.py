@@ -51,6 +51,10 @@ EXPORT = [
     ("USt-IdNr.", "ust_id"),
     ("Käuferreferenz oder Leitweg-ID", "kaeuferreferenz"),
     ("XRechnung", "xrechnung"),
+    ("Mandatsreferenz", "mandat_referenz"),
+    ("Mandat unterschrieben am", "mandat_datum"),
+    ("Zuletzt eingezogen am", "mandat_zuletzt"),
+    ("IBAN des Kunden", "mandat_iban"),
     ("Notiz", "notiz"),
 ]
 
@@ -64,6 +68,8 @@ def _export(kontakte):
             wert = wert() if callable(wert) else wert
             if isinstance(wert, bool):
                 wert = "ja" if wert else ""
+            elif isinstance(wert, date):
+                wert = f"{wert:%d.%m.%Y}"
             zeile.append(wert or None)
         zeilen.append(zeile)
     return [(titel, "text") for titel, _ in EXPORT], zeilen

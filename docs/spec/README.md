@@ -8,7 +8,7 @@ Status: **Entwurf** – wartet auf Freigabe.
 |---|---|---|
 | [01-grundsaetze.md](01-grundsaetze.md) | Bedienung, Gestaltung, Plattform, Datenschutz | alle |
 | [02-kern.md](02-kern.md) | Kontakte, Historie, Dateien, Wiedervorlagen, Benutzer, Protokoll | 1 |
-| [03-belege.md](03-belege.md) | Artikel, Angebote, Rechnungen, Steuer, E-Rechnung, Festschreibung | 2 |
+| [03-belege.md](03-belege.md) | Artikel, Angebote, Rechnungen, Steuer, E-Rechnung, Festschreibung, Serienrechnungen, Lastschrift | 2 |
 | [04-geld.md](04-geld.md) | Offene Posten, Zahlungen, Mahnwesen, DATEV, Import, E-Rechnung-Empfang | 3 |
 | [05-betrieb.md](05-betrieb.md) | Datenschutz-Funktionen, Datensicherung, Installation, Hosting | 4 |
 

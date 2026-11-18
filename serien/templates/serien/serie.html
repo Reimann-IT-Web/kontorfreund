@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load kf %}
+
+{% block title %}Serie {{ serie.termin }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Sie sind hier">
+  <ol class="crumbs">
+    <li><a href="{% url 'serien:liste' %}">Serien</a></li>
+    <li aria-current="page">{{ serie.termin }}</li>
+  </ol>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>{{ serie.thema }}</h1>
+    <p class="muted">{{ serie.termin }} · Rechnungsdatum {{ serie.datum|date:"d.m.Y" }} · {{ serie.preis|euro }} je Teilnehmer · {{ teilnehmer|length }} Rechnung{{ teilnehmer|length|pluralize:"en" }}</p>
+  </div>
+</div>
+
+<div class="form-actions">
+  {% if entwuerfe %}
+  <form method="post" action="{% url 'serien:festschreiben' serie.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit" data-confirm="{{ entwuerfe }} Entw{{ entwuerfe|pluralize:'urf,ürfe' }} festschreiben? Die Rechnungen bekommen ihre Nummern in der Reihenfolge der Liste und lassen sich danach nicht mehr ändern.">{% icon "lock" %}{{ entwuerfe }} Entw{{ entwuerfe|pluralize:"urf,ürfe" }} festschreiben</button>
+  </form>
+  {% endif %}
+  {% if zu_senden %}
+  {% if firma.mail_bereit %}
+  <form method="post" action="{% url 'serien:senden' serie.pk %}" class="actions">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit" data-confirm="{{ zu_senden }} Rechnung{{ zu_senden|pluralize:'en' }} per E-Mail senden?">{% icon "send" %}{{ zu_senden }} per E-Mail senden</button>
+    <label class="choice small"><input type="checkbox" name="kopie" checked> <span>Kopie an mich</span></label>
+  </form>
+  {% else %}
+  <p class="hint">Zum Senden fehlt der E-Mail-Versand{% if user.ist_inhaber %} in den <a href="{% url 'core:einstellungen' %}#t-mail">Einstellungen</a>{% endif %}.</p>
+  {% endif %}
+  {% endif %}
+  {% if zum_drucken %}<a class="btn" href="{% url 'serien:drucken' serie.pk %}">{% icon "download" %}{{ zum_drucken }} ohne E-Mail als PDF zum Drucken</a>{% endif %}
+  {% if einzuziehen %}
+  <form method="post" action="{% url 'serien:eingezogen' serie.pk %}">
+    {% csrf_token %}
+    <button class="btn" type="submit" data-confirm="{{ einzuziehen }} Lastschrift{{ einzuziehen|pluralize:'en' }} als eingezogen buchen? Buchen Sie erst, wenn der Einzug auf Ihrem Konto ist.">{% icon "check" %}{{ einzuziehen }} Lastschrift{{ einzuziehen|pluralize:"en" }} eingezogen</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="table-wrap">
+  <table class="table archive stapel">
+    <thead>
+      <tr>
+        <th scope="col" class="num">Zeile</th>
+        <th scope="col">Teilnehmer</th>
+        <th scope="col">Adresse</th>
+        <th scope="col">Zahlweg</th>
+        <th scope="col">Rechnung</th>
+        <th scope="col" class="num">Betrag</th>
+        <th scope="col">Versand</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in teilnehmer %}
+      {% with r=t.rechnung %}
+      <tr class="data-row">
+        <td class="num" data-label="Zeile">{{ t.zeile }}</td>
+        <td class="voll"><strong>{{ t.name }}</strong>{% if r.kontakt.art == "firma" %}<br><span class="small muted">{{ r.kontakt }}</span>{% endif %}</td>
+        <td>{% if r.kontakt %}<a href="{% url 'contacts:bearbeiten' r.kontakt.pk %}">{{ r.kontakt.kundennummer }}</a>{% endif %}</td>
+        <td>{{ r.get_zahlweg_display }}</td>
+        <td class="docnr"><a href="{% url 'invoicing:bearbeiten' r.pk %}">{% if r.ist_entwurf %}Entwurf{% else %}{{ r.nummer }}{% endif %}</a></td>
+        <td class="num"><span class="amount">{% if r.ist_entwurf %}{{ r.summen.2|euro }}{% else %}{{ r.brutto|euro }}{% endif %}</span></td>
+        <td>{% if r.versendet_am %}{{ r.versendet_am|date:"d.m.Y" }}{% elif r.email_an %}<span class="small muted">{{ r.email_an }}</span>{% else %}<span class="small muted">zum Drucken</span>{% endif %}</td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="table-foot muted">{% include "auswertungen/herunterladen.html" %}: Zeile der Liste, Kd-Nr., Rechnungsnummer, Betrag, Zahlweg und Versand, zum Übertragen in Ihre Liste.</p>
+{% endblock %}

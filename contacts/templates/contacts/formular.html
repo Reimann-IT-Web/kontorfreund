@@ -113,6 +113,18 @@
     </div>
   </section>
 
+  <section class="form-section" aria-labelledby="t-mandat">
+    <h2 class="form-title" id="t-mandat">SEPA-Lastschrift</h2>
+    <p class="muted form-hint">Hat der Kunde Ihnen ein Lastschriftmandat erteilt, ziehen Sie Rechnungen an diese Adresse per Lastschrift ein.</p>
+    <div class="form-grid">
+      {% include "core/feld.html" with f=form.mandat_referenz optional=True %}
+      {% include "core/feld.html" with f=form.mandat_datum optional=True %}
+      {% include "core/feld.html" with f=form.mandat_zuletzt optional=True %}
+      {% include "core/feld.html" with f=form.mandat_iban optional=True %}
+    </div>
+    {% if kontakt.mandat_verfallen_text %}<p class="hint is-warn-text">{{ kontakt.mandat_verfallen_text }}</p>{% endif %}
+  </section>
+
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{% icon "check" %}{% if kontakt %}Speichern{% else %}Adresse anlegen{% endif %}</button>
     <a class="btn btn-ghost" href="{% url 'contacts:liste' %}">Abbrechen</a>

@@ -12,7 +12,7 @@ Entwurf – wird vor Beginn von Phase 3 verfeinert und erneut freigegeben.
 
 - Zahlung erfassen: Datum, Betrag, Art (Überweisung, bar, Lastschrift, sonstige), Notiz.
 - Teilzahlungen; Skonto innerhalb der Frist wird automatisch berechnet; Restbeträge mit Grund ausbuchen.
-- GiroCode (EPC-QR nach EPC069-12) auf jeder Rechnung, mit Betrag und Rechnungsnummer als Verwendungszweck.
+- GiroCode (EPC-QR nach EPC069-12) auf jeder Rechnung zum Überweisen (nicht bei Lastschrift, B-12), mit Betrag und Rechnungsnummer als Verwendungszweck.
 
 ## M-3 Mahnwesen
 

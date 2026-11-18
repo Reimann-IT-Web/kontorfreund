@@ -545,6 +545,13 @@ if (rechnung) {
   const skontoHinweis = rechnung.querySelector("[data-skonto-hinweis]");
   const ohneSkonto = skontoHinweis?.textContent;
   const verzugshinweis = rechnung.querySelector("[data-verzugshinweis]");
+  // Neuer Empfänger: Lastschrift, wenn er ein gültiges SEPA-Mandat hat (B-12).
+  const zahlweg = feld("zahlweg");
+  if (zahlweg && !zahlweg.disabled) {
+    auswahl.addEventListener("change", () => {
+      zahlweg.value = auswahl.selectedOptions[0]?.dataset.lastschrift === "1" ? "lastschrift" : "ueberweisung";
+    });
+  }
   const karte = rechnung.querySelector("[data-address-card]");
   const anschriftFehlt = rechnung.querySelector("[data-address-missing]");
 

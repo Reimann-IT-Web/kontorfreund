@@ -275,7 +275,10 @@ def verfahren():
                     "und lässt sich frei ändern oder löschen; er zählt nicht als Beleg. "
                     "Für wiederkehrende Leistungen legt Kontorfreund aus einem Vertrag am "
                     "Anfang jedes Zeitraums einen solchen Entwurf an; festgeschrieben wird "
-                    "er wie jeder andere vom Nutzer."
+                    "er wie jeder andere vom Nutzer. Aus einer Teilnehmerliste legt "
+                    "Kontorfreund auf Wunsch je Teilnehmer einen Entwurf an "
+                    "(Serienrechnung); festgeschrieben werden sie gesammelt, mit Nummern "
+                    "in der Reihenfolge der Liste."
                 ),
                 absatz(
                     "Beim Festschreiben prüft Kontorfreund die Pflichtangaben nach § 14 "
@@ -348,7 +351,10 @@ def verfahren():
                     "Kontoauszug, mit Datum und Betrag; Kontorfreund ist nicht mit dem "
                     "Bankkonto verbunden. Teilzahlungen sind möglich. Wird eine Rechnung "
                     "innerhalb der Skontofrist bis auf das Skonto bezahlt, bucht "
-                    "Kontorfreund den Rest als Skonto. Uneinbringliche Beträge werden mit "
+                    "Kontorfreund den Rest als Skonto. Rechnungen an Kunden mit "
+                    "SEPA-Lastschriftmandat kündigen den Einzug an; eingezogen wird im "
+                    "Banking, und die Zahlung wird nach dem Eingang wie jede andere "
+                    "erfasst. Uneinbringliche Beträge werden mit "
                     "Angabe eines Grundes ausgebucht. Jede Zahlung und Ausbuchung steht im "
                     "Änderungsprotokoll."
                 ),

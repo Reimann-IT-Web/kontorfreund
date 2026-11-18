@@ -9,6 +9,7 @@ und MUSTANG (Mustang-CLI). Ohne diese Angaben wird übersprungen.
 import os
 import re
 import subprocess
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree
@@ -37,6 +38,9 @@ SKONTO = {"skonto_prozent": "2", "skonto_tage": "7"}
 RABATT = {"rabatt_prozent": "8"}
 # Webdesign zu 19 %, Hosting zu 7 % (B-4: mehrere Steuersätze auf einem Beleg).
 GEMISCHT = {"steuersatz": ["19", "7"]}
+# SEPA-Lastschrift (B-12): Mandat an der Adresse, Gläubiger-ID in den Firmendaten.
+MANDAT = {"mandat_datum": date(2026, 1, 15)}
+LASTSCHRIFT = {"zahlweg": "lastschrift"}
 
 # Name, Steuerfall, Angaben der Adresse, weitere Angaben der Rechnung;
 # dazu je eine Stornorechnung und Rechnungskorrektur.
@@ -90,6 +94,25 @@ FAELLE = [
         "regel",
         {"kaeuferreferenz": LEITWEG_ID, "xrechnung": True},
         {},
+    ),
+    # ZUGFeRD ohne Konto des Kunden, XRechnung mit (BT-91).
+    (
+        "lastschrift",
+        "steuerfrei",
+        {**MANDAT, "mandat_referenz": "9003"},
+        LASTSCHRIFT,
+    ),
+    (
+        "xrechnung-lastschrift",
+        "regel",
+        {
+            **MANDAT,
+            "mandat_referenz": "9004",
+            "mandat_iban": "DE89370400440532013000",
+            "kaeuferreferenz": LEITWEG_ID,
+            "xrechnung": True,
+        },
+        LASTSCHRIFT,
     ),
 ]
 
@@ -166,6 +189,7 @@ def rechnungen(client, settings, unterschrift):
     f.telefon = "06131 123456"
     f.iban = "DE02120300000000202051"
     f.steuerfrei_hinweis = "Umsatzsteuerfrei nach § 4 Nr. 21 UStG"
+    f.glaeubiger_id = "DE98ZZZ09999999999"
     # Durchsichtiger Grund: Mustang prüft damit auch das PDF/A samt Bild.
     f.unterschrift = unterschrift
     f.unterschrift_text = "Max Muster\nInhaber"

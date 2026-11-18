@@ -35,6 +35,7 @@ from invoicing.models import Position as Rechnungsposition
 from invoicing.models import Rechnung
 from protokoll.erfassen import VERDECKT, _felder, _name, _wert
 from protokoll.models import Eintrag
+from serien.models import Serie, Teilnehmer
 from vertraege.models import Position as Vertragsposition
 from vertraege.models import Vertrag
 from wiedervorlagen.models import Wiedervorlage
@@ -142,6 +143,24 @@ TABELLEN = [
         Vertragsposition.objects.select_related("vertrag"),
         [("Vertrag-ID", lambda p: p.vertrag_id)],
         [("Gesamt", lambda p: zahl(p.gesamt, 2))],
+    ),
+    (
+        "serien.csv",
+        "Serienrechnungen aus Teilnehmerlisten",
+        Serie.objects.all(),
+        ID,
+        [("Angelegt am", lambda s: _zeit(s.erstellt))],
+    ),
+    (
+        "teilnehmer.csv",
+        "Teilnehmer der Serienrechnungen",
+        Teilnehmer.objects.all(),
+        ID
+        + [
+            ("Serie-ID", lambda t: t.serie_id),
+            ("Rechnung-ID", lambda t: t.rechnung_id),
+        ],
+        [],
     ),
     (
         "rechnungen.csv",
