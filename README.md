@@ -13,7 +13,7 @@ Open-Source-CRM und Rechnungsprogramm für Selbstständige, Kleinunternehmer und
 
 ## So entsteht Kontorfreund
 
-Den Code von Kontorfreund schreibt die KI Claude Code. Ich lege fest, was das Programm können soll, lese jede Änderung und teste jede Version, bevor ich sie veröffentliche. Bei jeder Änderung laufen außerdem automatische Tests auf Linux, macOS und Windows, und die erzeugten E-Rechnungen werden mit den Prüfwerkzeugen von KoSIT und Mustang geprüft. Deshalb steht Claude in den Commits als Co-Autor.
+Den Code von Kontorfreund schreibt vor allem die KI Claude Code, deshalb steht Claude in den Commits als Co-Autor. Ab und zu setze ich auch Codex von OpenAI ein. Dass Kontorfreund ganz mit KI entsteht, ist Absicht: Ich will selbst sehen, was KI heute schon umsetzen kann. Ich lege fest, was das Programm können soll, lese jede Änderung und teste jede Version, bevor ich sie veröffentliche. Bei jeder Änderung laufen außerdem automatische Tests auf Linux, macOS und Windows, und die erzeugten E-Rechnungen werden mit den Prüfwerkzeugen von KoSIT und Mustang geprüft.
 
 ## So sieht es aus
 
